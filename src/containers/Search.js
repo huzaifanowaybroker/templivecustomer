@@ -28,7 +28,13 @@ const NAV_TABS = [
 
 
 
-const LIVE_CITIES = ["Chennai"];
+const LIVE_CITIES = ["Chennai","Mumbai",
+  "Delhi",
+  "Bengaluru",
+  "Hyderabad",
+  "Kolkata",
+  "Pune",
+  "Ahmedabad"];
 
 // Letters (any language) and spaces only
 // const VALID_SEARCH_TEXT = /^[\p{L}\p{M}\s]+$/u;

@@ -13,7 +13,13 @@ import { FaHouse } from "react-icons/fa";
 import { useHistory } from "react-router-dom";
 import { Link } from "react-router-dom";
 
-const LIVE_CITIES = ["Chennai"];
+const LIVE_CITIES = ["Chennai","Mumbai",
+  "Delhi",
+  "Bengaluru",
+  "Hyderabad",
+  "Kolkata",
+  "Pune",
+  "Ahmedabad"];
 
 const Footer = () => {
   const history = useHistory();

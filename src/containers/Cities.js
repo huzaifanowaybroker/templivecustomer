@@ -1,7 +1,13 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useHistory } from "react-router-dom";
 import Slider from "react-slick";
-const LIVE_CITIES = ["Chennai"];
+const LIVE_CITIES = ["Chennai","Mumbai",
+  "Delhi",
+  "Bengaluru",
+  "Hyderabad",
+  "Kolkata",
+  "Pune",
+  "Ahmedabad"];
 const Cities = React.memo(({ data }) => {
   const [citiesData, setCitiesData] = useState([]);
   const [loading, setLoading] = useState(true);

@@ -7,27 +7,27 @@ import SecurityIcon from "@mui/icons-material/Security";
 
 const features = [
     {
-        icon: <PercentIcon sx={{ fontSize: 28, color: "#8B1E3F" }} />,
+        icon: <PercentIcon sx={{ fontSize: 24, color: "#8B1E3F" }} />,
         title: "Zero Brokerage",
         subtitle: "No hidden charges",
     },
     {
-        icon: <VerifiedUserIcon sx={{ fontSize: 28 }} />,
+        icon: <VerifiedUserIcon sx={{ fontSize: 24 }} />,
         title: "Verified Owners",
         subtitle: "100% verified listings",
     },
     {
-        icon: <AutoAwesomeIcon sx={{ fontSize: 28 }} />,
+        icon: <AutoAwesomeIcon sx={{ fontSize: 24 }} />,
         title: "AI Technology Match",
         subtitle: "Smart recommendation",
     },
     {
-        icon: <VideocamIcon sx={{ fontSize: 28 }} />,
+        icon: <VideocamIcon sx={{ fontSize: 24 }} />,
         title: "Virtual Tour",
         subtitle: "360° property view",
     },
     {
-        icon: <SecurityIcon sx={{ fontSize: 28 }} />,
+        icon: <SecurityIcon sx={{ fontSize: 24 }} />,
         title: "Secure & Safe",
         subtitle: "Fraud detection",
     },
@@ -71,7 +71,7 @@ const FeaturesSection = () => {
                             min-w-[280px] sm:min-w-[320px] lg:min-w-0
                             px-5 py-6
                             transition-all duration-300
-                            hover:bg-[#FAFAFA]
+                            hover:bg-[#FAFAFA] hover:scale-105
                             border-gray-200
                             ${index !== features.length - 1 ? "lg:border-r" : ""}
                         `}
@@ -81,11 +81,11 @@ const FeaturesSection = () => {
                         </div>
 
                         <div>
-                            <h3 className="text-[17px] font-semibold text-[#1E293B] leading-5">
+                            <h3 className="text-[15px] font-semibold text-[#1E293B] leading-5">
                                 {item.title}
                             </h3>
 
-                            <p className="mt-1 text-[12px] text-[#6B7280] leading-5">
+                            <p className="mt-1 text-[10.5px] text-[#6B7280] leading-5">
                                 {item.subtitle}
                             </p>
                         </div>

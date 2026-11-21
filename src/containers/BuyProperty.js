@@ -1,951 +1,571 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import axios from "axios";
-import { useRef } from "react";
-import { MdApartment } from "react-icons/md";
-import { FaBath, FaUser } from "react-icons/fa";
-import { RiRuler2Line } from "react-icons/ri";
-import { AiOutlineClockCircle } from "react-icons/ai";
-import { Link } from "react-router-dom";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Slider from "react-slick";
-import { Ruler } from "lucide-react";
-import { faVideo } from "@fortawesome/free-solid-svg-icons";
-import { CiHeart } from "react-icons/ci";
-import { useHistory } from "react-router-dom";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import "../styles/RecommendedProperties.css";
-import { FaRupeeSign } from "react-icons/fa"; // Icon for price
-import { BsHouseDoorFill, BsArrowsFullscreen } from "react-icons/bs"; // Icon for property type
-import { faChair } from "@fortawesome/free-solid-svg-icons";
-import { faArrowRight } from "@fortawesome/free-solid-svg-icons";
-import { faShareNodes } from "@fortawesome/free-solid-svg-icons";
-import { AiOutlineUser } from "react-icons/ai";
-import { GoArrowLeft } from "react-icons/go";
-import { GoArrowRight } from "react-icons/go";
-import { PiCubeFocus } from "react-icons/pi";
-import { BiShapeSquare } from "react-icons/bi";
-import { Heart } from "lucide-react";
-import { FaMapMarkerAlt } from "react-icons/fa";
+import { useHistory } from "react-router-dom";
 import { toast } from "react-toastify";
+import { Heart } from "lucide-react";
+import { GoArrowLeft, GoArrowRight } from "react-icons/go";
+import { IoBedOutline } from "react-icons/io5";
+import { FaBath, FaMapMarkerAlt, FaUser } from "react-icons/fa";
+import { RiRuler2Line } from "react-icons/ri";
+import { FiCamera } from "react-icons/fi";
+import { MdApartment, MdCheckCircleOutline } from "react-icons/md";
+import { PiCubeFocus } from "react-icons/pi";
+import { AiOutlineUser, AiOutlineClockCircle } from "react-icons/ai";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faShareNodes } from "@fortawesome/free-solid-svg-icons";
 import Login1 from "../auth/Login1";
 import SignUp1 from "../auth/SignUp1";
 import PropertyCardSkeleton from "./PropertyCardSkeleton";
 
-const userLocation = JSON.parse(sessionStorage.getItem("userLocation"));
-function calculateDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371; // Earth radius in km
-    const dLat = (lat2 - lat1) * (Math.PI / 180);
-    const dLon = (lon2 - lon1) * (Math.PI / 180);
-    const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(lat1 * (Math.PI / 180)) *
-        Math.cos(lat2 * (Math.PI / 180)) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
+/* ------------------------------------------------------------------ */
+/* CARD SIZE: change these two numbers to make the cards bigger or      */
+/* smaller. Everything else follows them.                               */
+/* ------------------------------------------------------------------ */
+const CARD_HEIGHT = 380; // whole card, in px
+const IMAGE_HEIGHT = 190; // photo area at the top of the card, in px
 
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
+// Colours taken from the existing ZeroBriks code
+const C = {
+  primary: "#8B1E3F",
+  deep: "#7a1235",
+  navy: "#5e0d28",
+  gold: "#b8860b",
+  soft: "#fbf3ec",
+  chip: "#F6EEF1",
+  line: "#eadfd6",
+};
+
+const STYLE = `
+  .zb-bp .slick-prev, .zb-bp .slick-next { display: none !important; }
+  .zb-bp-track .slick-list { overflow: hidden; padding-bottom: 32px; margin-bottom: -32px; }
+  .zb-bp-photos .slick-list { overflow: hidden; padding: 0; margin: 0; }
+  .zb-bp-card { box-shadow: 0 24px 50px -30px rgba(78, 12, 34, .45); }
+  .zb-bp-card:hover { box-shadow: 0 34px 60px -26px rgba(78, 12, 34, .55); }
+  .zb-bp .slick-slide > div { height: 100%; }
+  .zb-bp .zb-serif { font-family: "Newsreader", Georgia, serif; }
+  .zb-bp-photos .slick-dots { bottom: 8px; }
+  .zb-bp-photos .slick-dots li { width: 12px; height: 12px; margin: 0 2px; }
+  .zb-bp-photos .slick-dots li button:before { font-size: 7px; color: #fff; opacity: .5; }
+  .zb-bp-photos .slick-dots li.slick-active button:before { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) {
+    .zb-bp, .zb-bp * { transition: none !important; }
+  }
+`;
+
+const BASE_URL = process.env.REACT_APP_API_URL;
+
+const toUrl = (img) => {
+  if (typeof img !== "string" || !img.trim()) return null;
+  return img.startsWith("http") ? img : `${BASE_URL}${img}`;
+};
+
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) *
+      Math.cos(lat2 * (Math.PI / 180)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-const BuyProperty = ({
-    openRecommendedShareModal,
-    closeShareModal,
-    copyLink,
-    currentShareUrl,
-    data,
-    fetchHomeData,
-}) => {
-    const [savedProperties, setSavedProperties] = useState([]);
-    const [properties, setProperties] = useState([]);
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const sliderRef = useRef(null);
-    const [activeIndex, setActiveIndex] = useState(0);
-    const [images, setImages] = useState([]);
-    const history = useHistory();
-    const defaultImage = "/image/appstore.png";
-    const userId = sessionStorage.getItem("accessToken");
-    const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-    const [isSignUpModalOpen, setIsSignUpModalOpen] = useState(false);
-
-    // Fetch Buy properties (data already filtered by parent with property_category_type: "Buy")
-    const fetchBuyProperties = () => {
-        if (data?.status === 1 && Array.isArray(data.data)) {
-            const buyProperties = data.data.filter(
-                (item) =>
-                    item.property_category_type &&
-                    item.property_category_type.toLowerCase() === "buy"
-            );
-
-            setProperties(buyProperties);
-        } else {
-            setProperties([]);
-        }
-    };
-
-    useEffect(() => {
-        fetchBuyProperties();
-    }, [data]);
-
-    const handleClick = () => {
-        history.push("/advisordashboard?label=Buy");
-    };
-
-    const addToFavorites = async (propertyId) => {
-        if (!userId) {
-            toast.error("Please log in to save properties to your favorites.");
-            return;
-        }
-
-        // Optimistic update - UI instantly update, API background madhe
-        setProperties((prev) =>
-            prev.map((item) =>
-                item._id === propertyId ? { ...item, is_favorite: true } : item
-            )
-        );
-
-        try {
-            const response = await axios.post(
-                `${process.env.REACT_APP_API_URL}/cust_api/add_to_favorite`,
-                {
-                    user_id: userId,
-                    property_id: propertyId,
-                }
-            );
-
-            if (response.data.status === 1) {
-                setProperties((prev) =>
-                    prev.map((item) =>
-                        item._id === propertyId
-                            ? {
-                                ...item,
-                                is_favorite: true,
-                                favorite_id: response.data.favorite_id,
-                            }
-                            : item
-                    )
-                );
-            } else {
-                // Revert if API failed
-                setProperties((prev) =>
-                    prev.map((item) =>
-                        item._id === propertyId ? { ...item, is_favorite: false } : item
-                    )
-                );
-            }
-        } catch (error) {
-            console.error("Add favorite failed:", error);
-
-            setProperties((prev) =>
-                prev.map((item) =>
-                    item._id === propertyId
-                        ? { ...item, is_favorite: false }
-                        : item
-                )
-            );
-        }
-    };
-
-    // Remove property from favorites
-    const removeFromFavorites = async (favoriteId) => {
-        if (!userId) {
-            toast.error("Please log in to remove properties from your favorites.");
-            return;
-        }
-
-        // Optimistic update - UI instantly update
-        setProperties((prev) =>
-            prev.map((item) =>
-                item.favorite_id === favoriteId
-                    ? { ...item, is_favorite: false, favorite_id: null }
-                    : item
-            )
-        );
-
-        try {
-            const response = await axios.delete(
-                `${process.env.REACT_APP_API_URL}/cust_api/remove_from_favorite`,
-                {
-                    data: {
-                        favorite_id: favoriteId,
-                    },
-                }
-            );
-
-            if (response.data.status !== 1) {
-                toast.error("Failed to remove favorite. Please try again.");
-            }
-        } catch (error) {
-            console.error("Remove favorite failed:", error);
-            toast.error("Failed to remove favorite. Please try again.");
-        }
-    };
-
-    const convertToSqFt = (area, unit) => {
-        if (!area || !unit) return null;
-        const areaNum = parseFloat(area);
-        if (isNaN(areaNum)) return null;
-
-        switch (unit.toLowerCase()) {
-            case "sq ft":
-            case "sqft":
-            case "square feet":
-                return areaNum;
-            case "sq yd":
-            case "sqyd":
-            case "square yards":
-                return areaNum * 9;
-            case "sq mt":
-            case "sqmt":
-            case "square meters":
-                return areaNum * 10.7639;
-            case "acre":
-            case "acres":
-                return areaNum * 43560;
-            default:
-                return areaNum; // Return as-is if unit is unknown
-        }
-    };
-
-    // Slider settings
-    const [activeIndexes, setActiveIndexes] = useState({});
-    const BASE_URL = process.env.REACT_APP_API_URL;
-
-    const settings = {
-        infinite: true,
-        lazyLoad: "ondemand",
-        slidesToShow: 4,
-        slidesToScroll: 1,
-        autoplay: true,
-        autoplaySpeed: 3000,
-        arrows: false,
-        cssEase: "linear",
-        centerMode: false,
-        centerPadding: "0px",
-        responsive: [
-            {
-                breakpoint: 1400,
-                settings: {
-                    slidesToShow: 3,
-                    slidesToScroll: 1,
-                },
-            },
-            {
-                breakpoint: 1024,
-                settings: {
-                    slidesToShow: 2,
-                    slidesToScroll: 1,
-                },
-            },
-            {
-                breakpoint: 768,
-                settings: {
-                    slidesToShow: 1,
-                    slidesToScroll: 1,
-                    arrows: false,
-                },
-            },
-        ],
-    };
-
-    const formatPrice = (price) => {
-        if (price === null || price === undefined || price === "") return "";
-        price = Number(price);
-        const formatNumber = (value, unit) => {
-            return `${value.toFixed(2).replace(/\.?0+$/, "")}${unit}`;
-        };
-        if (price >= 10000000) {
-            return formatNumber(price / 10000000, " Cr");
-        } else if (price >= 100000) {
-            return formatNumber(price / 100000, " L");
-        } else if (price >= 1000) {
-            return formatNumber(price / 1000, " K");
-        } else {
-            return price.toString();
-        }
-    };
-
-    // Auto-slide effect
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setActiveIndex((prevIndex) => (prevIndex + 1) % images.length);
-        }, 3000); // 3000ms = 3 seconds for auto-slide
-        return () => clearInterval(interval); // Cleanup on component unmount
-    }, [images.length]);
-
-    useEffect(() => {
-        window.scrollTo(0, 0);
-    }, []);
-
-    return (
-        <div className="px-4 py-4 bg-white sm:px-6 md:px-8 lg:px-10">
-            <div className="bg-slate-50 rounded-2xl">
-                <div className="w-full sm:px-6 lg:px-4">
-                    <div className="flex flex-col items-start justify-between px-4 pt-3 mb-3 sm:flex-row sm:items-center">
-                        <div className="flex flex-col">
-                            <h2 className="mb-2 text-xl font-bold tracking-wide text-gray-800 sm:text-2xl lg:text-3xl">
-                                Discover Your Dream Home
-                            </h2>
-                            <p className="text-sm text-gray-500 sm:text-base lg:text-lg">
-                                Your dream property is just a few clicks away
-                            </p>
-                        </div>
-
-                        <div className="flex items-center w-full mt-4 space-x-3 sm:w-auto sm:space-x-5 sm:mt-0">
-                            <button
-                                className="w-full px-4 py-2 text-sm bg-white rounded-lg my-text my-border sm:w-auto sm:px-6"
-                                onClick={handleClick}
-                            >
-                                View All Properties
-                            </button>
-                            <button
-                                className="hidden p-2 text-lg font-semibold text-gray-700 bg-white rounded-full shadow-md sm:block sm:text-2xl hover:shadow-lg"
-                                onClick={() => sliderRef.current.slickPrev()}
-                            >
-                                <GoArrowLeft className="text-3xl text-black" />
-                            </button>
-                            <button
-                                className="hidden p-2 text-lg font-semibold text-gray-700 bg-white rounded-full shadow-md sm:block sm:text-2xl hover:shadow-lg"
-                                onClick={() => sliderRef.current.slickNext()}
-                            >
-                                <GoArrowRight className="text-3xl text-black" />
-                            </button>
-                        </div>
-                    </div>
-
-                    {data.status === 0 ? (
-  <Slider {...settings} className="slider-container" ref={sliderRef}>
-    {[1, 2, 3, 4].map((item) => (
-      <PropertyCardSkeleton key={item} />
-    ))}
-  </Slider>
-) : (
-  <Slider {...settings} className="slider-container" ref={sliderRef}>
-                        {properties
-                            .filter((property) => property.available_status !== "Sold")
-                            .map((property) => {
-                                let distance = null;
-
-                                const subtitle = (() => {
-                                    const area = property.address_area || "";
-                                    const city = property.city_name || "";
-                                    const location = area.toLowerCase().includes(city.toLowerCase())
-                                        ? area
-                                        : `${area}, ${city}`;
-
-                                    const type =
-                                        property.property_type === "Office"
-                                            ? "Office Space"
-                                            : property.property_type === "Retail"
-                                                ? "Retail Space"
-                                                : property.property_type || "";
-
-                                    const category = property.property_category_type || "";
-
-                                    // Commercial Properties
-                                    if (
-                                        category === "Commercial Buy" ||
-                                        category === "Commercial Lease"
-                                    ) {
-                                        return `${type} for ${category === "Commercial Buy" ? "Sale" : "Lease"
-                                            } in ${location}`;
-                                    }
-
-                                    // PG / Co-Living
-                                    if (
-                                        category.includes("PG") ||
-                                        category.includes("Co-Living") ||
-                                        category.includes("Coliving")
-                                    ) {
-                                        return `${type} for Rent in ${location}`;
-                                    }
-
-                                    // Residential
-                                    const action = category === "Buy" ? "Sale" : category;
-                                    return `${property.bhk_type} ${type} for ${action} in ${location}`;
-                                })();
-
-                                if (userLocation && property.latitude && property.longitude) {
-                                    distance = calculateDistance(
-                                        userLocation.latitude,
-                                        userLocation.longitude,
-                                        parseFloat(property.latitude),
-                                        parseFloat(property.longitude),
-                                    ).toFixed(1);
-                                }
-
-                                function getValidImageUrl(img) {
-                                    if (typeof img !== "string") return null;
-                                    if (img.trim() === "") return null;
-                                    return img.startsWith("http") ? img : BASE_URL + img;
-                                }
-
-                                const coverImage = getValidImageUrl(property.cover_image);
-                                const additionalImages = (property.property_images || [])
-                                    .map((imgObj) => getValidImageUrl(imgObj?.image))
-                                    .filter(Boolean);
-
-                                const allImages = [
-                                    ...(coverImage ? [coverImage] : []),
-                                    ...additionalImages,
-                                ];
-
-                                return (
-                                    <div key={property._id} className="w-full h-full p-2">
-                                        <div className="flex flex-col h-full overflow-hidden shadow rounded-2xl bg-slate-100 min-h-[440px] sm:min-h-[460px]">
-                                            <div className="w-full overflow-hidden rounded-xl">
-                                                <div className="relative">
-                                                    <Link
-                                                        to={`/propertydetails/${property._id}`}
-                                                        className="block"
-                                                        onClick={() =>
-                                                            window.scrollTo({ top: 0, behavior: "smooth" })
-                                                        }
-                                                    >
-                                                        {allImages.length > 1 ? (
-                                                            <Slider
-                                                                key={`${property._id}-${allImages.length}-${Date.now()}`}
-                                                                className="h-40 sm:h-44 md:h-48"
-                                                                dots
-                                                                infinite
-                                                                speed={500}
-                                                                slidesToShow={1}
-                                                                slidesToScroll={1}
-                                                                arrows
-                                                                autoplay
-                                                                autoplaySpeed={2000}
-                                                                beforeChange={(current, next) =>
-                                                                    setActiveIndexes((prev) => ({
-                                                                        ...prev,
-                                                                        [property._id]: next,
-                                                                    }))
-                                                                }
-                                                                initialSlide={activeIndexes[property._id] || 0}
-                                                                customPaging={(i) => {
-                                                                    const activeSlide =
-                                                                        activeIndexes[property._id] || 0;
-                                                                    const isActive =
-                                                                        i === activeSlide % allImages.length;
-                                                                    return (
-                                                                        <div
-                                                                            style={{
-                                                                                width: "10px",
-                                                                                height: "10px",
-                                                                                borderRadius: "50%",
-                                                                                background: isActive ? "#fff" : "#888",
-                                                                                margin: "0 5px",
-                                                                                cursor: "pointer",
-                                                                            }}
-                                                                        />
-                                                                    );
-                                                                }}
-                                                                appendDots={(dots) => (
-                                                                    <div
-                                                                        style={{
-                                                                            position: "absolute",
-                                                                            bottom: "10px",
-                                                                            left: "50%",
-                                                                            transform: "translateX(-50%)",
-                                                                            display: "flex",
-                                                                            justifyContent: "center",
-                                                                            width: "100%",
-                                                                        }}
-                                                                    >
-                                                                        {dots}
-                                                                    </div>
-                                                                )}
-                                                            >
-                                                                {allImages.map((imgUrl, idx) => (
-                                                                    <div key={`${property._id}-${idx}`}>
-                                                                        <img
-                                                                            src={imgUrl}
-                                                                            alt="Property"
-                                                                            className="object-cover w-full h-40 rounded-t-2xl sm:h-44 md:h-48"
-                                                                        />
-                                                                    </div>
-                                                                ))}
-                                                            </Slider>
-                                                            
-                                                        ) : (
-                                                            <img
-                                                                src={allImages[0] || "/image/app.png"}
-                                                                alt="Property"
-                                                                className="object-cover w-full h-40 rounded-t-2xl sm:h-44 md:h-48"
-                                                            />
-                                                        )}
-                                                    </Link>
-
-                                                    {/* Days on nowaybroker */}
-                                                    {/* <span className="absolute px-2 py-1 text-xs font-normal text-white rounded-full top-2 left-2 bg-gray-800/60 backdrop-blur-sm">
-                          {property.days_since_created} days on NoWayBroker
-                        </span> */}
-
-                                                    {/* Admin Approval Badge */}
-                                                    {property.admin_approval === "Approved" && (
-                                                        <div className="absolute top-2 left-2 z-20">
-                                                            <div className="flex items-center bg-[#8B1E3F] text-white rounded-sm shadow-md px-2 py-1">
-
-                                                                {/* Tick Icon */}
-                                                                <span className="text-white text-xs font-bold mr-2">
-                                                                    ✓
-                                                                </span>
-
-                                                                {/* Verified Text */}
-                                                                <span className="text-[11px] font-semibold leading-none">
-                                                                    Verified
-                                                                </span>
-
-                                                            </div>
-                                                        </div>
-                                                    )}
-
-                                                    {/* Virtual Tour & Favorite Button */}
-                                                    <div className="absolute flex items-center space-x-2 top-2 right-2">
-                                                        {property.virtual_tour_availability === "Yes" && (
-                                                            <span className="flex items-center gap-1 px-2 py-1 text-[10px] font-normal text-white rounded-full bg-gray-800/60 backdrop-blur-sm sm:text-xs">
-                                                                <PiCubeFocus className="text-sm text-white" />
-                                                                Virtual Tour
-                                                            </span>
-                                                        )}
-
-                                                        <button
-                                                            type="button"
-                                                            className="p-2 rounded-full shadow bg-gray-800/60 backdrop-blur-sm"
-                                                            onClick={() => {
-                                                                if (!userId) {
-                                                                    setIsLoginModalOpen(true);
-                                                                    return;
-                                                                }
-
-                                                                if (property.is_favorite) {
-                                                                    removeFromFavorites(property.favorite_id);
-                                                                } else {
-                                                                    addToFavorites(property._id);
-                                                                }
-                                                            }}
-                                                        >
-                                                            <Heart
-                                                                size={20}
-                                                                stroke={property.is_favorite ? "none" : "white"}
-                                                                color={
-                                                                    property.is_favorite
-                                                                        ? "red"
-                                                                        : "rgba(75, 85, 99, 0.4)"
-                                                                }
-                                                                fill={
-                                                                    property.is_favorite
-                                                                        ? "red"
-                                                                        : "rgba(75, 85, 99, 0.4)"
-                                                                }
-                                                                strokeWidth={2}
-                                                            />
-                                                        </button>
-                                                    </div>
-
-                                                    {/* FOR BUY/RENT & FEATURED tags */}
-                                                    <div className="absolute bottom-0 left-0 max-w-[70%]">
-                                                        {(() => {
-                                                            const rawCategory =
-                                                                property.property_category_type || "";
-                                                            const normalizedCategory = rawCategory
-                                                                .replace(/\s+/g, " ")
-                                                                .replace(/-/g, " ")
-                                                                .replace(/\//g, " ")
-                                                                .trim()
-                                                                .toLowerCase();
-
-                                                            let matchedType = "UNKNOWN";
-                                                            const badgeColor = "bg-[#8B1E3F]";
-
-                                                            if (normalizedCategory === "buy") {
-                                                                matchedType = "FOR BUY";
-                                                            } else if (normalizedCategory === "rent") {
-                                                                matchedType = "FOR RENT";
-                                                            } else if (normalizedCategory.includes("commercial buy")) {
-                                                                matchedType = "COMMERCIAL BUY";
-                                                            } else if (normalizedCategory.includes("commercial lease")) {
-                                                                matchedType = "COMMERCIAL LEASE";
-                                                            } else if (
-                                                                normalizedCategory.includes("pg") ||
-                                                                normalizedCategory.includes("co living") ||
-                                                                normalizedCategory.includes("coliving")
-                                                            ) {
-                                                                matchedType = "PG/CO-LIVING";
-                                                            }
-                                                            return (
-                                                                <span
-                                                                    className={`text-white text-[10px] sm:text-xs px-2 sm:px-3 py-1 rounded-se-lg truncate block ${badgeColor}`}
-                                                                >
-                                                                    {matchedType}
-                                                                </span>
-                                                            );
-                                                        })()}
-                                                    </div>
-
-                                                    <div className="absolute bottom-0 right-0">
-                                                        {property.mark_as_featured === "Yes" && (
-                                                            <span className="px-2 py-1 text-[10px] text-white bg-yellow-500 rounded-ss-lg sm:text-xs sm:px-3">
-                                                                FEATURED
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* Property Details */}
-                                            <div className="flex flex-col flex-1 p-3 text-black bg-white">
-                                                {/* Price Section */}
-                                                <div className="flex items-start justify-between gap-2 mb-0 sm:gap-3">
-                                                    {/* Property Name */}
-                                                    <h3
-                                                        className="flex-1 min-w-0 m-0 text-base font-semibold leading-6 text-gray-900 truncate sm:text-lg"
-                                                        title={property.property_name}
-                                                    >
-                                                        {property.property_name || "N/A"}
-                                                    </h3>
-
-                                                    {/* Furnishing */}
-                                                    <span
-                                                        className="flex-shrink-0 m-0 text-xs font-medium leading-6 text-black sm:text-sm whitespace-nowrap"
-                                                        title={property.furnished_type}
-                                                    >
-                                                        {property.furnished_type}
-                                                    </span>
-                                                </div>
-
-                                                <p
-                                                    className="mt-0 mb-1 text-sm leading-5 text-gray-600 line-clamp-2 sm:truncate"
-                                                    title={subtitle}
-                                                >
-                                                    {subtitle}
-                                                </p>
-
-                                                <div className="flex flex-wrap items-center justify-between gap-1 mb-1">
-                                                    {/* Left Side */}
-                                                    <div className="flex flex-wrap items-center gap-2">
-                                                        <span className="text-xl font-bold sm:text-2xl">
-                                                            ₹{" "}
-                                                            {property.property_category_type === "Rent"
-                                                                ? formatPrice(property.rent)
-                                                                : formatPrice(property.property_price)}
-                                                        </span>
-                                                        {property.property_category_type === "Rent" && (
-                                                            <span className="text-sm text-gray-500">
-                                                                /{property.rent_duration}
-                                                            </span>
-                                                        )}
-
-                                                        {/* Ready to Move - Keep close to price */}
-                                                        {property.property_category_type?.includes("Buy") &&
-                                                            property.possession_status === "Ready To Move" && (
-                                                                <div className="flex items-center gap-2 px-2 py-1 text-white border rounded-full bg-[#8B1E3F] border-[#8B1E3F] sm:px-3">
-                                                                    <MdApartment className="text-base text-white" />
-                                                                    <span className="text-xs font-semibold text-white whitespace-nowrap">
-                                                                        Ready to Move
-                                                                    </span>
-                                                                </div>
-                                                            )}
-                                                    </div>
-
-                                                    {/* Right Side */}
-                                                    <div className="text-sm font-medium whitespace-nowrap">
-                                                        {property.property_category_type === "Rent" && (
-                                                            <>
-                                                                <span className="text-gray-500">Deposit:</span>
-                                                                <span className="ml-1 font-semibold">
-                                                                    ₹{" "}
-                                                                    {property.custom_deposit_amount?.toLocaleString(
-                                                                        "en-IN",
-                                                                    )}
-                                                                </span>
-                                                            </>
-                                                        )}
-                                                        {property.property_category_type?.includes("Buy") &&
-                                                            property.possession_status !==
-                                                            "Ready To Move" &&
-                                                            property.possession_date && (
-                                                                <>
-                                                                    <span className="text-gray-500">
-                                                                        Possession:
-                                                                    </span>
-                                                                    <span className="ml-1 font-semibold">
-                                                                        {new Date(
-                                                                            property.possession_date,
-                                                                        ).toLocaleDateString("en-IN")}
-                                                                    </span>
-                                                                </>
-                                                            )}
-                                                    </div>
-                                                </div>
-
-                                                {/* Features Row */}
-                                                <div className="grid grid-cols-3 py-3 border-t border-b border-gray-100">
-                                                    {/* First Column */}
-                                                    <div className="flex items-center gap-2 px-1 min-w-0 sm:px-3">
-                                                        <MdApartment className="text-[18px] sm:text-[22px] text-gray-700 flex-shrink-0" />
-                                                        <div className="flex flex-col justify-center min-w-0">
-                                                            <p className="m-0 text-xs font-semibold leading-4 truncate sm:text-sm">
-                                                                {property.building_type === "Commercial"
-                                                                    ? property.property_type === "Office"
-                                                                        ? "Office Space"
-                                                                        : property.property_type === "Retail"
-                                                                            ? "Retail Space"
-                                                                            : property.property_type
-                                                                    : property.property_category_type?.includes(
-                                                                        "PG",
-                                                                    )
-                                                                        ? `${property.bathroom || 0} Bathrooms`
-                                                                        : property.bhk_type}
-                                                            </p>
-                                                            <p className="m-0 text-[10px] sm:text-xs leading-4 text-gray-500 truncate">
-                                                                {property.building_type === "Commercial"
-                                                                    ? "Property Type"
-                                                                    : property.property_category_type?.includes(
-                                                                        "PG",
-                                                                    )
-                                                                        ? "Bathrooms"
-                                                                        : property.property_type}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Second Column */}
-                                                    <div className="flex items-center gap-2 px-1 border-l border-gray-200 min-w-0 sm:px-3">
-                                                        {property.property_category_type?.includes("PG") ? (
-                                                            <FaUser className="text-[16px] sm:text-[20px] text-gray-700 flex-shrink-0" />
-                                                        ) : (
-                                                            <FaBath className="text-[16px] sm:text-[20px] text-gray-700 flex-shrink-0" />
-                                                        )}
-                                                        <div className="flex flex-col justify-center min-w-0">
-                                                            <p className="m-0 text-xs font-semibold leading-4 truncate sm:text-sm">
-                                                                {property.property_category_type?.includes("PG")
-                                                                    ? property.available_for
-                                                                    : `${property.bathroom || 0} Baths`}
-                                                            </p>
-                                                            <p className="m-0 text-[10px] sm:text-xs leading-4 text-gray-500 truncate">
-                                                                {property.property_category_type?.includes("PG")
-                                                                    ? "Available For"
-                                                                    : "Bathrooms"}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Third Column */}
-                                                    <div className="flex items-center gap-2 px-1 border-l border-gray-200 min-w-0 sm:px-3">
-                                                        <RiRuler2Line className="text-[18px] sm:text-[22px] text-gray-700 flex-shrink-0" />
-                                                        <div className="flex flex-col justify-center min-w-0">
-                                                            <p className="m-0 text-xs font-semibold leading-4 truncate sm:text-sm">
-                                                                {property.area} {property.area_in}
-                                                            </p>
-                                                            <p className="m-0 text-[10px] sm:text-xs leading-4 text-gray-500 truncate">
-                                                                Built Up Area
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                {/* Divider */}
-                                                <hr className="my-1 border-gray-100" />
-
-                                                {/* Row 5: Posted By | Days | Distance | Share */}
-                                                <div className="flex items-center justify-between gap-2 pt-1 pb-2 text-[12px] sm:text-[13px] text-gray-600">
-                                                    {/* Left */}
-                                                    <div className="flex items-center flex-wrap min-w-0 gap-x-1">
-                                                        {/* Posted By */}
-                                                        <div className="flex items-center min-w-0">
-                                                            <AiOutlineClockCircle className="mr-1 text-[15px] text-gray-700 flex-shrink-0" />
-                                                            <span className="truncate">
-                                                                Posted by {property.user_type || "Owner"}
-                                                            </span>
-                                                        </div>
-                                                        {/* Dot */}
-                                                        <span className="mx-1 text-gray-400 sm:mx-2">•</span>
-                                                        {/* Days */}
-                                                        <span className="whitespace-nowrap">
-                                                            {property.days_since_created
-                                                                ? `${property.days_since_created} days ago`
-                                                                : "Recently"}
-                                                        </span>
-                                                        {/* Distance */}
-                                                        {distance && (
-                                                            <>
-                                                                <span className="mx-1 text-gray-400 sm:mx-2">
-                                                                    •
-                                                                </span>
-                                                                <div className="flex items-center whitespace-nowrap">
-                                                                    <FaMapMarkerAlt className="mr-1 text-red-500" />
-                                                                    {distance} km from you
-                                                                </div>
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                    {/* Share */}
-                                                    <FontAwesomeIcon
-                                                        icon={faShareNodes}
-                                                        className="ml-2 text-[17px] text-gray-500 transition-colors cursor-pointer hover:text-blue-500 flex-shrink-0"
-                                                        onClick={(e) => {
-                                                            e.preventDefault();
-                                                            e.stopPropagation();
-                                                            openRecommendedShareModal(property._id);
-                                                        }}
-                                                    />
-                                                </div>
-
-                                                {/* {console.log(
-                                                    property.connect_to_name,
-                                                    property.property_owner_image,
-                                                )} */}
-
-                                                {/* Row 6: Owner Details */}
-                                                <div className="flex items-center pt-3 mt-auto">
-                                                    {/* Avatar */}
-                                                    <div className="flex items-center justify-center flex-shrink-0 w-9 h-9 overflow-hidden rounded-full bg-blue-100 sm:w-10 sm:h-10">
-                                                        {property.property_owner_image &&
-                                                            !property.property_owner_image.includes(
-                                                                "default_profile",
-                                                            ) ? (
-                                                            <>
-                                                                <img
-                                                                    src={`${process.env.REACT_APP_API_URL}/media/${property.property_owner_image}`}
-                                                                    alt={property.connect_to_name || "Owner"}
-                                                                    className="object-cover w-full h-full rounded-full"
-                                                                    onError={(e) => {
-                                                                        e.target.style.display = "none";
-                                                                        e.target.nextSibling.style.display = "flex";
-                                                                    }}
-                                                                />
-                                                                {/* Fallback */}
-                                                                <div className="items-center justify-center hidden w-full h-full">
-                                                                    <AiOutlineUser className="text-2xl text-blue-600" />
-                                                                </div>
-                                                            </>
-                                                        ) : (
-                                                            <div className="flex items-center justify-center w-full h-full">
-                                                                <AiOutlineUser className="text-2xl text-blue-600" />
-                                                            </div>
-                                                        )}
-                                                    </div>
-
-                                                    {/* Name & User Type */}
-                                                    <div className="flex items-center min-w-0 ml-3 sm:ml-4">
-                                                        <span
-                                                            className="text-sm font-semibold text-gray-900 truncate whitespace-nowrap"
-                                                            title={property.connect_to_name}
-                                                        >
-                                                            {property.connect_to_name || "Owner"}
-                                                        </span>
-                                                        <div className="w-px h-4 mx-3 bg-gray-300 sm:mx-4"></div>
-                                                        <span className="text-sm text-gray-500 whitespace-nowrap">
-                                                            {property.user_type || "Owner"}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                    </Slider>
-                    )}
-                    {/* Mobile slider nav (arrows moved below the cards on small screens) */}
-                    <div className="flex items-center justify-center gap-4 mt-3 sm:hidden">
-                        <button
-                            className="p-2 text-lg font-semibold text-gray-700 bg-white rounded-full shadow-md hover:shadow-lg"
-                            onClick={() => sliderRef.current.slickPrev()}
-                        >
-                            <GoArrowLeft className="text-2xl text-black" />
-                        </button>
-                        <button
-                            className="p-2 text-lg font-semibold text-gray-700 bg-white rounded-full shadow-md hover:shadow-lg"
-                            onClick={() => sliderRef.current.slickNext()}
-                        >
-                            <GoArrowRight className="text-2xl text-black" />
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div
-                id="shareModal"
-                className="fixed bottom-0 right-0 z-50 items-center justify-center hidden px-4 bg-black bg-opacity-50"
-            >
-                <div className="w-full max-w-lg p-4 bg-white rounded-lg shadow-lg">
-                    <div className="flex items-center justify-between mb-4">
-                        <h5 className="text-lg font-bold">Share this link</h5>
-                        <button onClick={closeShareModal}>&times;</button>
-                    </div>
-                    <div className="flex flex-col items-stretch mb-4 sm:flex-row sm:items-center">
-                        <input
-                            type="text"
-                            className="flex-grow w-full p-2 border rounded form-control"
-                            value={currentShareUrl}
-                            readOnly
-                        />
-                        <button
-                            className="p-2 mt-2 bg-gray-200 rounded sm:mt-0 sm:ml-2"
-                            onClick={(e) => copyLink(e)}
-                        >
-                            Copy Link
-                        </button>
-                    </div>
-                    <div className="flex flex-wrap justify-around gap-2">
-                        <a
-                            href={`https://wa.me/?text=${encodeURIComponent(
-                                currentShareUrl,
-                            )}`}
-                            className="btn btn-success"
-                        >
-                            WhatsApp
-                        </a>
-                        <a
-                            href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
-                                currentShareUrl,
-                            )}`}
-                            className="btn btn-primary"
-                        >
-                            Facebook
-                        </a>
-                        <a href="https://www.instagram.com" className="btn btn-danger">
-                            Instagram
-                        </a>
-                        <a
-                            href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(
-                                currentShareUrl,
-                            )}`}
-                            className="btn btn-info"
-                        >
-                            Twitter
-                        </a>
-                        <a
-                            href={`mailto:?subject=Check out this page&body=${encodeURIComponent(
-                                currentShareUrl,
-                            )}`}
-                            className="btn btn-secondary"
-                        >
-                            Email
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-            <Login1
-                isOpen={isLoginModalOpen}
-                onClose={() => setIsLoginModalOpen(false)}
-                onSwitchToSignUp={() => {
-                    setIsLoginModalOpen(false);
-                    setIsSignUpModalOpen(true);
-                }}
-            />
-            <SignUp1
-                isOpen={isSignUpModalOpen}
-                onClose={() => setIsSignUpModalOpen(false)}
-                onSwitchToLogin={() => {
-                    setIsSignUpModalOpen(false);
-                    setIsLoginModalOpen(true);
-                }}
-            />
-        </div>
-    );
+// 45000 -> "45K", 125000000 -> "12.5 Cr"
+const shortAmount = (value) => {
+  const n = Number(value);
+  if (!n) return "";
+  if (n >= 1e7) return `${+(n / 1e7).toFixed(2)} Cr`;
+  if (n >= 1e5) return `${+(n / 1e5).toFixed(2)} L`;
+  if (n >= 1e3) return `${+(n / 1e3).toFixed(1)}K`;
+  return String(n);
 };
+
+const isCommercial = (p) =>
+  (p.property_category_type || "").toLowerCase().includes("commercial") ||
+  p.building_type === "Commercial";
+const isPG = (p) => /pg|living/i.test(p.property_category_type || "");
+const isRentLike = (p) => p.property_category_type === "Rent" || isPG(p);
+const isBuy = (p) => (p.property_category_type || "").toLowerCase().includes("buy");
+
+const badgeFor = (p) => {
+  const cat = (p.property_category_type || "").toLowerCase();
+  if (cat.includes("commercial")) {
+    return { text: cat.includes("lease") ? "For Lease" : "Commercial", color: C.navy };
+  }
+  if (isPG(p)) return { text: "PG / Co-living", color: C.gold };
+  if (cat === "rent") return { text: "For Rent", color: C.primary };
+  return { text: "For Sale", color: C.gold };
+};
+
+const priceOf = (p) => {
+  const rentLike = isRentLike(p);
+  const amount = shortAmount(rentLike ? p.rent : p.property_price);
+  const duration =
+    p.rent_duration && p.rent_duration !== "N/A"
+      ? p.rent_duration.replace(/^per\s+/i, "").toLowerCase()
+      : "month";
+  return { amount, suffix: rentLike && amount ? `/${duration}` : "" };
+};
+
+const locationOf = (p) => {
+  const area = p.address_area || "";
+  const city = p.city_name || "";
+  if (!city || area.toLowerCase().includes(city.toLowerCase())) return area || city;
+  return `${area}, ${city}`;
+};
+
+const featuresOf = (p) => {
+  const area = p.area ? `${p.area} ${p.area_in || ""}`.trim() : "—";
+  if (isCommercial(p)) {
+    return [
+      { icon: <MdApartment />, value: p.property_type || "Commercial" },
+      { icon: <RiRuler2Line />, value: area },
+      { icon: <MdApartment />, value: p.furnished_type || "Bare shell" },
+    ];
+  }
+  if (isPG(p)) {
+    return [
+      { icon: <FaUser />, value: p.available_for || "Anyone" },
+      { icon: <FaBath />, value: `${p.bathroom || 0} Baths` },
+      { icon: <RiRuler2Line />, value: area },
+    ];
+  }
+  return [
+    { icon: <IoBedOutline />, value: p.bhk_type || "—" },
+    { icon: <FaBath />, value: `${p.bathroom || 0} Baths` },
+    { icon: <RiRuler2Line />, value: area },
+  ];
+};
+
+// Owner avatar URL, or null to show the default icon
+const ownerImageOf = (p) =>
+  p.property_owner_image && !p.property_owner_image.includes("default_profile")
+    ? `${BASE_URL}/media/${p.property_owner_image}`
+    : null;
+
+// Card carousel. No lazyLoad and no hover lift, so cards stay still while scrolling.
+const cardSlider = {
+  infinite: true,
+  speed: 700,
+  slidesToShow: 4,
+  slidesToScroll: 1,
+  autoplay: true,
+  autoplaySpeed: 3500,
+  pauseOnHover: true,
+  arrows: false,
+  swipeToSlide: true,
+  cssEase: "cubic-bezier(0.22, 1, 0.36, 1)",
+  responsive: [
+    { breakpoint: 1400, settings: { slidesToShow: 3 } },
+    { breakpoint: 1024, settings: { slidesToShow: 2 } },
+    { breakpoint: 640, settings: { slidesToShow: 1 } },
+  ],
+};
+
+const photoSlider = {
+  dots: true,
+  infinite: true,
+  fade: true,
+  speed: 800,
+  autoplay: true,
+  autoplaySpeed: 2600,
+  pauseOnHover: false,
+  arrows: false,
+  cssEase: "cubic-bezier(0.22, 1, 0.36, 1)",
+};
+
+const BuyProperty = ({ openRecommendedShareModal, data }) => {
+  const history = useHistory();
+  const sliderRef = useRef(null);
+  const userId = sessionStorage.getItem("accessToken");
+  const [properties, setProperties] = useState([]);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isSignUpModalOpen, setIsSignUpModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (data?.status === 1 && Array.isArray(data.data)) {
+      setProperties(
+        data.data.filter(
+          (item) => (item.property_category_type || "").toLowerCase() === "buy"
+        )
+      );
+    } else {
+      setProperties([]);
+    }
+  }, [data]);
+
+  const patchProperty = (id, patch) =>
+    setProperties((prev) =>
+      prev.map((item) => (item._id === id ? { ...item, ...patch } : item))
+    );
+
+  // Optimistic favourite toggle; reverts if the API call fails
+  const toggleFavorite = async (property) => {
+    if (!userId) {
+      setIsLoginModalOpen(true);
+      return;
+    }
+    const id = property._id;
+    if (property.is_favorite) {
+      patchProperty(id, { is_favorite: false, favorite_id: null });
+      try {
+        const res = await axios.delete(
+          `${BASE_URL}/cust_api/remove_from_favorite`,
+          { data: { favorite_id: property.favorite_id } }
+        );
+        if (res.data.status !== 1) throw new Error("remove failed");
+      } catch (err) {
+        patchProperty(id, { is_favorite: true, favorite_id: property.favorite_id });
+        toast.error("Couldn't update favourites. Please try again.");
+      }
+    } else {
+      patchProperty(id, { is_favorite: true });
+      try {
+        const res = await axios.post(`${BASE_URL}/cust_api/add_to_favorite`, {
+          user_id: userId,
+          property_id: id,
+        });
+        if (res.data.status !== 1) throw new Error("add failed");
+        patchProperty(id, { favorite_id: res.data.favorite_id });
+      } catch (err) {
+        patchProperty(id, { is_favorite: false, favorite_id: null });
+        toast.error("Couldn't update favourites. Please try again.");
+      }
+    }
+  };
+
+  const visible = properties.filter((p) => p.available_status !== "Sold");
+
+  return (
+    <section
+      className="zb-bp px-4 py-2 sm:px-6 sm:py-3 md:px-8 lg:px-10"
+      style={{ backgroundColor: "#F5F5F5" }}
+    >
+      <style>{STYLE}</style>
+
+      {/* Header */}
+      <div className="flex flex-col gap-3 mb-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="mb-1 text-[9px] font-bold uppercase tracking-[0.2em] text-[#B9770E]">
+            Handpicked for you
+          </p>
+          <h2 className="zb-serif text-[25px] font-semibold text-[#1B1113] sm:text-[26px]">
+            Discover Your Dream Home
+          </h2>
+          <p className="text-[11.5px] text-gray-500">
+            Your dream property is just a few clicks away
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => history.push("/advisordashboard?label=Buy")}
+            className="px-4 py-2 text-[12px] font-semibold text-[#7a1235] bg-white border border-[#eadfd6] rounded-lg hover:bg-[#7a1235]  hover:text-white transition-colors"
+          >
+            View All Properties
+          </button>
+          <button
+            type="button"
+            aria-label="Previous properties"
+            onClick={() => sliderRef.current?.slickPrev()}
+            className="items-center justify-center hidden w-9 h-9 bg-white border border-[#eadfd6] rounded-full shadow-sm sm:flex hover:bg-[#fbf3ec] transition-colors"
+          >
+            <GoArrowLeft className="text-[18px] text-[#7a1235]" />
+          </button>
+          <button
+            type="button"
+            aria-label="Next properties"
+            onClick={() => sliderRef.current?.slickNext()}
+            className="items-center justify-center hidden w-9 h-9 bg-white border border-[#eadfd6] rounded-full shadow-sm sm:flex hover:bg-[#fbf3ec] transition-colors"
+          >
+            <GoArrowRight className="text-[18px] text-[#7a1235]" />
+          </button>
+        </div>
+      </div>
+
+      {/* Cards */}
+      {data.status === 0 ? (
+        <Slider {...cardSlider}>
+          {[1, 2, 3, 4].map((item) => (
+            <PropertyCardSkeleton key={item} />
+          ))}
+        </Slider>
+      ) : visible.length === 0 ? (
+        <p className="py-10 text-center text-[13px] text-gray-500">
+          No properties to show right now.
+        </p>
+      ) : (
+        <Slider ref={sliderRef} {...cardSlider} className="zb-bp-track">
+          {visible.map((p) => {
+            const images = [p.cover_image, ...(p.property_images || []).map((i) => i?.image)]
+              .map(toUrl)
+              .filter(Boolean);
+            const badge = badgeFor(p);
+            const { amount, suffix } = priceOf(p);
+            const features = featuresOf(p);
+            const verified = p.admin_approval === "Approved";
+            const ownerImage = ownerImageOf(p);
+            const distance =
+              userLocation && p.latitude && p.longitude
+                ? calculateDistance(
+                    userLocation.latitude,
+                    userLocation.longitude,
+                    parseFloat(p.latitude),
+                    parseFloat(p.longitude)
+                  ).toFixed(1)
+                : null;
+
+            return (
+              <div key={p._id} className="w-full h-full p-2">
+                <article
+                  onClick={() => history.push(`/propertydetails/${p._id}`)}
+                  style={{ height: CARD_HEIGHT }}
+                  className="zb-bp-card group flex flex-col overflow-hidden bg-white border cursor-pointer rounded-2xl border-[#EADFE2] transition-shadow duration-500 ease-out hover:border-[#7A1230] hover:shadow-lg hover:shadow-[#7A1230]/10"
+                >
+                  <div className="flex flex-col flex-1 min-h-0">
+                    {/* Image area */}
+                    <div className="relative overflow-hidden" style={{ height: IMAGE_HEIGHT }}>
+                      {images.length > 1 ? (
+                        <div className="zb-bp-photos relative h-full overflow-hidden">
+                          <Slider {...photoSlider}>
+                            {images.map((src, i) => (
+                              <img
+                                key={`${p._id}-${i}`}
+                                src={src}
+                                alt={p.property_name || "Property"}
+                                loading="lazy"
+                                className="block object-cover w-full"
+                                style={{ height: IMAGE_HEIGHT }}
+                              />
+                            ))}
+                          </Slider>
+                        </div>
+                      ) : (
+                        <img
+                          src={images[0] || "/image/app.png"}
+                          alt={p.property_name || "Property"}
+                          loading="lazy"
+                          className="block object-cover w-full h-full transition-transform duration-700 ease-out group-hover:scale-105"
+                        />
+                      )}
+
+                      <span
+                        className="absolute z-10 px-3 py-1 text-[10.5px] font-semibold text-white rounded-full shadow top-3 left-3"
+                        style={{ background: badge.color }}
+                      >
+                        {badge.text}
+                      </span>
+
+                      <div className="absolute z-10 flex items-center gap-2 top-3 right-3">
+                        {p.virtual_tour_availability === "Yes" && (
+                          <span className="flex items-center gap-1 px-2 py-1 text-[10px] text-white rounded-full bg-black/55 backdrop-blur-sm">
+                            <PiCubeFocus className="text-[12px]" />
+                            Virtual Tour
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          aria-label={p.is_favorite ? "Remove from favourites" : "Add to favourites"}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleFavorite(p);
+                          }}
+                          className="flex items-center justify-center w-8 h-8 bg-white rounded-full shadow transition-transform duration-300 hover:scale-110"
+                        >
+                          <Heart
+                            size={16}
+                            color={p.is_favorite ? "#e11d48" : C.deep}
+                            fill={p.is_favorite ? "#e11d48" : "transparent"}
+                            strokeWidth={2}
+                          />
+                        </button>
+                      </div>
+
+                      {verified && (
+                        <span className="absolute z-10 px-2 py-0.5 text-[9.5px] font-semibold text-white rounded bottom-3 left-3 bg-[#7a1235]">
+                          ✓ Verified
+                        </span>
+                      )}
+
+                      {images.length > 0 && (
+                        <span className="absolute z-10 flex items-center gap-1 px-2 py-1 text-[10px] text-white rounded-full bottom-3 right-3 bg-black/55">
+                          <FiCamera className="text-[11px]" />
+                          {images.length} Photos
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Details */}
+                    <div className="flex flex-col flex-1 min-h-0 gap-2 p-3.5 overflow-hidden">
+                      {/* Name + amount */}
+                      <div className="flex items-start justify-between gap-2">
+                        <h3
+                          className="flex-1 min-w-0 m-0 text-[14px] font-bold leading-5 text-gray-900 truncate"
+                          title={p.property_name}
+                        >
+                          {p.property_name || "N/A"}
+                        </h3>
+                        <p className="flex-shrink-0 m-0 text-[18px] font-bold text-[#7a1235] whitespace-nowrap">
+                          {amount ? (
+                            <>
+                              ₹ {amount}
+                              {suffix && (
+                                <span className="ml-1 text-[11px] font-medium text-gray-500">{suffix}</span>
+                              )}
+                            </>
+                          ) : (
+                            "On request"
+                          )}
+                        </p>
+                      </div>
+
+                      {/* Location on the left; Ready / Possession on the right */}
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="flex items-center min-w-0 gap-1.5 m-0 text-[11.5px] text-gray-500">
+                          <FaMapMarkerAlt className="flex-shrink-0 text-[#8B1E3F]" />
+                          <span className="truncate">
+                            {locationOf(p)}
+                            {distance && ` · ${distance} km`}
+                          </span>
+                        </p>
+                        {isBuy(p) && p.possession_status === "Ready To Move" && (
+                          <span className="flex items-center flex-shrink-0 gap-1 px-2.5 py-1 text-[10.5px] font-semibold text-[#7a1235] bg-[#F6EEF1] rounded-full whitespace-nowrap">
+                            <MdCheckCircleOutline className="text-[13px]" />
+                            Ready
+                          </span>
+                        )}
+                        {isBuy(p) && p.possession_status !== "Ready To Move" && p.possession_date && (
+                          <span className="flex-shrink-0 px-2.5 py-1 text-[10.5px] font-semibold text-[#7a1235] bg-[#F6EEF1] rounded-full whitespace-nowrap">
+                            Possession: {new Date(p.possession_date).toLocaleDateString("en-IN")}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Features */}
+                      <div className="grid grid-cols-3 py-2.5 mt-1 border-y border-[#f1e7e3]">
+                        {features.map((f, i) => (
+                          <div
+                            key={i}
+                            className={`flex items-center gap-1.5 min-w-0 px-1 ${
+                              i ? "pl-2.5 border-l border-[#f1e7e3]" : ""
+                            }`}
+                          >
+                            <span className="flex-shrink-0 text-[14px] text-[#7a1235]">{f.icon}</span>
+                            <span className="text-[10.5px] font-semibold text-gray-800 truncate">
+                              {f.value}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Footer: owner, posted by, days, share */}
+                      <div className="flex items-center justify-between gap-2 mt-auto pt-1">
+                        <div className="flex items-center min-w-0 gap-2">
+                          <div className="flex items-center justify-center flex-shrink-0 w-7 h-7 overflow-hidden rounded-full bg-[#fbf3ec]">
+                            {ownerImage ? (
+                              <>
+                                <img
+                                  src={ownerImage}
+                                  alt={p.connect_to_name || "Owner"}
+                                  className="object-cover w-full h-full rounded-full"
+                                  onError={(e) => {
+                                    e.target.style.display = "none";
+                                    e.target.nextSibling.style.display = "flex";
+                                  }}
+                                />
+                                <div className="items-center justify-center hidden w-full h-full">
+                                  <AiOutlineUser className="text-[14px] text-[#7a1235]" />
+                                </div>
+                              </>
+                            ) : (
+                              <div className="flex items-center justify-center w-full h-full">
+                                <AiOutlineUser className="text-[14px] text-[#7a1235]" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex flex-col min-w-0">
+                            <span
+                              className="text-[11px] font-semibold text-gray-900 truncate"
+                              title={p.connect_to_name}
+                            >
+                              {p.connect_to_name || "Owner"}
+                            </span>
+                            <span className="flex items-center gap-1 text-[10px] text-gray-500 truncate">
+                              <AiOutlineClockCircle className="text-[11px]" />
+                              {p.user_type || "Owner"} ·{" "}
+                              {p.days_since_created
+                                ? `${p.days_since_created} days ago`
+                                : "Recently"}
+                            </span>
+                          </div>
+                        </div>
+
+                        <FontAwesomeIcon
+                          icon={faShareNodes}
+                          className="flex-shrink-0 text-[14px] text-gray-500 transition-colors cursor-pointer hover:text-[#7a1235]"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            openRecommendedShareModal(p._id);
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              </div>
+            );
+          })}
+        </Slider>
+      )}
+
+      {/* Mobile arrows, below the cards */}
+      <div className="flex items-center justify-center gap-4 mt-3 sm:hidden">
+        <button
+          type="button"
+          aria-label="Previous properties"
+          onClick={() => sliderRef.current?.slickPrev()}
+          className="flex items-center justify-center w-9 h-9 bg-white border border-[#eadfd6] rounded-full shadow-sm"
+        >
+          <GoArrowLeft className="text-[18px] text-[#7a1235]" />
+        </button>
+        <button
+          type="button"
+          aria-label="Next properties"
+          onClick={() => sliderRef.current?.slickNext()}
+          className="flex items-center justify-center w-9 h-9 bg-white border border-[#eadfd6] rounded-full shadow-sm"
+        >
+          <GoArrowRight className="text-[18px] text-[#7a1235]" />
+        </button>
+      </div>
+
+      <Login1
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onSwitchToSignUp={() => {
+          setIsLoginModalOpen(false);
+          setIsSignUpModalOpen(true);
+        }}
+      />
+      <SignUp1
+        isOpen={isSignUpModalOpen}
+        onClose={() => setIsSignUpModalOpen(false)}
+        onSwitchToLogin={() => {
+          setIsSignUpModalOpen(false);
+          setIsLoginModalOpen(true);
+        }}
+      />
+    </section>
+  );
+};
+
+const userLocation = JSON.parse(sessionStorage.getItem("userLocation"));
 
 export default BuyProperty;

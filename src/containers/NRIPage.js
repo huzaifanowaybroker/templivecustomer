@@ -1,53 +1,66 @@
-import { useState, useRef } from "react";
+import { API_BASE_URL } from "../config/api";
+import { useState, useRef, useEffect } from "react";
 import {
-  NAME_MIN,
-  EMAIL_MAX,
-  cleanSpaces,
-  sanitizeNameInput,
-  LETTERS_ONLY_REGEX,
-  isValidEmail,
-  sanitizePhoneInput,
-  validateInternationalPhone,
-} from "../utils/Signupvalidation";
-import { FaMoneyBillWave, FaFileAlt, FaChartBar, FaIdCard, FaCalendarAlt } from "react-icons/fa";
-import {
-    FaBuilding,
-    FaBalanceScale,
-    FaHandshake,
-    FaPhoneAlt
-  } from "react-icons/fa";
+  FaBuilding,
+  FaBalanceScale,
+  FaHandshake,
+  FaPhoneAlt
+} from "react-icons/fa";
+
+// Custom hook for count-up animation
+function useCounter(end, duration = 2000, startOnView = true) {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    if (!startOnView) return;
+    let startTime = null;
+    const step = (timestamp) => {
+      if (!startTime) startTime = timestamp;
+      const progress = Math.min((timestamp - startTime) / duration, 1);
+      setCount(Math.floor(progress * end));
+      if (progress < 1) {
+        window.requestAnimationFrame(step);
+      }
+    };
+    window.requestAnimationFrame(step);
+  }, [end, duration, startOnView]);
+
+  return count;
+}
 
 export default function NRIPage() {
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
   // ================= STATES =================
   const [form, setForm] = useState({
     name: "",
+    countryCode: "+91",
     phone: "",
+    city: "",
     email: "",
     service: "",
+    agreeTerms: false,
   });
-  // field-level validation messages (NWB-BUG-044)
+
   const [errors, setErrors] = useState({
     name: "",
     phone: "",
+    city: "",
     email: "",
     service: "",
+    agreeTerms: "",
   });
 
-  const [showMoreSEO, setShowMoreSEO] = useState(false);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
+  const [isServiceOpen, setIsServiceOpen] = useState(false);
+  const [isCityOpen, setIsCityOpen] = useState(false);
   const [openFaq, setOpenFaq] = useState(null);
-  
+
   // API Form States
   const [isLoading, setIsLoading] = useState(false);
   const [submitMessage, setSubmitMessage] = useState({ type: "", text: "" });
-
-  // Accordions State
-  const [accordions, setAccordions] = useState({
-    buySell: true,
-    propertyManagement: true,
-    legal: true,
-    popular: true
-  });
 
   // ================= SCROLL REFERENCE =================
   const formRef = useRef(null);
@@ -63,11 +76,55 @@ export default function NRIPage() {
   };
 
   // ================= DATA =================
+
+  const countryCodes = [
+    { code: "+91", flag: "🇮🇳", name: "India" },
+    { code: "+1", flag: "🇺🇸", name: "USA / Canada" },
+    { code: "+44", flag: "🇬🇧", name: "United Kingdom" },
+    { code: "+971", flag: "🇦🇪", name: "UAE" },
+    { code: "+65", flag: "🇸🇬", name: "Singapore" },
+    { code: "+61", flag: "🇦🇺", name: "Australia" },
+    { code: "+966", flag: "🇸🇦", name: "Saudi Arabia" },
+    { code: "+974", flag: "🇶🇦", name: "Qatar" },
+    { code: "+968", flag: "🇴🇲", name: "Oman" },
+    { code: "+965", flag: "🇰🇼", name: "Kuwait" },
+    { code: "+973", flag: "🇧🇭", name: "Bahrain" },
+    { code: "+49", flag: "🇩🇪", name: "Germany" },
+    { code: "+33", flag: "🇫🇷", name: "France" },
+    { code: "+81", flag: "🇯🇵", name: "Japan" },
+    { code: "+64", flag: "🇳🇿", name: "New Zealand" },
+    { code: "+353", flag: "🇮🇪", name: "Ireland" },
+    { code: "+41", flag: "🇨🇭", name: "Switzerland" },
+    { code: "+31", flag: "🇳🇱", name: "Netherlands" },
+    { code: "+46", flag: "🇸🇪", name: "Sweden" },
+    { code: "+47", flag: "🇳🇴", name: "Norway" },
+    { code: "+45", flag: "🇩🇰", name: "Denmark" },
+    { code: "+358", flag: "🇫🇮", name: "Finland" },
+    { code: "+32", flag: "🇧🇪", name: "Belgium" },
+    { code: "+43", flag: "🇦🇹", name: "Austria" },
+    { code: "+34", flag: "🇪🇸", name: "Spain" },
+    { code: "+39", flag: "🇮🇹", name: "Italy" },
+    { code: "+351", flag: "🇵🇹", name: "Portugal" },
+    { code: "+30", flag: "🇬🇷", name: "Greece" },
+    { code: "+48", flag: "🇵🇱", name: "Poland" },
+    { code: "+420", flag: "🇨🇿", name: "Czech Republic" },
+    { code: "+36", flag: "🇭🇺", name: "Hungary" },
+    { code: "+55", flag: "🇧🇷", name: "Brazil" },
+    { code: "+52", flag: "🇲🇽", name: "Mexico" },
+    { code: "+27", flag: "🇿🇦", name: "South Africa" },
+    { code: "+60", flag: "🇲🇾", name: "Malaysia" },
+    { code: "+62", flag: "🇮🇩", name: "Indonesia" },
+    { code: "+63", flag: "🇵🇭", name: "Philippines" },
+    { code: "+66", flag: "🇹🇭", name: "Thailand" },
+    { code: "+84", flag: "🇻🇳", name: "Vietnam" },
+    { code: "+82", flag: "🇰🇷", name: "South Korea" }
+  ];
+  const cityOptions =["Mumbai", "Delhi", "Bengaluru", "Pune", "Hyderabad", "Ahmedabad", "Chennai"];
   const serviceOptions = [
-    "To SELL your property",
-    "To BUY a property",
-    "To RENT out your property",
     "Legal Services",
+    "To BUY a property",
+    "To SELL your property",
+    "To RENT out your property",
     "Property Management Services"
   ];
 
@@ -77,8 +134,8 @@ export default function NRIPage() {
       a: "End-to-end property management is a complete solution where every aspect of your property is handled for you. From tenant search and verification to rent collection, legal documentation, inspections, and maintenance — everything is managed seamlessly by a dedicated team."
     },
     {
-      q: "How does NoWayBroker manage my property remotely?",
-      a: "NoWayBroker assigns a dedicated Relationship Manager who takes care of your property on your behalf. You receive regular updates, and all activities — including tenant handling, rent collection, and maintenance — are managed efficiently without your physical presence."
+      q: "How does ZEROBRIKS manage my property remotely?",
+      a: "ZEROBRIKS assigns a dedicated Relationship Manager who takes care of your property on your behalf. You receive regular updates, and all activities — including tenant handling, rent collection, and maintenance — are managed efficiently without your physical presence."
     },
     {
       q: "How are tenants verified before renting?",
@@ -98,29 +155,84 @@ export default function NRIPage() {
     }
   ];
 
+  // ================= VALIDATION HELPERS =================
+  const validateField = (name, value) => {
+    let error = "";
+
+    if (name === "name") {
+      if (!value.trim()) {
+        error = "Name is required.";
+      } else if (value.length > 40) {
+        error = "Name cannot exceed 40 characters.";
+      } else if (/^\d+$/.test(value)) {
+        error = "Name cannot consist only of numbers.";
+      } else if (/^[^a-zA-Z0-9]+$/.test(value)) {
+        error = "Name cannot consist only of special characters.";
+      }
+    }
+
+    if (name === "phone") {
+      const cleanPhone = value.replace(/\D/g, "");
+      if (!value.trim()) {
+        error = "Phone number is required.";
+      } else if (cleanPhone.length < 7 || cleanPhone.length > 15) {
+        error = "Please enter a valid phone number (7 to 15 digits).";
+      }
+    }
+
+    if (name === "city") {
+      if (!value) {
+        error = "Please select a city.";
+      }
+    }
+
+    if (name === "email") {
+      const emailRegex = /^[a-zA-Z0-9._%+-]{1,64}@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      if (!value.trim()) {
+        error = "Email address is required.";
+      } else if (!emailRegex.test(value)) {
+        error = "Please enter a valid email address.";
+      }
+    }
+
+    if (name === "service") {
+      if (!value) {
+        error = "Please select a required service.";
+      }
+    }
+
+    if (name === "agreeTerms") {
+      if (!value) {
+        error = "You must agree to the terms and conditions.";
+      }
+    }
+
+    return error;
+  };
+
   // ================= HANDLERS =================
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    let next = value;
-    if (name === "name") next = sanitizeNameInput(value); // letters + single spaces, max length (038, 039, 040)
-    if (name === "phone") next = sanitizePhoneInput(value); // digits / leading +, max 15 digits (041)
-    if (name === "email") next = value.replace(/\s/g, "").slice(0, EMAIL_MAX); // no spaces, max length (043)
+    const { name, value, type, checked } = e.target;
+    const val = type === "checkbox" ? checked : value;
 
-    setForm({ ...form, [name]: next });
-    if (errors[name]) setErrors({ ...errors, [name]: "" });
+    if (name === "name" && value.length > 40) return;
+
+    setForm({ ...form, [name]: val });
+
+    const fieldError = validateField(name, val);
+    setErrors((prev) => ({ ...prev, [name]: fieldError }));
   };
 
   const handleServiceSelect = (option) => {
     setForm({ ...form, service: option });
-    setErrors({ ...errors, service: "" });
-    setIsDropdownOpen(false);
+    setErrors((prev) => ({ ...prev, service: "" }));
+    setIsServiceOpen(false);
   };
 
-  const toggleAccordion = (section) => {
-    setAccordions((prev) => ({
-      ...prev,
-      [section]: !prev[section],
-    }));
+  const handleCitySelect = (option) => {
+    setForm({ ...form, city: option });
+    setErrors((prev) => ({ ...prev, city: "" }));
+    setIsCityOpen(false);
   };
 
   const toggleFaq = (index) => {
@@ -131,71 +243,50 @@ export default function NRIPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const REQUIRED = "This field is required";
-    const cleanName = cleanSpaces(form.name);
-    const cleanPhone = form.phone.trim();
-    const cleanEmail = form.email.trim();
+    const nameErr = validateField("name", form.name);
+    const phoneErr = validateField("phone", form.phone);
+    const cityErr = validateField("city", form.city);
+    const emailErr = validateField("email", form.email);
+    const serviceErr = validateField("service", form.service);
+    const termsErr = validateField("agreeTerms", form.agreeTerms);
 
     const newErrors = {
-      name: !cleanName
-        ? REQUIRED
-        : !LETTERS_ONLY_REGEX.test(cleanName)
-          ? "Name can contain letters only"
-          : cleanName.length < NAME_MIN
-            ? `Name must be at least ${NAME_MIN} characters`
-            : "",
-      phone: !cleanPhone ? REQUIRED : validateInternationalPhone(cleanPhone),
-      email: !cleanEmail
-        ? REQUIRED
-        : isValidEmail(cleanEmail)
-          ? ""
-          : "Enter a valid email address (e.g. name@example.com)",
-      service: form.service ? "" : "Please select a service",
+      name: nameErr,
+      phone: phoneErr,
+      city: cityErr,
+      email: emailErr,
+      service: serviceErr,
+      agreeTerms: termsErr,
     };
 
     setErrors(newErrors);
 
-    if (Object.values(newErrors).some(Boolean)) {
-      setSubmitMessage({ type: "", text: "" });
+    if (nameErr || phoneErr || cityErr || emailErr || serviceErr || termsErr) {
+      setSubmitMessage({ type: "error", text: "Please fill out all highlighted inputs and agree to the terms." });
       return;
     }
-
-    const payload = {
-      ...form,
-      name: cleanName,
-      phone: cleanPhone,
-      email: cleanEmail,
-    };
 
     setIsLoading(true);
     setSubmitMessage({ type: "", text: "" });
 
     try {
-      const response = await fetch("https://api.nowaybroker.com/cust_api/add_nri_leads", {
+      const response = await fetch(`${API_BASE_URL}/cust_api/add_nri_leads`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          ...form,
+          phone: `${form.countryCode} ${form.phone}`
+        }),
       });
 
       if (response.ok) {
         setSubmitMessage({ type: "success", text: "Thank you! Our experts will contact you soon." });
-        setForm({ name: "", phone: "", email: "", service: "" });
-        setErrors({ name: "", phone: "", email: "", service: "" });
+        setForm({ name: "", countryCode: "+91", phone: "", city: "", email: "", service: "", agreeTerms: false });
+        setErrors({ name: "", phone: "", city: "", email: "", service: "", agreeTerms: "" });
       } else {
-        // show the server's own message when it sends one
-        let serverMessage = "";
-        try {
-          const errorBody = await response.json();
-          serverMessage = errorBody?.message || "";
-        } catch (parseError) {
-          // response was not JSON
-        }
-        setSubmitMessage({
-          type: "error",
-          text: serverMessage || "Something went wrong. Please try again later.",
-        });
+        setSubmitMessage({ type: "error", text: "Something went wrong. Please try again later." });
       }
     } catch (error) {
       console.error("Error submitting form:", error);
@@ -205,491 +296,534 @@ export default function NRIPage() {
     }
   };
 
-  // ================= RENDER MAIN PAGE =================
+  // Counter Hook calculations
+  const rentedCount = useCounter(5000, 4000);
+  const soldCount = useCounter(2000, 4000);
+
   return (
-    <div className="bg-[#f8f9fa] min-h-screen relative font-sans text-gray-800">
 
-      {/* NAVBAR */}
-      <nav className="sticky top-0 z-50 bg-white border-b border-gray-200 px-4 sm:px-6 py-3 flex flex-wrap justify-between items-center shadow-sm gap-y-2">
-        <div className="flex items-center gap-2 sm:gap-3">
-          <div className="flex items-center gap-1 cursor-pointer">
-            {/* <div className="w-7 h-7 sm:w-8 sm:h-8 bg-[#fd3752] rounded-full flex items-center justify-center">
-               <span className="text-white text-base sm:text-lg font-bold">N</span> 
-            </div> */}
-             {/* <h1 className="font-extrabold text-gray-900 text-lg sm:text-xl tracking-tight uppercase">NoWayBroker</h1>  */}
-          </div>
-          <div className="flex items-center gap-1 border border-red-200 bg-red-50 px-2 py-0.5 rounded">
-             {/* <span className="text-[9px] sm:text-[10px] text-red-600 font-bold uppercase tracking-wide">
-              NRI Services
-            </span>  */}
-          </div>
+
+    <div className="bg-slate-50 min-h-screen font-sans text-slate-800 antialiased selection:bg-[#691E2E] selection:text-white overflow-x-hidden">
+
+      {/* HERO SECTION */}
+      <section className="relative overflow-hidden pt-8 pb-10 md:py-16 bg-slate-900 text-white">
+        <div className="absolute inset-0 z-0">
+          <img
+            src="https://images.unsplash.com/photo-1560185127-6ed189bf02f4?auto=format&fit=crop&q=80"
+            alt="NRI Real Estate"
+            className="w-full h-full object-cover opacity-25 mix-blend-overlay"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-900/90 to-transparent"></div>
         </div>
-        {/* <button className="border border-[#42998b] text-[#42998b] font-bold px-3 sm:px-4 py-1.5 rounded flex items-center gap-1 sm:gap-2 text-xs sm:text-sm hover:bg-teal-50 transition ml-auto">
-           <span className="text-base sm:text-lg">📞</span> 919242500000 
-        </button> */}
-      </nav>
 
-      {/* BACKGROUND HERO IMAGE */}
-      <div className="absolute top-[60px] left-0 w-full h-[350px] sm:h-[480px] bg-black z-0">
-        <img
-          src="https://images.unsplash.com/photo-1560185127-6ed189bf02f4?auto=format&fit=crop&q=80"
-          alt="NRI Real Estate"
-          className="w-full h-full object-cover opacity-40 mix-blend-overlay"
-        />
-        <div className="absolute bottom-0 w-full h-24 sm:h-32 bg-gradient-to-t from-[#f8f9fa] to-transparent"></div>
-      </div>
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 md:px-8 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center">
 
-      {/* MAIN CONTENT CONTAINER */}
-      <div className="relative z-10 max-w-[1200px] mx-auto flex flex-col lg:flex-row items-start gap-8 px-4 pt-8 sm:pt-16 pb-24">
+          {/* Hero Left Content */}
+          <div className="lg:col-span-7 space-y-4 text-center lg:text-left">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-300 text-sm font-semibold tracking-wide mx-auto lg:mx-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping"></span>
+              Global NRI Concierge Service
+            </div>
 
-        {/* ================= LEFT SCROLLABLE CONTENT ================= */}
-        <div className="w-full lg:w-[60%] flex flex-col gap-6">
-
-          {/* Hero Text */}
-          <div className="text-white mb-2 sm:mb-6 mt-4 sm:mt-0">
-            <h1 className="text-2xl sm:text-[36px] font-bold leading-tight mb-2 sm:mb-3 text-shadow-md">
-              Smooth Property Solutions for NRIs
+            <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black tracking-tight leading-[1.15]">
+              Manage Indian Real Estate Without Flying Home.
             </h1>
-            <p className="text-[13px] sm:text-[15px] text-gray-100 font-medium">
-              Trusted Tenants & Buyer Discovery, Legal Assistance & Property Care - handled by professionals
+
+            <p className="text-slate-300 text-[11px] sm:text-xs md:text-sm font-normal max-w-xl mx-auto lg:mx-0 leading-relaxed">
+              End-to-end verified tenant discovery, rental collection, legal compliance, and tax management tailored for global NRIs.
             </p>
-          </div>
 
-          {/* Intro Card */}
-          <div className="bg-white p-5 sm:p-7 rounded-xl shadow-sm border border-gray-200">
-            <h2 className="font-bold text-[16px] sm:text-[18px] text-gray-900 mb-3">
-              Property Management Services for NRIs in India by NoWayBroker
-            </h2>
-            <p className="text-gray-600 text-[13px] leading-relaxed">
-            Managing a property in India while living overseas can be challenging due to time zone gaps, legal formalities, tax obligations, and various other responsibilities. NoWayBroker’s NRI property management services simplify the entire process, ensuring your property remains safe, maintained, and professionally managed even when you are miles away.
-            </p>
-          </div>
-
-          {/* Stats Box */}
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col sm:flex-row justify-center items-center divide-y sm:divide-y-0 sm:divide-x divide-gray-200 gap-4 sm:gap-0">
-            <div className="w-full sm:w-1/2 text-center pb-2 sm:pb-0">
-              <span className="text-[#fd3752] text-2xl font-bold">25,000+</span>
-              <span className="text-gray-700 text-[13px] ml-2">properties <strong>RENTED out</strong> monthly</span>
-            </div>
-            <div className="w-full sm:w-1/2 text-center pt-2 sm:pt-0">
-              <span className="text-[#fd3752] text-2xl font-bold">5,000+</span>
-              <span className="text-gray-700 text-[13px] ml-2">properties <strong>SOLD</strong> monthly</span>
-            </div>
-          </div>
-
-          {/* Why Trust Us */}
-          <div className="bg-white p-5 sm:p-7 rounded-xl shadow-sm border border-gray-200">
-            <h2 className="font-bold text-[16px] sm:text-[18px] text-gray-900 mb-1">
-              Why NRIs Rely on Us for Property Management in India
-            </h2>
-            <p className="text-gray-500 text-[12px] italic mb-6">Rent, sell, or manage your property — from anywhere in the world</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-6 gap-x-6 mb-6">
-              {[
-  {
-    icon: <FaBuilding />,
-    text: "One-stop platform for buying, selling, renting, property management, legal, RA, and home services"
-  },
-  {
-    icon: <FaBalanceScale />,
-    text: "Strong expertise in NRI-focused legal and tax matters"
-  },
-  {
-    icon: <FaHandshake />,
-    text: "Local experts providing end-to-end assistance"
-  },
-  {
-    icon: <FaPhoneAlt />,
-    text: "NRI-friendly support via toll-free numbers aligned with your time zone"
-  }
-].map((item, idx) => (
-                <div key={idx} className="flex items-start gap-3 text-[13px] text-gray-700 font-medium">
-                  <div className="w-8 h-8 bg-[#e8f4f1] text-[#42998b] rounded flex items-center justify-center shrink-0 text-lg">{item.icon}</div>
-                  <p className="pt-1">{item.text}</p>
-                </div>
-              ))}
-            </div>
-            {/* Scroll Button */}
-            <button
-  onClick={scrollToForm}
-  className="w-full bg-[#691E2E] hover:bg-[#581926] text-white font-semibold py-3 rounded-lg transition-colors"
->
-  Become a Partner
-</button>
-          </div>
-
-          {/* Accordion 1: Buy. Sell. Rent. */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="h-32 sm:h-40 bg-gray-900 text-white p-5 sm:p-6 flex flex-col justify-end relative bg-[url('https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&q=80&w=800')] bg-cover bg-center cursor-pointer select-none" onClick={() => toggleAccordion('buySell')}>
-              <div className="absolute inset-0 bg-black/60"></div>
-              <div className="absolute top-4 right-4 bg-white/20 p-1.5 rounded z-10 backdrop-blur-sm hover:bg-white/30 transition">
-                <svg className={`transform transition-transform duration-300 ${!accordions.buySell ? 'rotate-180' : ''}`} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="18 15 12 9 6 15"></polyline></svg>
+            {/* Quick Animated Counter Highlights */}
+            <div className="grid grid-cols-2 gap-2.5 pt-2 max-w-md mx-auto lg:mx-0">
+              <div className="p-2.5 sm:p-3 rounded-lg bg-white/5 border border-white/10 backdrop-blur-sm">
+                <div className="text-lg sm:text-xl font-black text-rose-400">{rentedCount.toLocaleString()}+</div>
+                <div className="text-[10px] text-slate-400 font-medium mt-0.5">Properties Rented Monthly</div>
               </div>
-              <h3 className="font-bold text-xl sm:text-2xl relative z-10">Buy. Sell. Rent.</h3>
-              <p className="text-xs text-gray-300 italic mt-1 relative z-10">NoWayBrokerage. No Drama.</p>
+              <div className="p-2.5 sm:p-3 rounded-lg bg-white/5 border border-white/10 backdrop-blur-sm">
+                <div className="text-lg sm:text-xl font-black text-rose-400">{soldCount.toLocaleString()}+</div>
+                <div className="text-[10px] text-slate-400 font-medium mt-0.5">Properties Sold Monthly</div>
+              </div>
             </div>
-            {accordions.buySell && (
-              <div className="p-5 sm:p-6 space-y-6 bg-white border-t border-gray-100">
+          </div>
+
+          {/* Hero Right: Form Card */}
+          <div ref={formRef} className="lg:col-span-5 max-w-sm md:max-w-md mx-auto lg:max-w-none w-full">
+            <div className="bg-white rounded-xl p-4 sm:p-5 md:p-6 text-slate-800 shadow-2xl shadow-slate-950/50 border border-slate-100 relative">
+
+              <div className="absolute -top-2.5 right-4 bg-[#691E2E] text-white text-[8px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full shadow">
+                Priority Desk
+              </div>
+
+              <h3 className="text-base sm:text-lg font-black text-slate-900 mb-0.5">Talk to Our NRI Expert</h3>
+              <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium mb-4">Fill in your details for a prompt callback aligned with your timezone.</p>
+
+              <form className="space-y-2.5" onSubmit={handleSubmit} noValidate>
+                {/* Name Field */}
                 <div>
-                  <h4 className="font-bold text-[15px] text-gray-900 mb-1">Looking to rent or sell?</h4>
-                  <p className="text-[13px] text-gray-600 leading-relaxed">Our dedicated Relationship Managers take care of everything — from <span className="font-semibold">finding verified tenants/buyers</span> to organizing <span className="font-semibold">property visits</span> and sharing <span className="font-semibold">regular updates</span>, all aligned with your time zone.</p>
-                </div>
-                <div>
-                  <h4 className="font-bold text-[15px] text-gray-900 mb-1">Planning to buy??</h4>
-                  <p className="text-[13px] text-gray-600 leading-relaxed">Purchase your home with confidence — no matter where you are. Explore <span className="font-semibold">4000+ verified builder projects</span> with a <span className="font-semibold">dedicated expert</span> by your side.</p>
-                </div>
-                {/* Scroll Button */}
-                <button onClick={scrollToForm} className="w-full bg-[#691E2E] hover:bg-[#581926] text-white py-3 rounded-lg text-sm font-semibold transition">Explore Now</button>
-              </div>
-            )}
-          </div>
-
-          {/* Accordion 2: Property Management */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="h-32 sm:h-40 bg-gray-900 text-white p-5 sm:p-6 flex flex-col justify-end relative bg-[url('https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&q=80&w=800')] bg-cover bg-center cursor-pointer select-none" onClick={() => toggleAccordion('propertyManagement')}>
-              <div className="absolute inset-0 bg-black/60"></div>
-              <div className="absolute top-4 right-4 bg-white/20 p-1.5 rounded z-10 backdrop-blur-sm hover:bg-white/30 transition">
-                <svg className={`transform transition-transform duration-300 ${!accordions.propertyManagement ? 'rotate-180' : ''}`} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="18 15 12 9 6 15"></polyline></svg>
-              </div>
-              <h3 className="font-bold text-xl sm:text-2xl relative z-10">Complete Property Management Solutions </h3>
-              <p className="text-xs text-gray-300 italic mt-1 relative z-10">Your Property. Our Responsibility.</p>
-            </div>
-            {accordions.propertyManagement && (
-              <div className="p-5 sm:p-6 border-t border-gray-100">
-                <h4 className="font-bold text-[15px] text-gray-900 mb-1">Do you own a property in India?</h4>
-                <p className="text-[13px] text-gray-600 mb-5">We take care of everything so you can enjoy complete peace of mind</p>
-                <ul className="text-[13px] text-gray-700 space-y-3 mb-6 font-medium">
-                  {["Tenant Discovery and Verification", "On-schedule rent transfers", "Move-in, move-out & regular inspections", "Keeping your home in excellent condition", "Complimentary rental agreement"].map((item, idx) => (
-                    <li key={idx} className="flex gap-3 items-start sm:items-center">
-                      <div className="bg-[#42998b] text-white rounded-full w-[18px] h-[18px] flex items-center justify-center text-[10px] shrink-0 mt-0.5 sm:mt-0">✔</div> {item}
-                    </li>
-                  ))}
-                </ul>
-                {/* Scroll Button */}
-                <button onClick={scrollToForm} className="w-full bg-[#691E2E] hover:bg-[#581926] text-white py-3 rounded-lg text-sm font-semibold transition">Manage my Property</button>
-              </div>
-            )}
-          </div>
-
-          {/* Accordion 3: Legal Services */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="h-32 sm:h-40 bg-gray-900 text-white p-5 sm:p-6 flex flex-col justify-end relative bg-[url('https://images.unsplash.com/photo-1589829085413-56de8ae18c73?auto=format&fit=crop&q=80&w=800')] bg-cover bg-center cursor-pointer select-none" onClick={() => toggleAccordion('legal')}>
-              <div className="absolute inset-0 bg-black/60"></div>
-              <div className="absolute top-4 right-4 bg-white/20 p-1.5 rounded z-10 backdrop-blur-sm hover:bg-white/30 transition">
-                <svg className={`transform transition-transform duration-300 ${!accordions.legal ? 'rotate-180' : ''}`} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="18 15 12 9 6 15"></polyline></svg>
-              </div>
-              <h3 className="font-bold text-xl sm:text-2xl relative z-10">Legal Services</h3>
-              <p className="text-xs text-gray-300 italic mt-1 relative z-10">Be compliant. Be worry-free.</p>
-            </div>
-            {accordions.legal && (
-              <div className="p-5 sm:p-6 border-t border-gray-100">
-                <h4 className="font-bold text-[15px] text-gray-900 mb-2">Looking to buy or sell property in India??</h4>
-                <p className="text-[13px] text-gray-600 mb-6 leading-relaxed">Get expert assistance with Power of Attorney, Lower TDS Certificate, Khata Transfer, ITR, and Capital Gains — ensuring full compliance, wherever you are.</p>
-                {/* Scroll Button */}
-                <button onClick={scrollToForm} className="w-full  text-white bg-[#691E2E] hover:bg-[#581926] py-3 rounded-lg text-sm font-semibold  transition">Book Legal Consultation</button>
-              </div>
-            )}
-          </div>
-
-          {/* Popular Services Accordion */}
-          <div className="bg-white p-5 sm:p-7 rounded-xl shadow-sm border border-gray-200">
-            <div className="flex justify-between items-center mb-1 cursor-pointer select-none" onClick={() => toggleAccordion('popular')}>
-              <h2 className="font-bold text-[16px] sm:text-[18px] text-gray-900">Services NRIs rely on the most</h2>
-              <div className="p-1.5 rounded hover:bg-gray-100 transition shrink-0">
-                <svg className={`text-gray-500 transform transition-transform duration-300 ${!accordions.popular ? 'rotate-180' : ''}`} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="18 15 12 9 6 15"></polyline></svg>
-              </div>
-            </div>
-            {accordions.popular && (
-              <div className="mt-4">
-                <p className="text-[12px] text-gray-500 mb-4 italic">Be compliant. Be worry-free.</p>
-                <p className="text-[13px] text-gray-600 mb-6 leading-relaxed">Our expert teams take care of it all — cleaning, maintenance, inspections, rentals, legal agreements, and full home makeovers.</p>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                  {[
-                    { name: "Painting & Cleaning", img: "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=200" },
-                    { name: "Property Inspections", img: "https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&q=80&w=200" },
-                    { name: "Interior Design", img: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&q=80&w=200" },
-                    { name: "Packers & Movers", img: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=200" },
-                    { name: "Rental Agreement", img: "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&q=80&w=200" }
-                  ].map((s, i) => (
-                    <div key={i} className="relative rounded-xl overflow-hidden group border border-gray-200 aspect-square flex flex-col items-center justify-end bg-gray-100 shadow-sm">
-                      <div className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-110" style={{ backgroundImage: `url('${s.img}')` }}></div>
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>
-                      <span className="relative z-10 text-white text-[11px] font-medium text-center p-2 leading-tight w-full">{s.name}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Comparison Table */}
-          <div className="bg-white p-5 sm:p-7 rounded-xl shadow-sm border border-gray-200">
-            <h2 className="font-bold text-[16px] sm:text-[18px] text-gray-900 mb-1">Making property matters easy</h2>
-            <p className="text-[12px] text-gray-500 mb-6 italic">Why NRIs Prefer NoWayBroker Over Traditional Brokers</p>
-            <div className="border border-gray-200 rounded-lg overflow-x-auto">
-              <table className="w-full min-w-[500px] text-[13px] text-left">
-                <thead className="bg-[#f8f9fa] text-gray-700 border-b border-gray-200">
-                  <tr>
-                    <th className="py-3 px-4 sm:px-5 font-bold">Offerings</th>
-                    <th className="py-3 px-4 sm:px-5 font-bold text-center border-l border-gray-200">With NoWayBroker</th>
-                    <th className="py-3 px-4 sm:px-5 font-bold text-center border-l border-gray-200">Without NoWayBroker</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 text-gray-800">
-                  {["One-stop solution", "Dedicated Relationship Manager", "Transparent pricing", "Efficient service", "End-to-end assistance", "ZERO brokerage"].map((feature, i) => (
-                    <tr key={i} className="hover:bg-gray-50 transition-colors">
-                      <td className="py-3 px-4 sm:px-5 font-medium">{feature}</td>
-                      <td className="py-3 px-4 sm:px-5 text-center border-l border-gray-200 text-[#42998b] font-bold text-lg">✔</td>
-                      <td className="py-3 px-4 sm:px-5 text-center border-l border-gray-200 text-[#fd3752] font-bold text-lg">✘</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Testimonials */}
-          <div className="bg-white p-5 sm:p-7 rounded-xl shadow-sm border border-gray-200">
-            <h2 className="font-bold text-[16px] sm:text-[18px] text-gray-900 mb-6">Testimonials</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[
-                { name: "LOKESH SINGH", loc: "UK", img: "https://i.pravatar.cc/100?img=11", text: "NoWayBroker has been like a genie in a bottle for renting my apartment. Special thanks to my Relationship Manager and Field RMs who supported me throughout — from finding tenants to finalizing the agreement." },
-                { name: "RAJESH KUMAR", loc: "USA", img: "https://i.pravatar.cc/100?img=12", text: "Great service overall! NoWayBroker managed to rent my property in less than a month. The tenants were properly screened, and the team was quick with repairs and excellent in communication." },
-                { name: "SUMIT MAHTRE", loc: "INDIA", img: "https://i.pravatar.cc/100?img=13", text: "The team at NoWayBroker Property Management is very responsive and efficient. They take care of everything — from tenant sourcing to timely rent collection and paperwork — making it completely hassle-free." }
-              ].map((t, i) => (
-                <div key={i} className="border border-gray-200 p-4 rounded-lg flex flex-col justify-between hover:shadow-md transition">
-                  <div>
-                    <div className="flex items-center gap-3 mb-3">
-                      <img src={t.img} alt="Avatar" className="w-10 h-10 rounded-full object-cover" />
-                      <div>
-                        <h4 className="text-[11px] font-bold text-gray-800 uppercase">{t.name}, {t.loc}</h4>
-                        <div className="text-[#f5a623] text-[12px]">★★★★★</div>
-                      </div>
-                    </div>
-                    <p className="text-[12px] text-gray-600 leading-relaxed line-clamp-5">{t.text}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Blogs */}
-          <div className="bg-white p-5 sm:p-7 rounded-xl shadow-sm border border-gray-200">
-            <h2 className="font-bold text-[16px] sm:text-[18px] text-gray-900 mb-6">Blogs</h2>
-            <div className="space-y-5">
-              {[
-                { title: "NRI Fund Transfers from India: RBI Guidelines, $1M Limit & Process (2024)", date: "15 Apr 2026", icon: <FaMoneyBillWave /> },
-                { title: "Selling Property in India as an NRI: Tax, TDS & Repatriation Guide (2024)", date: "23 Apr 2026", icon: <FaFileAlt /> },
-                { title: "Form 12BB Explained: Meaning, Eligibility & Filing Steps", date: "28 Apr 2026", icon: <FaChartBar /> },
-                { title: "OCI Card Guide: Benefits, Eligibility & Rules in India (2024)", date: "3 Apr 2026", icon: <FaIdCard /> }
-              ].map((blog, idx) => (
-                <div key={idx} className="flex gap-4 items-center cursor-pointer group">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-50 rounded-lg flex-shrink-0 flex items-center justify-center border border-gray-200 text-lg sm:text-xl shadow-sm">
-                    {blog.icon}
-                  </div>
-                  <div>
-                    <h4 className="text-[12px] sm:text-[13px] font-bold text-gray-800 group-hover:text-[#42998b] transition leading-tight mb-1">{blog.title}</h4>
-                    <p className="text-[10px] sm:text-[11px] text-gray-500 font-medium flex items-center gap-1">
-                      <FaCalendarAlt className="text-[10px] sm:text-[11px]" /> {blog.date}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* SEO Text Section */}
-          <div className="bg-white p-5 sm:p-7 rounded-xl shadow-sm border border-gray-200 transition-all duration-300">
-            <h2 className="font-bold text-[16px] sm:text-[18px] text-gray-900 mb-4">Why Choose NoWayBroker for NRI Property Management?</h2>
-            <p className="text-[13px] text-gray-600 mb-4">With NoWayBroker’s NRI property management services, you benefit from complete assistance and full transparency. Here’s what to expect</p>
-
-            <h3 className="text-[14px] font-bold text-gray-800 mt-4 mb-1">Complete Property Management</h3>
-            <p className="text-[13px] text-gray-600 mb-4">Our services cover everything, so you can stay worry-free. We manage your property end-to-end, ensuring every task is handled efficiently. From tax filing and tenant verification to legal matters, NoWayBroker takes care of it all — making it the perfect one-stop solution for NRIs.</p>
-
-            {showMoreSEO && (
-             <div className="mt-4 animate-fade-in">
-               <h3 className="text-[14px] font-bold text-gray-800 mt-4 mb-1">Local Knowledge</h3>
-               <p className="text-[13px] text-gray-600 mb-4">Our team possesses strong knowledge of the local real estate market, making us a dependable NRI property management service in India.</p>
-               <h3 className="text-[14px] font-bold text-gray-800 mt-4 mb-1">Clear Processes</h3>
-               <p className="text-[13px] text-gray-600 mb-6">We focus on building trust with our clients. That’s why our NRI property services follow clear processes with no hidden costs. Every transaction is properly documented.</p>
-             </div>
-            )}
-
-            <button
-              onClick={() => setShowMoreSEO(!showMoreSEO)}
-              className="text-[#42998b] font-bold text-[13px] mt-4 hover:underline focus:outline-none"
-            >
-              {showMoreSEO ? "Read Less" : "Read More"}
-            </button>
-          </div>
-
-          {/* Frequently Asked Question's Section */}
-          <div className="bg-white p-5 sm:p-8 rounded-xl shadow-sm border border-gray-200">
-            <h2 className="font-bold text-[20px] sm:text-[24px] text-[#222222] mb-4">
-              Frequently Asked Question's
-            </h2>
-
-            <div className="flex flex-col">
-              {faqs.map((faq, index) => (
-                <div key={index} className="border-b border-gray-200 last:border-0">
-                  <button
-                    className="w-full text-left py-5 flex justify-between items-center focus:outline-none group"
-                    onClick={() => toggleFaq(index)}
-                  >
-                    <span className={`text-[14px] sm:text-[15px] font-bold pr-4 leading-snug transition-colors ${openFaq === index ? 'text-[#5465bd]' : 'text-[#333333]'}`}>
-                      {faq.q}
-                    </span>
-                    <span className="text-gray-600 text-[20px] font-light shrink-0 leading-none ml-4">
-                      {openFaq === index ? "✕" : "+"}
-                    </span>
-                  </button>
-                  <div className={`grid transition-all duration-300 ease-in-out ${openFaq === index ? 'grid-rows-[1fr] opacity-100 pb-5' : 'grid-rows-[0fr] opacity-0 pb-0'}`}>
-                    <div className="overflow-hidden">
-                      <div className="text-[14px] text-gray-500 leading-relaxed font-medium">
-                        {faq.a}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-        </div>
-
-        {/* ================= RIGHT STICKY FORM (Ref is attached here) ================= */}
-        <div ref={formRef} className="w-full lg:w-[40%] lg:sticky top-24 order-1 lg:order-2 mb-6 lg:mb-0">
-          <div className="bg-white p-5 sm:p-7 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] border border-gray-100 relative">
-            <h2 className="font-bold text-[16px] sm:text-[18px] text-gray-900 mb-2">Contact our Real Estate Experts</h2>
-            <div className="flex items-center gap-3 mb-6">
-              <span className="text-[10px] sm:text-[11px] text-gray-500 font-medium whitespace-nowrap uppercase tracking-wider">
-                Just fill up the form & we will take care of the rest
-              </span>
-              <div className="h-[1px] bg-gray-200 w-full"></div>
-            </div>
-
-            {/* FORM STARTS HERE */}
-            <form className="space-y-4" onSubmit={handleSubmit}>
-              <div>
-                <input
-                  name="name"
-                  value={form.name}
-                  placeholder="Name"
-                  maxLength={50}
-                  className={`w-full border p-3 rounded-lg text-[14px] outline-none focus:ring-1 transition bg-white ${errors.name ? "border-red-500 focus:border-red-500 focus:ring-red-500" : "border-gray-300 focus:border-[#42998b] focus:ring-[#42998b]"}`}
-                  onChange={handleChange}
-                />
-                {errors.name && (
-                  <p className="text-red-500 text-[12px] mt-1">{errors.name}</p>
-                )}
-              </div>
-
-              <div>
-                <div className={`flex border rounded-lg overflow-hidden focus-within:ring-1 bg-white transition ${errors.phone ? "border-red-500 focus-within:border-red-500 focus-within:ring-red-500" : "border-gray-300 focus-within:border-[#42998b] focus-within:ring-[#42998b]"}`}>
                   <input
-                    name="phone"
-                    value={form.phone}
-                    placeholder="Phone Number"
-                    inputMode="tel"
-                    maxLength={16}
-                    className="w-full p-3 text-[14px] outline-none bg-white"
+                    name="name"
+                    value={form.name}
+                    placeholder="Full Name"
+                    className={`w-full bg-slate-50 border p-2.5 rounded-lg text-[11px] outline-none transition-all font-medium ${errors.name ? 'border-rose-500 bg-rose-50/20 focus:ring-2 focus:ring-rose-500/20' : 'border-slate-200 focus:border-[#691E2E] focus:bg-white'}`}
                     onChange={handleChange}
                   />
+                  {errors.name && <p className="text-[9px] font-semibold text-rose-600 mt-0.5 pl-1">⚠️ {errors.name}</p>}
                 </div>
-                {errors.phone && (
-                  <p className="text-red-500 text-[12px] mt-1">{errors.phone}</p>
-                )}
-                <p className="text-[10px] sm:text-[11px] font-medium text-gray-500 mt-1.5">*Enter your international number. We'll call you at no extra cost.</p>
-              </div>
 
-              <div>
-                <input
-                  name="email"
-                  value={form.email}
-                  placeholder="Email ID"
-                  maxLength={EMAIL_MAX}
-                  className={`w-full border p-3 rounded-lg text-[14px] outline-none focus:ring-1 transition bg-white ${errors.email ? "border-red-500 focus:border-red-500 focus:ring-red-500" : "border-gray-300 focus:border-[#42998b] focus:ring-[#42998b]"}`}
-                  onChange={handleChange}
-                />
-                {errors.email && (
-                  <p className="text-red-500 text-[12px] mt-1">{errors.email}</p>
-                )}
-              </div>
+                {/* Country Code + Phone Number Field */}
+                <div>
+                  <div className={`flex bg-slate-50 border rounded-lg overflow-hidden transition-all ${errors.phone ? 'border-rose-500 bg-rose-50/20' : 'border-slate-200 focus-within:border-[#691E2E] focus-within:bg-white'}`}>
+                    <select
+                      name="countryCode"
+                      value={form.countryCode}
+                      onChange={handleChange}
+                      className="bg-transparent border-r border-slate-200 px-2 py-2.5 text-[11px] font-bold text-slate-700 outline-none cursor-pointer"
+                    >
+                      {countryCodes.map((item) => (
+                        <option key={item.code} value={item.code}>
+                          {item.flag} {item.code}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      name="phone"
+                      value={form.phone}
+                      placeholder="Phone Number"
+                      className="w-full p-2.5 text-[11px] outline-none bg-transparent font-medium"
+                      onChange={handleChange}
+                    />
+                  </div>
+                  {errors.phone ? (
+                    <p className="text-[9px] font-semibold text-rose-600 mt-0.5 pl-1">⚠️ {errors.phone}</p>
+                  ) : (
+                    <p className="text-[8px] font-semibold text-slate-400 mt-0.5 pl-1">Zero international calling charges.</p>
+                  )}
+                </div>
 
-              <div className="pt-2">
-                <label className="text-[12px] sm:text-[13px] font-bold text-gray-800 block mb-2">Are you looking for</label>
+                {/* City Dropdown */}
                 <div className="relative">
                   <div
-                    className={`w-full border p-3 rounded-lg text-[14px] cursor-pointer flex justify-between items-center transition bg-white min-h-[46px] ${isDropdownOpen ? 'border-[#42998b] ring-1 ring-[#42998b]' : errors.service ? 'border-red-500' : 'border-gray-300'}`}
-                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    className={`w-full bg-slate-50 border p-2.5 rounded-lg text-[11px] cursor-pointer flex justify-between items-center transition-all font-medium ${errors.city ? 'border-rose-500 bg-rose-50/20' : isCityOpen ? 'border-[#691E2E] bg-white ring-2 ring-[#691E2E]/10' : 'border-slate-200'}`}
+                    onClick={() => {
+                      setIsCityOpen(!isCityOpen);
+                      setIsServiceOpen(false);
+                    }}
                   >
-                    <span className={form.service !== "" ? "text-gray-800" : "text-gray-400"}>
-                      {form.service === "" ? "Service" : form.service}
+                    <span
+                      className={
+                        form.city !== ""
+                          ? "text-slate-900 font-semibold"
+                          : "text-slate-400"
+                      }
+                    >
+                      {form.city === ""
+                        ? "Select City (Mumbai, Delhi, Bengaluru, Pune, Hyderabad, Ahmedabad, Chennai)"
+                        : form.city}
                     </span>
-                    <span className="text-gray-500 text-xs transform transition-transform duration-200">▼</span>
+                    <span className="text-slate-400 text-[8px] transform transition-transform duration-200">▼</span>
                   </div>
 
-                  {isDropdownOpen && (
+                  {errors.city && <p className="text-[9px] font-semibold text-rose-600 mt-0.5 pl-1">⚠️ {errors.city}</p>}
+
+                  {isCityOpen && (
                     <>
-                      <div className="fixed inset-0 z-40" onClick={() => setIsDropdownOpen(false)}></div>
-                      <div className="absolute top-[105%] left-0 w-full bg-[#e8f4f1] rounded-lg shadow-xl border border-gray-200 z-50 overflow-hidden py-2">
-                        {serviceOptions.map((option, idx) => (
+                      <div className="fixed inset-0 z-40" onClick={() => setIsCityOpen(false)}></div>
+                      <div className="absolute top-[110%] left-0 w-full bg-white rounded-lg shadow-2xl border border-slate-100 z-50 overflow-hidden py-1 divide-y divide-slate-50">
+                        {cityOptions.map((city, idx) => (
                           <div
                             key={idx}
-                            className="px-4 py-2 text-[13.5px] text-gray-800 hover:bg-[#d5ebe5] cursor-pointer flex items-center transition-colors"
-                            onClick={() => handleServiceSelect(option)}
+                            className="px-2.5 py-2 text-[10px] sm:text-[11px] text-slate-700 hover:bg-rose-50 hover:text-[#691E2E] cursor-pointer flex items-center justify-between transition-colors font-medium"
+                            onClick={() => handleCitySelect(city)}
                           >
-                            <span className="w-6 inline-block font-bold">
-                              {form.service === option ? "✓" : ""}
-                            </span>
-                            {option}
+                            <span>{city}</span>
+                            <span className="text-[#691E2E] font-bold">{form.city === city ? "✓" : ""}</span>
                           </div>
                         ))}
                       </div>
                     </>
                   )}
                 </div>
-                {errors.service && (
-                  <p className="text-red-500 text-[12px] mt-1">{errors.service}</p>
+
+                {/* Email Field */}
+                <div>
+                  <input
+                    name="email"
+                    value={form.email}
+                    placeholder="Email Address"
+                    className={`w-full bg-slate-50 border p-2.5 rounded-lg text-[11px] outline-none transition-all font-medium ${errors.email ? 'border-rose-500 bg-rose-50/20 focus:ring-2 focus:ring-rose-500/20' : 'border-slate-200 focus:border-[#691E2E] focus:bg-white'}`}
+                    onChange={handleChange}
+                  />
+                  {errors.email && <p className="text-[9px] font-semibold text-rose-600 mt-0.5 pl-1">⚠️ {errors.email}</p>}
+                </div>
+
+                {/* Description Field */}
+                <div>
+                  <textarea
+                    name="description"
+                    value={form.description}
+                    placeholder="Describe your requirement (optional)"
+                    rows={3}
+                    className="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-lg text-[11px] outline-none transition-all font-medium resize-none focus:border-[#691E2E] focus:bg-white"
+                    onChange={handleChange}
+                  />
+                </div>
+
+                {/* Service Dropdown */}
+                <div className="relative">
+                  <div
+                    className={`w-full bg-slate-50 border p-2.5 rounded-lg text-[11px] cursor-pointer flex justify-between items-center transition-all font-medium ${errors.service ? 'border-rose-500 bg-rose-50/20' : isServiceOpen ? 'border-[#691E2E] bg-white ring-2 ring-[#691E2E]/10' : 'border-slate-200'}`}
+                    onClick={() => {
+                      setIsServiceOpen(!isServiceOpen);
+                      setIsCityOpen(false);
+                    }}
+                  >
+                    <span className={form.service !== "" ? "text-slate-900 font-semibold" : "text-slate-400"}>
+                      {form.service === "" ? "Select Required Service" : form.service}
+                    </span>
+                    <span className="text-slate-400 text-[8px] transform transition-transform duration-200">▼</span>
+                  </div>
+
+                  {errors.service && <p className="text-[9px] font-semibold text-rose-600 mt-0.5 pl-1">⚠️ {errors.service}</p>}
+
+                  {isServiceOpen && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setIsServiceOpen(false)}></div>
+                      <div className="absolute top-[110%] left-0 w-full bg-white rounded-lg shadow-2xl border border-slate-100 z-50 overflow-hidden py-1 divide-y divide-slate-50">
+                        {serviceOptions.map((option, idx) => (
+                          <div
+                            key={idx}
+                            className="px-2.5 py-2 text-[10px] sm:text-[11px] text-slate-700 hover:bg-rose-50 hover:text-[#691E2E] cursor-pointer flex items-center justify-between transition-colors font-medium"
+                            onClick={() => handleServiceSelect(option)}
+                          >
+                            <span>{option}</span>
+                            <span className="text-[#691E2E] font-bold">{form.service === option ? "✓" : ""}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Terms and Conditions Checkbox */}
+                <div className="pt-0.5">
+                  <label className="flex items-start gap-1.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="agreeTerms"
+                      checked={form.agreeTerms}
+                      onChange={handleChange}
+                      className="mt-0.5 w-3 h-3 rounded text-[#691E2E] focus:ring-[#691E2E] border-slate-300 cursor-pointer"
+                    />
+                    <span className="text-[10px] text-slate-600 leading-snug">
+                      I agree to the{" "}
+                      <a href="/terms-and-conditions.pdf" target="_blank" rel="noopener noreferrer" className="text-[#691E2E] font-bold underline hover:text-[#581926]">
+                        Terms and Conditions
+                      </a>{" "}
+                      and privacy policy.
+                    </span>
+                  </label>
+                  {errors.agreeTerms && <p className="text-[9px] font-semibold text-rose-600 mt-0.5 pl-1">⚠️ {errors.agreeTerms}</p>}
+                </div>
+
+                {/* Submit Button */}
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className={`w-full py-2.5 rounded-lg font-bold text-[11px] tracking-wide shadow-lg shadow-rose-900/10 transition-all flex justify-center items-center cursor-pointer ${isLoading ? 'bg-slate-400 cursor-not-allowed text-white' : 'bg-[#691E2E] hover:bg-[#581926] text-white'}`}
+                >
+                  {isLoading ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-3.5 w-3.5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Processing Request...
+                    </>
+                  ) : (
+                    "Instant Consultation Request"
+                  )}
+                </button>
+
+                {submitMessage.text && (
+                  <div className={`mt-2 p-2 rounded-lg text-[10px] font-semibold text-center transition-all ${submitMessage.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'}`}>
+                    {submitMessage.text}
+                  </div>
                 )}
+              </form>
+
+              <div className="mt-4 pt-2.5 border-t border-slate-100 flex flex-wrap items-center justify-center gap-2 text-[8px] font-bold uppercase tracking-wider text-slate-800 text-center">
+                <span>Zero Brokerage</span>
+                <span>•</span>
+                <span>Full Transparency</span>
+                <span>•</span>
+                <span>Verified RMs</span>
               </div>
 
-              <button
-                type="submit"
-                disabled={isLoading}
-                className={`w-full py-3.5 rounded-lg font-bold text-[14px] sm:text-[15px] mt-2 shadow-md transition-all flex justify-center items-center ${isLoading ? 'bg-gray-400 cursor-not-allowed text-white' : 'bg-[#691E2E] hover:bg-[#581926] text-white hover:shadow-lg'}`}
-              >
-                {isLoading ? (
-                  <>
-                    <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Submitting...
-                  </>
-                ) : (
-                  "Check Price"
-                )}
-              </button>
-
-              {submitMessage.text && (
-                <div className={`mt-4 p-3 rounded-lg text-[13px] font-medium text-center transition-all ${submitMessage.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
-                  {submitMessage.text}
-                </div>
-              )}
-            </form>
-
-            {/* BOTTOM TEXT (No Brokerage...) */}
-            <div className="bg-[#f8f9fa] py-3 px-2 rounded-lg mt-6 border border-gray-200 flex justify-center items-center gap-2 sm:gap-3 text-[9px] sm:text-[11px] font-bold text-gray-700">
-              <span>No Brokerage</span>
-              <span className="w-1 h-1 bg-gray-400 rounded-full shrink-0"></span>
-              <span>Only end-to-end assistance</span>
-              <span className="w-1 h-1 bg-gray-400 rounded-full shrink-0"></span>
-              <span>No Hidden Fees</span>
             </div>
           </div>
+
+        </div>
+      </section>
+
+      {/* CORE VALUE PROPOSITIONS */}
+      <section className="py-10 md:py-16 max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+        <div className="text-center max-w-2xl mx-auto mb-6 md:mb-8">
+          <h2 className="text-lg sm:text-xl md:text-2xl font-black text-slate-900 tracking-tight">Comprehensive NRI Solutions</h2>
+          <p className="text-[11px] md:text-xs text-slate-500 mt-1.5">Explore our core divisions designed specifically to make remote property ownership seamless.</p>
         </div>
 
-      </div>
+        <div className="flex overflow-x-auto pb-1.5 mb-5 md:flex-wrap md:justify-center gap-1.5 scrollbar-none">
+          {[
+            { id: "overview", label: "Why Choose Us" },
+            { id: "buysell", label: "Buy, Sell & Rent" },
+            { id: "management", label: "Property Management" },
+            { id: "legal", label: "Legal & Tax Assistance" }
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-3 py-1.5 rounded-full text-[10px] sm:text-[11px] font-bold transition-all whitespace-nowrap cursor-pointer shrink-0 ${activeTab === tab.id ? 'bg-[#691E2E] text-white shadow-md shadow-rose-900/10' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'}`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="bg-white rounded-xl p-4 sm:p-5 md:p-8 border border-slate-200/80 shadow-xl shadow-slate-200/50">
+          {activeTab === "overview" && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {[
+                { icon: <FaBuilding />, title: "All-in-One Platform", desc: "Buy, sell, rent, manage, and legal support under one single roof." },
+                { icon: <FaBalanceScale />, title: "Legal & Tax Mastery", desc: "Expert guidance on TDS certificates, Capital Gains, and repatriations." },
+                { icon: <FaHandshake />, title: "Local Expert Network", desc: "Dedicated field managers handling physical inspections and handovers." },
+                { icon: <FaPhoneAlt />, title: "Timezone Aligned", desc: "24/7 dedicated assistance tailored to your international schedule." }
+              ].map((item, idx) => (
+                <div key={idx} className="p-4 rounded-lg bg-slate-50 border border-slate-100 hover:border-rose-200 transition-all group">
+                  <div className="w-8 h-8 rounded-lg bg-rose-50 text-[#691E2E] flex items-center justify-center text-base mb-2.5 group-hover:scale-110 transition-transform">
+                    {item.icon}
+                  </div>
+                  <h4 className="font-bold text-slate-900 text-xs mb-1.5">{item.title}</h4>
+                  <p className="text-[10px] sm:text-[11px] text-slate-600 leading-relaxed">{item.desc}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {activeTab === "buysell" && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-center">
+              <div className="space-y-2.5">
+                <span className="text-[9px] font-bold uppercase tracking-widest text-[#691E2E]">Zero Drama Transactions</span>
+                <h3 className="text-lg sm:text-xl font-black text-slate-900">Buy, Sell & Rent With Complete Peace of Mind</h3>
+                <p className="text-[11px] sm:text-xs text-slate-600 leading-relaxed">
+                  Whether you are looking to liquidate an asset or invest in India's top 4000+ verified builder projects, our dedicated Relationship Managers take care of documentation, shortlisting, and negotiations on your behalf.
+                </p>
+                <button onClick={scrollToForm} className="px-4 py-2 bg-[#691E2E] text-white rounded-lg text-[11px] font-bold shadow hover:bg-[#581926] transition cursor-pointer">
+                  Explore Property Options
+                </button>
+              </div>
+              <div className="rounded-lg overflow-hidden shadow-md aspect-video bg-slate-100">
+                <img src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&q=80&w=800" alt="Buy Sell Rent" className="w-full h-full object-cover" />
+              </div>
+            </div>
+          )}
+
+          {activeTab === "management" && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-center">
+              <div className="space-y-2.5">
+                <span className="text-[9px] font-bold uppercase tracking-widest text-[#691E2E]">Total Care Solutions</span>
+                <h3 className="text-lg sm:text-xl font-black text-slate-900">Your Property. Our Full Responsibility.</h3>
+                <ul className="space-y-2 text-[11px] sm:text-xs text-slate-700 font-medium">
+                  {["Rigorous Tenant Discovery & Background Verification", "Timely Automated Monthly Rent Transfers", "Regular Move-in, Move-out & Maintenance Inspections", "Complimentary Digital Rental Agreements"].map((item, i) => (
+                    <li key={i} className="flex items-center gap-2">
+                      <div className="w-3.5 h-3.5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-[8px] shrink-0 font-bold">✓</div>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="rounded-lg overflow-hidden shadow-md aspect-video bg-slate-100">
+                <img src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&q=80&w=800" alt="Property Management" className="w-full h-full object-cover" />
+              </div>
+            </div>
+          )}
+
+          {activeTab === "legal" && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-center">
+              <div className="space-y-2.5">
+                <span className="text-[9px] font-bold uppercase tracking-widest text-[#691E2E]">Absolute Compliance</span>
+                <h3 className="text-lg sm:text-xl font-black text-slate-900">Secure Legal & Tax Frameworks</h3>
+                <p className="text-[11px] sm:text-xs text-slate-600 leading-relaxed">
+                  Navigate complex Indian tax regulations effortlessly. Get certified expert assistance with Power of Attorney execution, Lower TDS Certificates, Khata transfers, and capital gains tax repatriation.
+                </p>
+                <button onClick={scrollToForm} className="px-4 py-2 bg-[#691E2E] text-white rounded-lg text-[11px] font-bold shadow hover:bg-[#581926] transition cursor-pointer">
+                  Book Legal Consultation
+                </button>
+              </div>
+              <div className="rounded-lg overflow-hidden shadow-md aspect-video bg-slate-100">
+                <img src="https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&q=80&w=800" alt="Legal and Tax Services" className="w-full h-full object-cover" />
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* POPULAR SERVICES GRID */}
+      <section className="py-10 bg-white border-y border-slate-200/80">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-6">
+            <div>
+              <span className="text-[9px] font-bold uppercase tracking-widest text-[#691E2E]">Add-on Care</span>
+              <h2 className="text-lg sm:text-xl font-black text-slate-900 mt-0.5">Services NRIs Rely on the Most</h2>
+            </div>
+            <span className="self-start md:self-auto inline-flex items-center px-3 py-1 mt-1.5 md:mt-0 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#691E2E] bg-[#691E2E]/10 border border-[#691E2E]/20 rounded-full whitespace-nowrap">
+              Coming Soon
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3">
+            {[
+              { name: "Painting & Cleaning", img: "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=300" },
+              { name: "Property Inspections", img: "https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&q=80&w=300" },
+              { name: "Interior Design", img: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&q=80&w=300" },
+              { name: "Packers & Movers", img: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=300" },
+              { name: "Rental Agreements", img: "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&q=80&w=300" }
+            ].map((s, i) => (
+              <div key={i} className="relative rounded-lg overflow-hidden group border border-slate-200 aspect-[4/5] flex flex-col items-center justify-end shadow-sm cursor-pointer" onClick={scrollToForm}>
+                <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: `url('${s.img}')` }}></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
+                <span className="relative z-10 text-white text-[10px] sm:text-[11px] font-bold text-center p-2 leading-tight w-full">{s.name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* COMPARISON MATRIX */}
+      <section className="py-10 md:py-16 max-w-5xl mx-auto px-4 sm:px-6 md:px-8">
+        <div className="text-center max-w-2xl mx-auto mb-6 md:mb-8">
+          <h2 className="text-lg sm:text-xl md:text-2xl font-black text-slate-900 tracking-tight">
+            The ZEROBRIKS Advantage
+          </h2>
+          <p className="text-[11px] sm:text-xs text-slate-500 mt-1.5">
+            See why global NRIs choose our structured concierge service over traditional brokers.
+          </p>
+        </div>
+
+        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xl shadow-slate-200/50">
+          <table className="w-full table-fixed text-[10px] text-left">
+            <thead className="bg-slate-900 text-white">
+              <tr>
+                <th className="py-2.5 px-2 sm:px-4 font-bold w-[46%]">Key Offerings</th>
+                <th className="py-2.5 px-1 sm:px-4 font-bold text-center bg-[#691E2E] w-[27%]">
+                  With ZEROBRIKS
+                </th>
+                <th className="py-2.5 px-1 sm:px-4 font-bold text-center text-slate-100 w-[27%]">
+                  Traditional Brokers
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 font-medium">
+              {[
+                "One-stop asset & legal solution",
+                "Dedicated Relationship Manager",
+                "100% Transparent pricing & documentation",
+                "End-to-end remote execution",
+                "ZERO hidden fees or brokerage drama",
+              ].map((feature, i) => (
+                <tr key={i} className="hover:bg-slate-50/80 transition-colors">
+                  <td className="py-2.5 px-2 sm:px-4 text-xs sm:text-sm text-slate-800 whitespace-normal break-words leading-snug">
+                    {feature}
+                  </td>
+                  <td className="py-2.5 px-1 sm:px-4 text-center bg-rose-50/50 text-emerald-600 font-black text-sm sm:text-base">
+                    ✓
+                  </td>
+                  <td className="py-2.5 px-1 sm:px-4 text-center text-rose-500 font-black text-sm sm:text-base">
+                    ✕
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {/* TESTIMONIALS */}
+      <section className="py-10 bg-slate-900 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+          <div className="text-center max-w-xl mx-auto mb-6">
+            <h2 className="text-lg sm:text-xl font-black">Trusted Across Continents</h2>
+            <p className="text-[10px] sm:text-[11px] text-slate-100 mt-1.5">Hear what homeowners in the UK, USA, and beyond say about our service.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {[
+              { name: "Lokesh Singh", loc: "United Kingdom", img: "https://i.pravatar.cc/100?img=11", text: "ZEROBRIKS has been like magic for renting my apartment. Special thanks to my Relationship Manager who supported me throughout from tenant search to agreement finalization." },
+              { name: "Rajesh Kumar", loc: "United States", img: "https://i.pravatar.cc/100?img=12", text: "Great service overall! Rented my property in less than a month. Screened tenants properly and quick with repair coordination. Absolute peace of mind." },
+              { name: "Sumit Mahtre", loc: "India / NRI", img: "https://i.pravatar.cc/100?img=13", text: "Very responsive and efficient team. They take care of timely rent collection and documentation seamlessly without requiring my physical presence." }
+            ].map((t, i) => (
+              <div key={i} className="p-4 rounded-lg bg-white/5 border border-white/10 backdrop-blur-sm flex flex-col justify-between">
+                <div>
+                  <div className="text-amber-400 text-[10px] mb-1.5">★★★★★</div>
+                  <p className="text-[10px] sm:text-[11px] text-slate-100 leading-relaxed italic mb-3">"{t.text}"</p>
+                </div>
+                <div className="flex items-center gap-2 pt-2.5 border-t border-white/10">
+                  <img src={t.img} alt={t.name} className="w-6 h-6 rounded-full object-cover shrink-0" />
+                  <div>
+                    <h4 className="text-[10px] font-bold uppercase tracking-wider">{t.name}</h4>
+                    <p className="text-[8px] text-slate-400">{t.loc}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FREQUENTLY ASKED QUESTIONS */}
+      <section className="py-10 md:py-16 max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+        <div className="text-center max-w-2xl mx-auto mb-6">
+          <span className="text-[9px] font-bold uppercase tracking-widest text-[#691E2E]">Got Questions?</span>
+          <h2 className="text-lg sm:text-xl md:text-2xl font-black text-slate-900 mt-0.5">Frequently Asked Questions</h2>
+          <p className="text-[11px] sm:text-xs text-slate-500 mt-1.5">Everything you need to know about managing Indian real estate remotely.</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3 items-start">
+          {faqs.map((faq, index) => {
+            const isOpen = openFaq === index;
+            return (
+              <div
+                key={index}
+                onClick={() => setOpenFaq(isOpen ? null : index)}
+                className={`group bg-white rounded-lg p-4 border transition-all duration-300 cursor-pointer relative overflow-hidden self-start ${isOpen
+                  ? 'border-[#691E2E]/30 shadow-xl shadow-rose-950/5 ring-1 ring-[#691E2E]/20 border-l-4 border-l-[#691E2E]'
+                  : 'border-slate-200/80 hover:border-rose-200 hover:shadow-md'
+                  }`}
+              >
+                <div className="flex items-start justify-between gap-2.5">
+                  <h3 className={`text-[11px] sm:text-xs font-bold transition-colors ${isOpen ? 'text-[#691E2E]' : 'text-slate-900 group-hover:text-[#691E2E]'}`}>
+                    {faq.q}
+                  </h3>
+                  <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0 transition-all duration-300 ${isOpen ? 'bg-[#691E2E] text-white rotate-180' : 'bg-slate-100 text-slate-500 group-hover:bg-rose-50 group-hover:text-[#691E2E]'
+                    }`}>
+                    ↓
+                  </div>
+                </div>
+
+                <div className={`grid transition-all duration-300 ease-in-out ${isOpen ? 'grid-rows-[1fr] opacity-100 mt-2.5 pt-2.5 border-t border-slate-100' : 'grid-rows-[0fr] opacity-0 mt-0'
+                  }`}>
+                  <div className="overflow-hidden">
+                    <p className="text-[10px] sm:text-[11px] text-slate-600 leading-relaxed font-normal">
+                      {faq.a}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
     </div>
+
   );
 }

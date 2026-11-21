@@ -26,10 +26,10 @@ const ComingSoon = (props) => {
   return (
     <>
       <Helmet>
-        <title>NOWAYBROKER</title>
+        <title>zerobriks</title>
         <meta
           name="description"
-          content={`NowayBroker is coming soon to ${cityName}. Be the first to know when we launch.`}
+          content={`zerobriks is coming soon to ${cityName}. Be the first to know when we launch.`}
         />
         <link
           href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&display=swap"

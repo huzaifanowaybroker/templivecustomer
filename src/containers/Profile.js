@@ -66,7 +66,7 @@ const Profile = () => {
       if (response.data && response.data.data) {
         const userData = response.data.data;
 
-        if (userData.dynamic_pricing == "ON") {
+        if (userData.dynamic_pricing === "ON") {
           setIsDynamicPricing(true);
         }
 

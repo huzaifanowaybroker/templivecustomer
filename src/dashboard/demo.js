@@ -87,6 +87,8 @@ const MyProperties = () => {
     { label: "₹ 9 Lakhs", value: 900000 },
     { label: "₹ 10 Lakhs", value: 1000000 },
   ];
+  const rentPriceOptions = priceOptions;
+  const pgPriceOptions = priceOptions;
   const budgetOptions =
     propertyType === "Rent"
       ? rentPriceOptions

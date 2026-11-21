@@ -1,45 +1,42 @@
-import React, { useState, useEffect, useRef } from "react";
-import { createPortal } from "react-dom";
-import { IoClose } from "react-icons/io5";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import React, { memo, useMemo, useState, useEffect, useRef } from "react";
+import { MapContainer, Marker, Popup, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-import { FaRegHeart, FaHeart } from "react-icons/fa";
-import { BiRupee } from "react-icons/bi";
-import { AiOutlineInfo } from "react-icons/ai";
+import { ZbMapLayers, houseMarkerIcon } from "../containers/ZbMapTools";
+import { BiRupee, BiArea } from "react-icons/bi";
+import { AiOutlineInfo, AiOutlineUser, AiOutlineClockCircle } from "react-icons/ai";
 import axios from "axios";
-import { useLocation } from "react-router-dom";
-import { Link, useHistory } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 import { RiArrowDropDownLine, RiRuler2Line } from "react-icons/ri";
-import { MdOutlineNavigateBefore, MdOutlineNavigateNext, MdApartment } from "react-icons/md";
+import { MdOutlineNavigateBefore, MdOutlineNavigateNext, MdOutlineBedroomParent, MdApartment } from "react-icons/md";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faShareNodes, faUserCircle } from "@fortawesome/free-solid-svg-icons";
-import { AiOutlineUser, AiOutlineClockCircle } from "react-icons/ai";
-import { MdOutlineBedroomParent } from "react-icons/md";
-import { FaMapMarkerAlt } from "react-icons/fa";
-import { BiArea } from "react-icons/bi";
-import { FaRupeeSign, FaBath, FaUser } from "react-icons/fa";
-import { faChair } from "@fortawesome/free-solid-svg-icons";
-import { FaCube } from "react-icons/fa";
-import { PiShareNetworkLight } from "react-icons/pi";
+import { faShareNodes, faChair } from "@fortawesome/free-solid-svg-icons";
+import { FaRupeeSign, FaWhatsapp, FaPhone, FaBath, FaUser, FaMapMarkerAlt } from "react-icons/fa";
 import { PiCubeFocus } from "react-icons/pi";
 import ShareModal from "../containers/ShareModal";
 import Slider from "react-slick";
-import { Heart, Building2 } from "lucide-react";
+import { Heart } from "lucide-react";
 import { toast } from "react-toastify";
 import Login1 from "../auth/Login1";
 import SignUp1 from "../auth/SignUp1";
 import { useCity } from "./SearchContext";
-import { FaWhatsapp, FaPhone } from "react-icons/fa";
-import { FaPhoneAlt } from "react-icons/fa";
 import ContactDetails from "../containers/ContactDetails";
-import { getResultsTitle } from "./getResultsTitle";
-const API_URL = process.env.REACT_APP_API_URL;
+import { IoCall } from "react-icons/io5";
+import { describeFilters, filterByLocality, readSearchState } from "./universalSearch";
 
 const userLocation = JSON.parse(sessionStorage.getItem("userLocation"));
 
+// A typed locality ("flat in Baner, Pune") narrows the listings loaded on the page.
+// Set this to true if your filter_property API can match a locality through `search_keyword`;
+// the locality is then sent to the server as well.
+const SEND_LOCALITY_TO_SERVER = false;
+
+// Total number of matching listings, when the API reports one
+const readTotal = (data) =>
+  Number(data?.total_count ?? data?.total_records ?? data?.total_properties ?? data?.total) || 0;
+
 function calculateDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371;
+  const R = 6371; // Earth radius in km
   const dLat = (lat2 - lat1) * (Math.PI / 180);
   const dLon = (lon2 - lon1) * (Math.PI / 180);
   const a =
@@ -52,116 +49,294 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
   return R * c;
 }
 
-/**
- * Enables Leaflet's scroll-wheel zoom ONLY while the cursor is over the
- * map container, and disables it as soon as the cursor leaves — so the
- * page scrolls normally everywhere else. No UI/markers/popups/controls
- * are affected; this only toggles the wheel-zoom interaction handler.
- */
-function ScrollWheelZoomOnHover() {
+// One-line subtitle such as "2 BHK Flat for Sale in Mayur Colony, Pune"
+function getPropertySubtitle(property) {
+  const area = property.address_area || "";
+  const city = property.city_name || "";
+  const location = area.toLowerCase().includes(city.toLowerCase())
+    ? area
+    : `${area}, ${city}`;
+
+  const type =
+    property.property_type === "Office"
+      ? "Office Space"
+      : property.property_type === "Retail"
+        ? "Retail Space"
+        : property.property_type || "";
+
+  const category = property.property_category_type || "";
+
+  if (category === "Commercial Buy" || category === "Commercial Lease") {
+    return `${type} for ${category === "Commercial Buy" ? "Sale" : "Lease"} in ${location}`;
+  }
+  if (category.includes("PG") || category.includes("Co-Living") || category.includes("Coliving")) {
+    return `${type} for Rent in ${location}`;
+  }
+  const action = category === "Buy" ? "Sale" : category;
+  return `${property.bhk_type} ${type} for ${action} in ${location}`;
+}
+
+// Flies the map to a target point whenever a card is hovered
+const MapPanner = ({ target }) => {
   const map = useMap();
 
   useEffect(() => {
-    if (!map) return;
-
-    // Start disabled so page scroll works by default
-    map.scrollWheelZoom.disable();
-
-    const container = map.getContainer();
-
-    const enableZoom = () => map.scrollWheelZoom.enable();
-    const disableZoom = () => map.scrollWheelZoom.disable();
-
-    container.addEventListener("mouseenter", enableZoom);
-    container.addEventListener("mouseleave", disableZoom);
-
-    return () => {
-      container.removeEventListener("mouseenter", enableZoom);
-      container.removeEventListener("mouseleave", disableZoom);
-      map.scrollWheelZoom.disable();
-    };
-  }, [map]);
+    if (!target) return;
+    map.flyTo([target.lat, target.lng], Math.max(map.getZoom(), 12), {
+      duration: 0.8,
+    });
+  }, [target, map]);
 
   return null;
-}
+};
+
+// Preview card shown on marker hover: gallery, price, specs, address
+const MarkerPopup = ({ p, onFavorite, onEnter, onLeave }) => {
+  const images = useMemo(
+    () => [p.cover_image, ...(p.property_images || []).map((i) => i.image)].filter(Boolean),
+    [p.cover_image, p.property_images],
+  );
+  const [idx, setIdx] = useState(0);
+  const count = images.length || 1;
+  const src = images[idx % count] || p.cover_image;
+
+  const step = (e, dir) => {
+    e.stopPropagation();
+    setIdx((i) => (i + dir + count) % count);
+  };
+
+  const isRent = p.property_category_type === "Rent";
+  const duration =
+    isRent && p.rent_duration && p.rent_duration !== "N/A" ? ` / ${p.rent_duration}` : "";
+  const specs = [p.bhk_type, p.city_name, p.area_sq ? `${p.area_sq} sq ft` : null].filter(Boolean);
+  const formatAmount = (value) => {
+    const n = Number(value);
+    if (!n) return value || "N/A";
+    if (n >= 10000000) return (n / 10000000).toFixed(1).replace(/\.0$/, "") + " Cr";
+    if (n >= 100000) return (n / 100000).toFixed(1).replace(/\.0$/, "") + " L";
+    if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, "") + " K";
+    return String(n);
+  };
+
+  const getListedPrice = (property) => {
+    const isRent = property.property_category_type === "Rent";
+    const primary = isRent ? property.rent : property.property_price;
+    return primary ?? property.property_price ?? property.rent ?? null;
+  };
+  return (
+    <div
+      onClick={(e) => {
+        if (e.target.closest("a, button, svg, input, select, textarea, label")) return;
+        const link = e.currentTarget.querySelector('a[href^="/propertydetails/"]');
+        if (link) link.click();
+      }}
+      className="cursor-pointer w-[240px] sm:w-[280px] bg-white"
+      onMouseEnter={onEnter}
+      onMouseLeave={onLeave}
+    >
+      <div className="relative h-[170px] bg-slate-900">
+        <img src={src} alt={p.property_name || "Property"} loading="lazy" className="w-full h-full object-cover" />
+
+        <button
+          type="button"
+          aria-label={p.is_favorite ? "Remove from favourites" : "Add to favourites"}
+          onClick={(e) => {
+            e.stopPropagation();
+            onFavorite(p);
+          }}
+          className="absolute z-10 top-2 right-2 flex items-center justify-center w-8 h-8 rounded-full bg-white/90 shadow hover:bg-white"
+        >
+          <Heart
+            size={16}
+            color={p.is_favorite ? "#e11d48" : "#7a1235"}
+            fill={p.is_favorite ? "#e11d48" : "transparent"}
+            strokeWidth={2}
+          />
+        </button>
+
+        {count > 1 && (
+          <>
+            <button
+              type="button"
+              aria-label="Previous image"
+              onClick={(e) => step(e, -1)}
+              className="absolute top-1/2 left-1.5 -translate-y-1/2 w-7 h-7 flex items-center justify-center rounded-full bg-white/90 hover:bg-white text-[12px]"
+            >
+              ‹
+            </button>
+            <button
+              type="button"
+              aria-label="Next image"
+              onClick={(e) => step(e, 1)}
+              className="absolute top-1/2 right-1.5 -translate-y-1/2 w-7 h-7 flex items-center justify-center rounded-full bg-white/90 hover:bg-white text-[12px]"
+            >
+              ›
+            </button>
+          </>
+        )}
+      </div>
+
+      <div className="p-3">
+        <div className="flex items-center justify-between gap-2">
+          <span className="flex items-baseline gap-0.5 text-[13.5px] font-bold text-[#7a1235]">
+            <FaRupeeSign className="text-[10px] self-center" />
+            {formatAmount(getListedPrice(p))}
+            {duration && <span className="text-[9px] font-medium text-gray-500">{duration}</span>}
+          </span>
+          <Link
+            to={`/propertydetails/${p._id}`}
+            aria-label="View details"
+            className="flex items-center justify-center w-8 h-8 rounded-full bg-[#7a1235] text-white hover:bg-[#5e0d28]"
+          >
+            <AiOutlineInfo />
+          </Link>
+        </div>
+
+        <div className="mt-1 text-[10px] font-semibold text-gray-800 truncate">{p.property_name}</div>
+        {specs.length > 0 && (
+          <div className="text-[9.5px] text-gray-600 truncate">{specs.join(" | ")}</div>
+        )}
+        <div className="text-[9.5px] text-gray-500 truncate">
+          {p.address_area || p.address || "No Address Provided"}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Marker: hover opens the preview card; the card stays open while the cursor is on it
+const PropertyMarker = memo(function PropertyMarker({
+  property: p,
+  icon,
+  zIndexOffset,
+  onHover,
+  onLeave,
+  onFavorite,
+}) {
+  const markerRef = useRef(null);
+  const closeTimer = useRef(null);
+  const openedAt = useRef(0);
+
+  const openCard = () => {
+    clearTimeout(closeTimer.current);
+    openedAt.current = Date.now();
+    markerRef.current?.openPopup();
+  };
+  const scheduleClose = () => {
+    clearTimeout(closeTimer.current);
+    // When the map auto-pans to fit the popup, the cursor briefly leaves the marker.
+    // Give the pan time to finish so the popup doesn't close while it is moving.
+    const panGuard = Math.max(0, 900 - (Date.now() - openedAt.current));
+    closeTimer.current = setTimeout(() => markerRef.current?.closePopup(), Math.max(150, panGuard));
+  };
+  const keepOpen = () => clearTimeout(closeTimer.current);
+
+  useEffect(() => () => clearTimeout(closeTimer.current), []);
+
+  return (
+    <Marker
+      ref={markerRef}
+      position={[parseFloat(p.latitude), parseFloat(p.longitude)]}
+      icon={icon}
+      zIndexOffset={zIndexOffset}
+      eventHandlers={{
+        mouseover: () => {
+          onHover(p._id);
+          openCard();
+        },
+        mouseout: () => {
+          onLeave();
+          scheduleClose();
+        },
+      }}
+    >
+      <Popup
+        className="zb-popup"
+        minWidth={240}
+        maxWidth={280}
+        autoPan={true}
+        autoPanPaddingTopLeft={[12, 12]}
+        autoPanPaddingBottomRight={[12, 12]}
+        keepInView={false}
+      >
+        <MarkerPopup p={p} onFavorite={onFavorite} onEnter={keepOpen} onLeave={scheduleClose} />
+      </Popup>
+    </Marker>
+  );
+});
 
 export default function SearchDashboard() {
   const [hoveredPropertyId, setHoveredPropertyId] = useState(null);
-  const [squareFtDropdownOpen, setSquareFtDropdownOpen] = useState(false);
-  const [sortBy, setSortBy] = useState("");
-  const [verifiedOnly, setVerifiedOnly] = useState(false);
-  const [appliedSortBy, setAppliedSortBy] = useState("");
-  const [appliedVerifiedOnly, setAppliedVerifiedOnly] = useState(false);
+  const [panTarget, setPanTarget] = useState(null);
   const location = useLocation();
-  const propertytype = location.state?.propertyType;
+  // A search arriving from the home search card or the navbar (see universalSearch.js).
+  // Its filters become the starting values of the filter bar below.
+  const [initial] = useState(() => readSearchState(location.state));
+  // The query behind the current results (typed text, locality). Cleared when filters are reset.
+  const [universal, setUniversal] = useState(initial.universal);
   const [properties, setProperties] = useState([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const locationState = location.state || {};
-  const isNearMe = locationState?.isNearMe || false;
-  const userLat = locationState?.lat || null;
-  const userLng = locationState?.lng || null;
   const [error, setError] = useState(null);
-  const { searchQuery = "", type = "" } = location.state || {};
-  useEffect(() => {
-    if (location.state) {
-      setSearch(location.state.searchQuery || "");
-    }
-  }, [location.state]);
-  const [search, setSearch] = useState(searchQuery);
+  const { searchQuery, type } = location.state || {};
+
   const { searchCity, setSearchCity } = useCity();
-  const homeSearchTitle =
-  type && searchCity
-    ? `${type} Properties in ${searchCity}`
-    : type
-      ? `${type} Properties`
-      : "";
-  console.log("COMMON SEARCH DATA:", {
-  searchCity,
-  searchQuery,
-  type,
-});
-  useEffect(() => {
-  if (location.state?.searchCity) {
-    setSearchCity(location.state.searchCity);
-  }
-}, [location.state, setSearchCity]);
-  const [propertyType, setPropertyType] = useState("");
-  const [bhkType, setBhkType] = useState("");
-  const [furnishedStatus, setFurnishedStatus] = useState("");
-  const [minPrice, setMinPrice] = useState("");
-  const [maxPrice, setMaxPrice] = useState("");
+
+  // Helper to parse comma-separated city string into an array of trimmed locations
+  const parseCities = (cityString) => {
+    if (!cityString) return [];
+    if (Array.isArray(cityString)) return cityString.filter(Boolean);
+    return cityString
+      .split(",")
+      .map((c) => c.trim())
+      .filter((c) => c.length > 0);
+  };
+
+  // Multiple Locations State
+  const [selectedLocations, setSelectedLocations] = useState(() => {
+    if (initial.isSearch) return initial.locations;
+    const initialCity = searchQuery || searchCity || "";
+    return parseCities(initialCity);
+  });
+  const [locationInput, setLocationInput] = useState("");
+
+  const [propertyType, setPropertyType] = useState(initial.propertyType);
+  const [bhkType, setBhkType] = useState(initial.bhk);
+  const [furnishedStatus, setFurnishedStatus] = useState(initial.furnishing);
+  const [minPrice, setMinPrice] = useState(initial.minPrice);
+  const [maxPrice, setMaxPrice] = useState(initial.maxPrice);
   const [minSquareFt, setMinSquareFt] = useState("");
   const [maxSquareFt, setMaxSquareFt] = useState("");
-  const [filtersApplied, setFiltersApplied] = useState(false);
+  const [filtersApplied, setFiltersApplied] = useState(initial.hasFilters);
   const [activePropertyId, setActivePropertyId] = useState(null);
-  const [isFavorited, setIsFavorited] = useState(false);
   const [currentShareUrl, setCurrentShareUrl] = useState("");
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [activeShareId, setActiveShareId] = useState(null);
-  const propertyRefs = useRef({});
   const accessToken = sessionStorage.getItem("accessToken");
-  const [activeApi, setActiveApi] = useState("search");
+  const [activeApi, setActiveApi] = useState(initial.hasFilters ? "filter" : "search");
+  const [filterRequestId, setFilterRequestId] = useState(0);
+  // Every fetch takes a number; a response is dropped when a newer fetch has started since
+  const fetchSeq = useRef(0);
+  // Router entry whose search is applied right now, and the cities that search set
+  const appliedKey = useRef(location.key);
+  const incomingCities = useRef(null);
+
   // Modal open states
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isSignUpModalOpen, setIsSignUpModalOpen] = useState(false);
-  // Paginatio -
+
+  // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState();
-  const [totalResults, setTotalResults] = useState(0);
-  const [searchLocation, setSearchLocation] = useState("");
+  const [totalPages, setTotalPages] = useState(1);
   const itemsPerPage = 10;
   const [activeIndexes, setActiveIndexes] = useState({});
-  const [priceDropdownOpen, setPriceDropdownOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [mapImageIndexes, setMapImageIndexes] = useState({});
   const [propertyImages, setPropertyImages] = useState([]);
 
-  const [postedBy, setPostedBy] = useState("");
-  const [constructionStatus, setConstructionStatus] = useState([]);
-  const [constructionOpen, setConstructionOpen] = useState(false);
+  const [postedBy, setPostedBy] = useState(initial.postedBy);
+  const [constructionStatus, setConstructionStatus] = useState(initial.construction);
   const [amenitiesList, setAmenitiesList] = useState([]);
   const [selectedAmenities, setSelectedAmenities] = useState([]);
-  const [amenitiesOpen, setAmenitiesOpen] = useState(false);
   const [bathrooms, setBathrooms] = useState("");
   const [facing, setFacing] = useState("");
   const [withPhoto, setWithPhoto] = useState("");
@@ -170,141 +345,35 @@ export default function SearchDashboard() {
   const [sharingType, setSharingType] = useState([]);
   const [availableFrom, setAvailableFrom] = useState([]);
 
-  const [sharingTypeOpen, setSharingTypeOpen] = useState(false);
-  const [availableFromOpen, setAvailableFromOpen] = useState(false);
   const [availableFor, setAvailableFor] = useState([]);
-  const [availableForOpen, setAvailableForOpen] = useState(false);
   const [capacity, setCapacity] = useState([]);
-  const [capacityOpen, setCapacityOpen] = useState(false);
   const [investmentOptions, setInvestmentOptions] = useState([]);
   const [purchaseType, setPurchaseType] = useState("");
-  const [investmentOpen, setInvestmentOpen] = useState(false);
 
-  const [plotLandTypes, setPlotLandTypes] = useState([]);
-  const [plotLandOpen, setPlotLandOpen] = useState(false);
-
+  const [plotLandTypes, setPlotLandTypes] = useState(initial.plotLandTypes);
   const [officeType, setOfficeType] = useState([]);
   const [retailType, setRetailType] = useState([]);
-  const [otherCommercialType, setOtherCommercialType] = useState([]);
-
-  const [officeTypeOpen, setOfficeTypeOpen] = useState(false);
-  const [retailTypeOpen, setRetailTypeOpen] = useState(false);
-  const [otherCommercialOpen, setOtherCommercialOpen] = useState(false);
+  const [otherCommercialType, setOtherCommercialType] = useState(initial.otherCommercialType);
 
   const [selectedProperty, setSelectedProperty] = useState(null);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
-  const [buildingType, setBuildingType] = useState("");
-  const [propertyType2, setPropertyType2] = useState([]);
-  const [propertyTypeOpen, setPropertyTypeOpen] = useState(false);
-  const propertyTypeButtonRef = useRef(null);
-  const [parsedFilters, setParsedFilters] = useState({
-  property_category_type: "",
-  building_type: "",
-  property_type: "",
-  bhk_type: "",
-  });
-  //Property Portal
-  const [propertyTypeDropdownPos, setPropertyTypeDropdownPos] = useState({
-    top: 0,
-    left: 0,
-    width: 260,
-  });
-  // Budget Portal
-  const budgetButtonRef = useRef(null);
-
-  const [budgetDropdownPos, setBudgetDropdownPos] = useState({
-    top: 0,
-    left: 0,
-    width: 260,
-  });
-  //Construction Portal
-  const constructionButtonRef = useRef(null);
-
-  const [constructionDropdownPos, setConstructionDropdownPos] = useState({
-    top: 0,
-    left: 0,
-    width: 260,
-  });
-  //Amenities Portal
-  const amenitiesButtonRef = useRef(null);
-  const [amenitiesDropdownPos, setAmenitiesDropdownPos] = useState({
-    top: 0,
-    left: 0,
-    width: 260,
-  });
-  //Area Portal
-  const areaButtonRef = useRef(null);
-  const [areaDropdownPos, setAreaDropdownPos] = useState({
-    top: 0,
-    left: 0,
-    width: 260,
-  });
-  //Sharing Type Portal
-  const sharingTypeButtonRef = useRef(null);
-  const [sharingTypeDropdownPos, setSharingTypeDropdownPos] = useState({
-    top: 0,
-    left: 0,
-    width: 260,
-  });
-  //Available Portal
-  const availableFromButtonRef = useRef(null);
-  const [availableFromDropdownPos, setAvailableFromDropdownPos] = useState({
-    top: 0,
-    left: 0,
-    width: 260,
-  });
-  //Available for Portal
-  const availableForButtonRef = useRef(null);
-  const [availableForDropdownPos, setAvailableForDropdownPos] = useState({
-    top: 0,
-    left: 0,
-    width: 260,
-  });
-  //Capacity Portal
-  const capacityButtonRef = useRef(null);
-  const [capacityDropdownPos, setCapacityDropdownPos] = useState({
-    top: 0,
-    left: 0,
-    width: 260,
-  });
-  //Invesment Portal
-  const investmentButtonRef = useRef(null);
-  const [investmentDropdownPos, setInvestmentDropdownPos] = useState({
-    top: 0,
-    left: 0,
-    width: 260,
-  });
-  //Plot Land Type
-  const plotLandButtonRef = useRef(null);
-  const [plotLandDropdownPos, setPlotLandDropdownPos] = useState({
-    top: 0,
-    left: 0,
-    width: 0,
-  });
-  //Office Type
-  const officeTypeButtonRef = useRef(null);
-  const [officeTypeDropdownPos, setOfficeTypeDropdownPos] = useState({
-    top: 0,
-    left: 0,
-    width: 0,
-  });
-  //Retail Type
-  const retailTypeButtonRef = useRef(null);
-  const [retailTypeDropdownPos, setRetailTypeDropdownPos] = useState({
-    top: 0,
-    left: 0,
-    width: 0,
-  });
-  //Other Commercial Type
-  const otherCommercialButtonRef = useRef(null);
-  const [otherCommercialDropdownPos, setOtherCommercialDropdownPos] = useState({
-    top: 0,
-    left: 0,
-    width: 0,
-  });
+  const [buildingType, setBuildingType] = useState(initial.buildingType);
+  const [propertyType2, setPropertyType2] = useState(initial.propertyTypes);
   const [freeViewCount, setFreeViewCount] = useState(0);
   const [paidViewCount, setPaidViewCount] = useState(0);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+  // Open "More Filters" when the search set one of the filters that live inside it
+  const [showMoreFilters, setShowMoreFilters] = useState(
+    !!(initial.furnishing || initial.postedBy || initial.construction.length)
+  );
+
+  // ========== SINGLE DROPDOWN CONTROL ==========
+  const [openDropdown, setOpenDropdown] = useState(null);
+
+  const toggleDropdown = (name) => {
+    setOpenDropdown((prev) => (prev === name ? null : name));
+  };
+
   const officeTypeOptions = [
     "Ready to move office space",
     "Bare shell office space",
@@ -340,7 +409,7 @@ export default function SearchDashboard() {
     "Cold Storage",
     "Manufacturing",
     "Guest-House/Banquet-Halls",
-    "Retail", // important
+    "Retail",
   ];
 
   const plotLandOptions = [
@@ -357,168 +426,76 @@ export default function SearchDashboard() {
     "Food Court",
     "Multiplex",
     "Co-working",
-    "Corner Shop",
-    "Main Road Shop"
   ];
 
   const purchaseTypeOptions = ["Resale", "New bookings"];
+
   const priceOptions = [
-    500000,
-    1000000,
-    1500000,
-    2000000,
-    2500000,
-    3000000,
-    3500000,
-    4000000,
-    4500000,
-    5000000,
-    5500000,
-    6000000,
-    6500000,
-    7000000,
-    7500000,
-    8000000,
-    8500000,
-    9000000,
-    9500000,
-    10000000,
-    12500000,
-    15000000,
-    17500000,
-    20000000,
-    25000000,
-    30000000,
-    40000000,
-    50000000,
-    75000000,
-    100000000,
-    150000000,
-    200000000,
-    250000000,
-    300000000,
-    400000000,
-    500000000,
-    600000000,
-    700000000,
-    750000000,
-    900000000,
-    1000000000,
-    1500000000,
-    2000000000,
-    2500000000,
-    3000000000,
-    4000000000,
-    5000000000,
-    6000000000,
-    7000000000,
-    7500000000,
-    9000000000,
-    10000000000,
+    500000, 1000000, 1500000, 2000000, 2500000, 3000000, 3500000, 4000000, 4500000, 5000000,
+    5500000, 6000000, 6500000, 7000000, 7500000, 8000000, 8500000, 9000000, 9500000, 10000000,
+    12500000, 15000000, 17500000, 20000000, 25000000, 30000000, 40000000, 50000000, 75000000,
+    100000000, 150000000, 200000000, 250000000, 300000000, 400000000, 500000000, 600000000, 700000000,
+    750000000, 900000000, 1000000000, 1500000000, 2000000000, 2500000000, 3000000000, 4000000000,
+    5000000000, 6000000000, 7000000000, 7500000000, 9000000000, 10000000000,
   ];
-
-  const rentPriceOptions = [
-    5000,
-    6000,
-    7000,
-    8000,
-    9000,
-    10000,
-    15000,
-    20000,
-    25000,
-    30000,
-    40000,
-    50000,
-    60000,
-    70000,
-    80000,
-    90000,
-    100000,
-    200000,
-    300000,
-    400000,
-    500000,
-    600000,
-    700000,
-    800000,
-    900000,
-    1000000,
-
-  ];
-
-  const pgPriceOptions = [
-    5000,
-    6000,
-    7000,
-    8000,
-    9000,
-    10000,
-    15000,
-    20000,
-    25000,
-    30000,
-    40000,
-    50000,
-    60000,
-    70000,
-    80000,
-    90000,
-    100000,
-    200000,
-    300000,
-    400000,
-    500000,
-    600000,
-    700000,
-    800000,
-    900000,
-    1000000,
-  ];
-
-  const budgetOptions =
-    propertyType === "Rent"
-      ? rentPriceOptions
-      : propertyType === "PG/Co-living"
-        ? pgPriceOptions
-        : priceOptions;
-
 
   const areaUnits = [
-    "sq.ft",
-    "sq.yards",
-    "sq.m",
-    "acre",
-    "marla",
-    "cents",
-    "bigha",
-    "kottah",
-    "kanal",
-    "grounds",
-    "ares",
-    "biswa",
-    "guntha",
-    "aankadam",
-    "hectares",
-    "rood",
-    "chataks",
-    "perch",
+    "sq.ft", "sq.yards", "sq.m", "acre", "marla", "cents", "bigha", "kottah",
+    "kanal", "grounds", "ares", "biswa", "guntha", "aankadam", "hectares", "rood",
+    "chataks", "perch",
   ];
 
-  const toggleSquareFtDropdown = () => {
-    setSquareFtDropdownOpen((prev) => !prev);
+  // Multiple Locations Handlers
+  const addLocation = (locName) => {
+    const trimmed = locName.trim();
+    if (!trimmed) return;
+    if (selectedLocations.includes(trimmed)) {
+      setLocationInput("");
+      return;
+    }
+    if (selectedLocations.length >= 3) {
+      toast.error("You can select a maximum of 3 locations.");
+      return;
+    }
+    const updated = [...selectedLocations, trimmed];
+    setSelectedLocations(updated);
+    const updatedStr = updated.join(", ");
+    setSearchCity(updatedStr);
+    setLocationInput("");
+
+    if (activeApi === "filter") {
+      requestFilteredFetch(1);
+    } else {
+      fetchProperties(updatedStr, type, updatedStr);
+    }
   };
-  const togglePriceDropdown = () => {
-    setPriceDropdownOpen((prev) => !prev);
+
+  const removeLocation = (locToRemove) => {
+    const updated = selectedLocations.filter((loc) => loc !== locToRemove);
+    setSelectedLocations(updated);
+    const updatedStr = updated.join(", ");
+    setSearchCity(updatedStr);
+
+    if (activeApi === "filter") {
+      requestFilteredFetch(1);
+    } else {
+      fetchProperties(updatedStr, type, updatedStr);
+    }
+  };
+
+  const handleLocationKeyDown = (e) => {
+    if (e.key === "Enter" && locationInput.trim()) {
+      e.preventDefault();
+      addLocation(locationInput.trim());
+    }
   };
 
   useEffect(() => {
+    // Searches from the search bar set the filters directly (see readSearchState)
+    if (location.state?.zbSearch) return;
     const query = (searchQuery || "").trim().toLowerCase();
     const typeValue = (type || "").trim().toLowerCase();
 
-    if (!query && !typeValue) return;
-
-    //Property Type matches
     const propertyTypes = ["commercial", "residential", "buy", "rent"];
     if (propertyTypes.includes(typeValue)) {
       setPropertyType(capitalize(typeValue));
@@ -526,7 +503,6 @@ export default function SearchDashboard() {
       setPropertyType(capitalize(query));
     }
 
-    // Furnished Status matches
     const furnishedOptions = ["furnished", "semi-furnished", "unfurnished"];
     if (furnishedOptions.includes(typeValue)) {
       setFurnishedStatus(capitalize(typeValue));
@@ -534,19 +510,8 @@ export default function SearchDashboard() {
       setFurnishedStatus(capitalize(query));
     }
 
-    // BHK Type matches
     const bhkOptions = [
-      "Studio",
-      "1 RK",
-      "1 BHK",
-      "1.5 BHK",
-      "2 BHK",
-      "2.5 BHK",
-      "3 BHK",
-      "3.5 BHK",
-      "4 BHK",
-      "5 BHK",
-      "6+ bhk",
+      "Studio", "1 RK", "1 BHK", "1.5 BHK", "2 BHK", "2.5 BHK", "3 BHK", "3.5 BHK", "4 BHK", "5 BHK", "6+ bhk",
     ];
 
     if (bhkOptions.includes(typeValue)) {
@@ -567,237 +532,71 @@ export default function SearchDashboard() {
   }
 
   const handlePrev = () => {
-    setCurrentIndex((prev) =>
-      prev === 0 ? propertyImages.length - 1 : prev - 1,
-    );
+    setCurrentIndex((prev) => (prev === 0 ? propertyImages.length - 1 : prev - 1));
   };
 
   const handleNext = () => {
-    setCurrentIndex((prev) =>
-      prev === propertyImages.length - 1 ? 0 : prev + 1,
-    );
+    setCurrentIndex((prev) => (prev === propertyImages.length - 1 ? 0 : prev + 1));
   };
-  // MAP POPUP SLIDER
-const handleMapPrev = (propertyId, totalImages) => {
-  setMapImageIndexes((prev) => {
-    const currentIndex = prev[propertyId] || 0;
 
-    return {
-      ...prev,
-      [propertyId]:
-        currentIndex === 0 ? totalImages - 1 : currentIndex - 1,
-    };
-  });
-};
-
-const handleMapNext = (propertyId, totalImages) => {
-  setMapImageIndexes((prev) => {
-    const currentIndex = prev[propertyId] || 0;
-
-    return {
-      ...prev,
-      [propertyId]:
-        currentIndex === totalImages - 1 ? 0 : currentIndex + 1,
-    };
-  });
-};
-  const fetchProperties = async (
-    searchCity,
-    type,
-    searchQuery,
-    sortValue = appliedSortBy,
-    verifiedValue = appliedVerifiedOnly,
-  ) => {
+  const fetchProperties = async (cityParam, typeParam, queryParam) => {
+    const seq = ++fetchSeq.current;
     try {
       setLoading(true);
+      const targetCity = cityParam !== undefined ? cityParam : selectedLocations.join(", ");
       const fetchPropertiesFormData = new FormData();
-      fetchPropertiesFormData.append("user_id", accessToken);
+      fetchPropertiesFormData.append("user_id", accessToken || "");
+      fetchPropertiesFormData.append("city_name", targetCity);
+      fetchPropertiesFormData.append("search_query", targetCity || queryParam || "");
+      fetchPropertiesFormData.append("building_type", typeParam || type || "");
       fetchPropertiesFormData.append("page", currentPage);
       fetchPropertiesFormData.append("page_size", itemsPerPage);
 
-      if (isNearMe && userLat && userLng) {
-        fetchPropertiesFormData.append("is_near_me", "true");
-        fetchPropertiesFormData.append("latitude", userLat);
-        fetchPropertiesFormData.append("longitude", userLng);
-        fetchPropertiesFormData.append("radius", 5);
-      } else {
-        fetchPropertiesFormData.append("city_name", searchCity);
-        fetchPropertiesFormData.append(
-  "search_query",
-  searchQuery || type || ""
-);
-        fetchPropertiesFormData.append("building_type", type);
-      }
-
-      if (sortValue) {
-        fetchPropertiesFormData.append("sort_by", sortValue);
-      }
-      if (verifiedValue) {
-        fetchPropertiesFormData.append("verified", true);
-      }
       const response = await axios.post(
-        `${API_URL}/cust_api/search_properties`,
+        `${process.env.REACT_APP_API_URL}/cust_api/search_properties`,
         fetchPropertiesFormData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        },
+        { headers: { "Content-Type": "multipart/form-data" } }
       );
+      if (seq !== fetchSeq.current) return; // a newer search has started
+
       if (response.status === 200 && response.data.status === 1) {
-  setProperties(response.data.data);
-  setTotalPages(response.data.total_pages || 1);
-  setTotalResults(response.data.total_count || 0);
-
-  // if (response.data.parsed_filters) {
-  //   setParsedFilters(response.data.parsed_filters);
-  // }
-  if (response.data.parsed_filters) {
-  const parsed = response.data.parsed_filters;
-
-  setParsedFilters(parsed);
-
-  if (parsed.address_area && parsed.city_name) {
-    setSearchLocation(`${parsed.address_area}, ${parsed.city_name}`);
-  } else if (parsed.city_name) {
-    setSearchLocation(parsed.city_name);
-  } else {
-    setSearchLocation("");
-  }
-}
-} else {
-  setError("No properties available");
-  setProperties([]);
-  setTotalPages(0);
-  setTotalResults(0);
-}
-    } catch (error) {
+        setProperties(response.data.data);
+        setTotalPages(response.data.total_pages || 1);
+        setTotalCount(readTotal(response.data));
+      } else {
+        setError("No properties available");
+        setProperties([]);
+        setTotalPages(0);
+        setTotalCount(0);
+      }
+    } catch (err) {
+      if (seq !== fetchSeq.current) return;
       setError("Failed to load properties.");
       setProperties([]);
       setTotalPages(0);
-      setTotalResults(0);
+      setTotalCount(0);
     } finally {
-      setLoading(false);
+      if (seq === fetchSeq.current) setLoading(false);
     }
   };
-  useEffect(() => {
-  console.log("Parsed Filters:", parsedFilters);
-}, [parsedFilters]);
-const BUY_PROPERTY_TYPE_MAPPING = {
-    "Apartment": "Flat/Apartment",
-    "Independent House/Villa": "Home/Villa",
-    "Plot/Land": "Plot/Land",
-};
 
-const RENT_PROPERTY_TYPE_MAPPING = {
-    "Apartment": "Flat/Apartment",
-    "Independent House/Villa": "Independent House/Villa",
-};
-const COMMERCIAL_BUY_PROPERTY_TYPE_MAPPING = {
-    "Office": "Ready to move office space",
-    "Retail": "Retail",
-    "Plot/Land": "Plot/Land",
-    "Storage": "Ware House",
-    "Industry": "Manufacturing",
-    "Hospitality": "Hotel/Resorts",
-    "Other": "Others",
-};
-
-const COMMERCIAL_LEASE_PROPERTY_TYPE_MAPPING = {
-    "Office": "Office Space",
-    "Retail": "Retail Shops/Showrooms",
-    "Plot/Land": "Plot/Land",
-    "Storage": "Other Commercial Spaces",
-    "Industry": "Other Commercial Spaces",
-    "Hospitality": "Other Commercial Spaces",
-    "Other": "Other Commercial Spaces",
-};
-  useEffect(() => {
-  if (!parsedFilters) return;
-
-  if (parsedFilters.property_category_type) {
-    setPropertyType(parsedFilters.property_category_type);
-  }
-
-  if (parsedFilters.building_type) {
-    setBuildingType(parsedFilters.building_type);
-  }
-
-  if (parsedFilters.bhk_type) {
-    setBhkType(parsedFilters.bhk_type);
-  }
-
-  if (parsedFilters.property_type) {
-    console.log("Backend Property Type:", parsedFilters.property_type);
-
-    let propertyType = parsedFilters.property_type;
-
-if (parsedFilters.building_type === "Residential") {
-    if (parsedFilters.property_category_type === "Buy") {
-        propertyType =
-            BUY_PROPERTY_TYPE_MAPPING[propertyType] || propertyType;
-    } else if (parsedFilters.property_category_type === "Rent") {
-        propertyType =
-            RENT_PROPERTY_TYPE_MAPPING[propertyType] || propertyType;
-    }
-} else if (parsedFilters.building_type === "Commercial") {
-    if (parsedFilters.property_category_type === "Buy" ||
-        parsedFilters.property_category_type === "Commercial Buy"
-    ) {
-        propertyType =
-            COMMERCIAL_BUY_PROPERTY_TYPE_MAPPING[propertyType] || propertyType;
-    } else if (
-        parsedFilters.property_category_type === "Commercial Lease" ||
-        parsedFilters.property_category_type === "Lease" ||
-        parsedFilters.property_category_type === "Rent"
-    ) {
-        propertyType =
-            COMMERCIAL_LEASE_PROPERTY_TYPE_MAPPING[propertyType] || propertyType;
-    }
-}
-console.log("Mapped Property Type:", propertyType);
-
-setPropertyType2([propertyType]);
-}
-}, [parsedFilters]);
-useEffect(() => {
-  console.log({
-    propertyType,
-    buildingType,
-    bhkType,
-    propertyType2,
-  });
-}, [propertyType, buildingType, bhkType, propertyType2]);
-  const fetchFilteredProperties = async (
-    page,
-    sortValue = appliedSortBy,
-    verifiedValue = appliedVerifiedOnly,
-  ) => {
+  const fetchFilteredProperties = async (page) => {
+    const seq = ++fetchSeq.current;
     try {
-  setError(null);
+      setLoading(true);
+      setError(null);
+      const formData = new FormData();
+      const cityToSend = selectedLocations.join(", ");
 
-  const formData = new FormData();
-
-  formData.append("customer_id", accessToken);
-
-  if (searchCity) {
-  formData.append("city_name", searchCity);
-} else if (parsedFilters?.city_name) {
-  formData.append("city_name", parsedFilters.city_name);
-}
-
-  if (parsedFilters?.address_area) {
-    formData.append("address_area", parsedFilters.address_area);
-  }
-
-  formData.append("page", page);
-  formData.append("page_size", itemsPerPage);
-  formData.append("search_keyword", searchQuery);
-
-      if (sortValue) {
-        formData.append("sort_by", sortValue); // newest | oldest | price_low | price_high
+      formData.append("customer_id", accessToken || "");
+      if (cityToSend) {
+        formData.append("city_name", cityToSend);
       }
-      if (verifiedValue) {
-        formData.append("verified", true);
-      }
+
+      formData.append("page", page);
+      formData.append("page_size", itemsPerPage);
+      const localityKeyword = SEND_LOCALITY_TO_SERVER ? universal?.locality : "";
+      formData.append("search_keyword", localityKeyword || cityToSend || searchQuery || "");
 
       if (buildingType) {
         formData.append("building_type", buildingType);
@@ -810,18 +609,10 @@ useEffect(() => {
             : propertyType === "Commercial Lease"
               ? "Rent"
               : propertyType;
-
         formData.append("property_category_type", apiPropertyCategory);
       }
 
-      // ============================
-      //  COMMERCIAL MAPPING
-      // ============================
-
-      if (
-        propertyType === "Commercial Lease" &&
-        buildingType === "Commercial"
-      ) {
+      if (propertyType === "Commercial Lease" && buildingType === "Commercial") {
         const mapped = mapCommercialLeaseTypes({
           propertyType2,
           officeType,
@@ -829,47 +620,25 @@ useEffect(() => {
           otherCommercialType,
           plotLandTypes,
         });
-
-        if (mapped.property_type.length > 0) {
+        if (mapped.property_type.length > 0)
           formData.append("property_type", mapped.property_type.join(","));
-        }
-
-        if (mapped.office_type.length > 0) {
+        if (mapped.office_type.length > 0)
           formData.append("office_type", mapped.office_type.join(","));
-        }
-
-        if (mapped.sub_sub_property_type.length > 0) {
-          formData.append(
-            "sub_sub_property_type",
-            mapped.sub_sub_property_type.join(","),
-          );
-        }
-      } else if (propertyType === "Commercial Buy") {
+        if (mapped.sub_sub_property_type.length > 0)
+          formData.append("sub_sub_property_type", mapped.sub_sub_property_type.join(","));
+      } else if (propertyType === "Commercial Buy" || (!propertyType && buildingType === "Commercial")) {
+        // Building type "Commercial" without Buy/Lease lists the same options as Commercial Buy
         const mapped = mapCommercialTypes(propertyType2);
-
-        if (mapped.property_type.length > 0) {
+        if (mapped.property_type.length > 0)
           formData.append("property_type", mapped.property_type.join(","));
-        }
-
-        if (mapped.office_type.length > 0) {
+        if (mapped.office_type.length > 0)
           formData.append("office_type", mapped.office_type.join(","));
-        }
-
-        if (mapped.sub_sub_property_type.length > 0) {
-          formData.append(
-            "sub_sub_property_type",
-            mapped.sub_sub_property_type.join(","),
-          );
-        }
+        if (mapped.sub_sub_property_type.length > 0)
+          formData.append("sub_sub_property_type", mapped.sub_sub_property_type.join(","));
       } else {
-        if (propertyType2.length > 0) {
+        if (propertyType2.length > 0)
           formData.append("property_type", propertyType2.join(","));
-        }
       }
-
-      // ============================
-      // OTHER FILTERS
-      // ============================
 
       if (bhkType) formData.append("bhk_type", bhkType);
       if (furnishedStatus) formData.append("furnished_type", furnishedStatus);
@@ -877,688 +646,289 @@ useEffect(() => {
       if (maxPrice) formData.append("max_price", maxPrice);
       if (minSquareFt) formData.append("min_area", minSquareFt);
       if (maxSquareFt) formData.append("max_area", maxSquareFt);
-
-      if ((minSquareFt || maxSquareFt) && areaIn) {
-        formData.append("area_in", areaIn);
-      }
-
+      if ((minSquareFt || maxSquareFt) && areaIn) formData.append("area_in", areaIn);
       if (postedBy) formData.append("user_type", postedBy);
-
-      if (constructionStatus.length > 0) {
+      if (constructionStatus.length > 0)
         formData.append("construction_status", constructionStatus.join(","));
-      }
-
-      if (selectedAmenities.length > 0) {
+      if (selectedAmenities.length > 0)
         formData.append("amenities", selectedAmenities.join(","));
-      }
-
       if (bathrooms) formData.append("number_of_minimum_bathrooms", bathrooms);
       if (facing) formData.append("facing", facing);
       if (withPhoto) formData.append("with_photo", withPhoto);
       if (withVideos) formData.append("with_videos", withVideos);
-
-      if (availableFor.length > 0) {
+      if (availableFor.length > 0)
         formData.append("available_for", availableFor.join(","));
-      }
-
-      if (sharingType.length > 0) {
+      if (sharingType.length > 0)
         formData.append("sharing_type", sharingType.join(","));
-      }
-
-      if (availableFrom.length > 0) {
+      if (availableFrom.length > 0)
         formData.append("available_from", availableFrom.join(","));
-      }
-
-      if (capacity.length > 0) {
+      if (capacity.length > 0)
         formData.append("available_beds", mapCapacityToBeds(capacity));
-      }
-
-      if (investmentOptions.length > 0) {
+      if (investmentOptions.length > 0)
         formData.append("investment_options", investmentOptions.join(","));
-      }
-
-      if (purchaseType) {
-        formData.append("purchase_type", purchaseType);
-      }
-
-      // ============================
-      // API CALL
-      // ============================
+      if (purchaseType) formData.append("purchase_type", purchaseType);
 
       const response = await axios.post(
-        `${API_URL}/cust_api/filter_property`,
+        `${process.env.REACT_APP_API_URL}/cust_api/filter_property`,
         formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        },
+        { headers: { "Content-Type": "multipart/form-data" } }
       );
+      if (seq !== fetchSeq.current) return; // a newer search has started
 
       if (response.status === 200 && response.data.status === 1) {
         setProperties(response.data.data);
         setTotalPages(response.data.total_pages || 1);
-        setTotalResults(response.data.total_count || 0);
+        setTotalCount(readTotal(response.data));
       } else {
         setProperties([]);
         setTotalPages(0);
-        setTotalResults(0);
+        setTotalCount(0);
         setError("No properties available");
       }
-    } catch (error) {
+    } catch (err) {
+      if (seq !== fetchSeq.current) return;
       setProperties([]);
       setTotalPages(0);
-      setTotalResults(0);
+      setTotalCount(0);
       setError("Failed to load properties.");
     } finally {
-      setLoading(false);
+      if (seq === fetchSeq.current) setLoading(false);
     }
   };
 
   useEffect(() => {
     setError(null);
-    setProperties([]);
-    const style = document.createElement("style");
-    style.innerHTML = `
-      .leaflet-popup-content-wrapper {
-        margin-bottom: 50px !important;
-        padding: 0 !important;
-      }
-
-      .leaflet-popup-content {
-        margin: 0 !important;
-        padding: 0 !important;
-      }
-
-      .leaflet-container a.leaflet-popup-close-button {
-        z-index: 1000;
-        top: 5px !important;
-        left: 10px;
-        border: none;
-        background-color: rgba(0, 0, 0, 0.6);
-        color: white;
-        cursor: pointer;
-        border-radius: 50%;
-      }
-
-      .leaflet-container a.leaflet-popup-close-button:hover {
-        background-color: rgba(0, 0, 0, 0.9);
-        color: white;
-      }
-
-      .leaflet-container .leaflet-popup-heart-button {
-        z-index: 1000;
-        position: absolute;
-        top: 5px;
-        right: 10px;
-        width: 26px;
-        height: 24px;
-        border: none;
-        background-color: rgba(0, 0, 0, 0.6);
-        color: white;
-        cursor: pointer;
-        border-radius: 20%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 1px;
-      }
-
-      .leaflet-container .leaflet-popup-heart-button:hover {
-        background-color: rgba(0, 0, 0, 0.9);
-        color: white;
-      }
-
-      .custom-marker.active .marker-wrapper .price-tooltip {
-        background-color: green;
-      }
-
-      .marker-wrapper {
-        position: relative;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-      }
-
-      .price-tooltip {
-        background: white;
-        color: black;
-        padding: 8px 12px;
-        border-radius: 18px;
-        font-weight: bold;
-        font-size: 1.1rem;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-        position: relative;
-        text-align: center;
-        white-space: nowrap;
-        z-index: 10;
-      }
-
-      .price-tooltip:hover {
-        background-color: gray;
-        color: white;
-      }
-
-      .price-tooltip .pointer {
-        position: absolute;
-        bottom: -8px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 0;
-        height: 0;
-        border-left: 8px solid transparent;
-        border-right: 8px solid transparent;
-        border-top: 8px solid white;
-        background-color: lightgray;
-      }
-
-      .custom-marker {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-
-      input[type="number"]::-webkit-outer-spin-button,
-      input[type="number"]::-webkit-inner-spin-button {
-        -webkit-appearance: none;
-        margin: 0;
-      }
-
-      input[type="number"] {
-        -moz-appearance: textfield;
-      }
-
-      .custom-button {
-        font-family: "Arial", sans-serif;
-        font-size: 1.5rem;
-        background-color: #fff;
-        padding: 0.5rem;
-        text-align: center;
-        cursor: pointer;
-      }
-
-      .custom-button:hover {
-        background-color: #f0f0f0;
-        color: #333;
-      }
-    `;
-    document.head.appendChild(style);
-
     if (activeApi === "filter") {
       fetchFilteredProperties(currentPage);
     } else {
-      console.log("SEARCH DASHBOARD VALUES:", {
-    searchCity,
-    type,
-    searchQuery,
-  });
-
-      fetchProperties(searchCity, type, searchQuery);
+      fetchProperties(selectedLocations.join(", "), type, selectedLocations.join(", "));
     }
+  }, [currentPage, accessToken]);
 
-    return () => {
-      document.head.removeChild(style);
-    };
-  }, [searchCity, type, searchQuery, currentPage, accessToken, appliedSortBy, appliedVerifiedOnly]);
-
-  const formatPrice = (price) => {
-    if (!price) return "";
-
-    price = Number(price);
-
-    const formatNumber = (num) => {
-      return num.toFixed(2).replace(/\.?0+$/, "");
-    };
-
-    if (price >= 10000000) {
-      return `₹ ${formatNumber(price / 10000000)} Cr`; // Crores
-    } else if (price >= 100000) {
-      return `₹ ${formatNumber(price / 100000)} L`; // Lakhs
-    } else if (price >= 1000) {
-      return `₹ ${formatNumber(price / 1000)} K`; // Thousands
+  // Runs after the filter state has committed, so it always sends the latest values.
+  useEffect(() => {
+    if (filterRequestId === 0) return;
+    setError(null);
+    if (activeApi === "filter") {
+      fetchFilteredProperties(currentPage);
     } else {
-      return `₹ ${price}`;
+      fetchProperties(selectedLocations.join(", "), type, selectedLocations.join(", "));
     }
+  }, [filterRequestId]);
+
+  // Filter changes must not call fetchFilteredProperties directly: React state
+  // updates are async, so the call would read the previous filter values.
+  // Instead we bump a counter and fetch from an effect that runs after the new state commits.
+  const requestFilteredFetch = (page = 1) => {
+    setCurrentPage(page);
+    setFilterRequestId((id) => id + 1);
+  };
+
+  // A new search from the navbar while this page is open: the route stays the same and only
+  // the router state changes. Replace every filter with the new search and fetch again.
+  useEffect(() => {
+    if (appliedKey.current === location.key) return;
+    appliedKey.current = location.key;
+    const next = readSearchState(location.state);
+    if (!next.isSearch) return;
+
+    incomingCities.current = next.locations.join(", ");
+    setUniversal(next.universal);
+    setSelectedLocations(next.locations);
+    setPropertyType(next.propertyType);
+    setBuildingType(next.buildingType);
+    setPropertyType2(next.propertyTypes);
+    setPlotLandTypes(next.plotLandTypes);
+    setOtherCommercialType(next.otherCommercialType);
+    setBhkType(next.bhk);
+    setFurnishedStatus(next.furnishing);
+    setConstructionStatus(next.construction);
+    setMinPrice(next.minPrice);
+    setMaxPrice(next.maxPrice);
+    setPostedBy(next.postedBy);
+
+    // Filters the search text cannot set start clean
+    setOfficeType([]);
+    setRetailType([]);
+    setMinSquareFt("");
+    setMaxSquareFt("");
+    setAreaIn("sq.ft");
+    setSelectedAmenities([]);
+    setBathrooms("");
+    setFacing("");
+    setWithPhoto("");
+    setWithVideos("");
+    setAvailableFor([]);
+    setSharingType([]);
+    setAvailableFrom([]);
+    setCapacity([]);
+    setInvestmentOptions([]);
+    setPurchaseType("");
+
+    setOpenDropdown(null);
+    if (next.furnishing || next.postedBy || next.construction.length) setShowMoreFilters(true);
+    setFiltersApplied(next.hasFilters);
+    setActiveApi(next.hasFilters ? "filter" : "search");
+    requestFilteredFetch(1);
+  }, [location.key]);
+
+  // Keep the results in sync with the navbar location search. The navbar writes
+  // the typed city into the shared searchCity context.
+  useEffect(() => {
+    const parsed = parseCities(searchCity);
+    // A search that just arrived through the router has already applied these cities
+    const expected = incomingCities.current;
+    incomingCities.current = null;
+    if (expected !== null && parsed.join(", ") === expected) return;
+    if (parsed.join(", ") === selectedLocations.join(", ")) return;
+    setSelectedLocations(parsed);
+    if (activeApi === "filter") {
+      requestFilteredFetch(1);
+    } else if (currentPage !== 1) {
+      setCurrentPage(1);
+    } else {
+      fetchProperties(parsed.join(", "), type, parsed.join(", "));
+    }
+  }, [searchCity]);
+
+  const handleAutoApply = () => {
+    setFiltersApplied(true);
+    setActiveApi("filter");
+    requestFilteredFetch(1);
+  };
+
+  const handleResetFilters = () => {
+    setPropertyType("");
+    setBuildingType("");
+    setBhkType("");
+    setFurnishedStatus("");
+    setMinPrice("");
+    setMaxPrice("");
+    setMinSquareFt("");
+    setMaxSquareFt("");
+    setPostedBy("");
+    setConstructionStatus([]);
+    setSelectedAmenities([]);
+    setBathrooms("");
+    setFacing("");
+    setWithPhoto("");
+    setWithVideos("");
+    setPropertyType2([]);
+    setAvailableFor([]);
+    setSharingType([]);
+    setAvailableFrom([]);
+    setCapacity([]);
+    setInvestmentOptions([]);
+    setPurchaseType("");
+    setPlotLandTypes([]);
+    setOfficeType([]);
+    setRetailType([]);
+    setOtherCommercialType([]);
+    setAreaIn("sq.ft");
+    setOpenDropdown(null);
+    setFiltersApplied(false);
+    setUniversal(null);
+    setActiveApi("search");
+    setCurrentPage(1);
+    fetchProperties(selectedLocations.join(", "), type, selectedLocations.join(", "));
   };
 
   const formatPriceMinMax = (value) => {
     const num = Number(value);
-
-    const formatNumber = (n) =>
-      n.toFixed(2).replace(/\.?0+$/, "");
-
-    if (num >= 10000000)
-      return `${formatNumber(num / 10000000)} Cr`;
-
-    if (num >= 100000)
-      return `${formatNumber(num / 100000)} L`;
-
-    if (num >= 1000)
-      return `${formatNumber(num / 1000)} K`;
-
-    return num.toString();
-  };
-  // 5L = 500000, goes up to 75Cr (750000000)
-
-  const createCustomIcon = (property, isActive = false) => {
-  // Decide what to display
-  let displayValue = "";
-
-  const category = property.property_category_type?.toLowerCase() || "";
-
-  if (
-    (category === "buy" || category === "commercial buy") &&
-    property.property_price
-  ) {
-    displayValue = formatPrice(property.property_price);
-  } else if (
-    category === "rent" ||
-    category === "commercial lease" ||
-    category.includes("pg") ||
-    category.includes("co-living") ||
-    category.includes("coliving")
-  ) {
-    if (property.rent) {
-      displayValue = formatPrice(property.rent);
-    }
-  }
-
-  return L.divIcon({
-    className: `custom-marker ${isActive ? "active" : ""}`,
-    html: `
-      <div class="marker-wrapper">
-        <div class="price-tooltip">
-          ${displayValue}
-          <div class="pointer"></div>
-        </div>
-      </div>
-    `,
-    iconSize: [50, 60],
-    iconAnchor: [25, 60],
-  });
-};
-
-  // Category badge helper (same as FeaturedDashboard)
-  const getCategoryBadge = (property) => {
-    const rawCategory = property.property_category_type || "";
-    const buildingTypeRaw = property.building_type || "";
-
-    const normalizedCategory = rawCategory
-      .replace(/\s+/g, " ")
-      .replace(/-/g, " ")
-      .replace(/\//g, " ")
-      .trim()
-      .toLowerCase();
-
-    const normalizedBuilding = buildingTypeRaw.trim().toLowerCase();
-
-    let badgeText = "";
-    let badgeColor = "bg-[#8B1E3F]";
-
-    if (normalizedBuilding === "commercial" && normalizedCategory === "buy") {
-      badgeText = "COMMERCIAL BUY";
-      badgeColor = "bg-[#8B1E3F]";
-    } else if (
-      normalizedBuilding === "commercial" &&
-      normalizedCategory === "rent"
-    ) {
-      badgeText = "COMMERCIAL LEASE";
-      badgeColor = "bg-[#8B1E3F]";
-    } else if (normalizedCategory === "buy") {
-      badgeText = "FOR BUY";
-      badgeColor = "bg-[#8B1E3F]";
-    } else if (normalizedCategory === "rent") {
-      badgeText = "FOR RENT";
-      badgeColor = "bg-[#8B1E3F]";
-    } else if (
-      normalizedCategory.includes("pg") ||
-      normalizedCategory.includes("co living") ||
-      normalizedCategory.includes("coliving")
-    ) {
-      badgeText = "PG / CO-LIVING";
-      badgeColor = "bg-[#8B1E3F]";
-    } else if (normalizedBuilding === "residential") {
-      badgeText = "RESIDENTIAL";
-      badgeColor = "bg-[#8B1E3F]";
-    }
-
-    return { badgeText, badgeColor };
+    if (num >= 10000000) return (num / 10000000).toFixed(1).replace(/\.0$/, "") + " Cr";
+    if (num >= 100000) return (num / 100000).toFixed(1).replace(/\.0$/, "") + " L";
+    if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, "") + " K";
+    return num;
   };
 
-  // Handle button click
-  const handleButtonClick = async () => {
-    if (filtersApplied) {
-      // Reset all filters
-      setPropertyType("");
-      setBuildingType("");
-      setBhkType("");
-      setFurnishedStatus("");
-      setMinPrice("");
-      setMaxPrice("");
-      setMinSquareFt("");
-      setMaxSquareFt("");
-      setPostedBy("");
-      setConstructionStatus([]);
-      setSelectedAmenities([]);
-      setBathrooms("");
-      setFacing("");
-      setWithPhoto("");
-      setWithVideos("");
-      setPropertyType2([]);
-      setAvailableFor([]);
-      setSharingType([]);
-      setAvailableFrom([]);
-      setCapacity([]);
-      setInvestmentOptions([]);
-      setPurchaseType("");
+  const formatPrice = (price) => {
+    const n = Number(price);
+    if (!price || isNaN(n) || n <= 0) return "On request";
+    if (n >= 10000000) return `₹ ${(n / 10000000).toFixed(2)} Cr`;
+    if (n >= 100000) return `₹ ${(n / 100000).toFixed(2)} L`;
+    if (n >= 1000) return `₹ ${(n / 1000).toFixed(2)} K`;
+    return `₹ ${n}`;
+  };
 
-      setPlotLandTypes([]);
+  const getPaginationRange = () => {
+    const range = [];
+    const groupSize = 3;
+    const groupStart = Math.floor((currentPage - 1) / groupSize) * groupSize + 1;
+    const groupEnd = Math.min(groupStart + groupSize - 1, totalPages);
+    for (let i = groupStart; i <= groupEnd; i++) range.push(i);
+    if (groupEnd < totalPages) {
+      range.push("...");
+      range.push(totalPages);
+    }
+    return range;
+  };
 
-      // Reset Sort By & Verified (both selected and applied state)
-      setSortBy("");
-      setVerifiedOnly(false);
-      setAppliedSortBy("");
-      setAppliedVerifiedOnly(false);
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) setCurrentPage(page);
+  };
 
-      // Close dropdowns
-      setPriceDropdownOpen(false);
-      setSquareFtDropdownOpen(false);
-      setAmenitiesOpen(false);
-
-      // Reset mode
-      setFiltersApplied(false);
-      setActiveApi("search");
-      setCurrentPage(1);
-
-      fetchProperties(searchCity, type, searchQuery, "", false);
-    } else {
-      // Lock in the currently selected Sort By & Verified values
-      setAppliedSortBy(sortBy);
-      setAppliedVerifiedOnly(verifiedOnly);
-
-      setFiltersApplied(true);
-      setActiveApi("filter");
-      setCurrentPage(1);
-
-      fetchFilteredProperties(1, sortBy, verifiedOnly);
-      setAreaIn("sq.ft");
+  // HOVER: CARD <-> MAP
+  const handleCardEnter = (property) => {
+    setHoveredPropertyId(property._id);
+    const lat = parseFloat(property.latitude);
+    const lng = parseFloat(property.longitude);
+    if (!isNaN(lat) && !isNaN(lng)) {
+      setPanTarget({ lat, lng });
     }
   };
 
-  const openShareModal1 = (url, propertyId) => {
-    setCurrentShareUrl(url);
-    setActiveShareId(propertyId);
-    setIsShareModalOpen(true);
+  const handleCardLeave = () => {
+    setHoveredPropertyId(null);
   };
 
-  const handleCloseShareModal = () => {
-    setIsShareModalOpen(false);
-    setActiveShareId(null);
-  };
+  const isMarkerActive = (id) => id === activePropertyId || id === hoveredPropertyId;
 
-  const [activeIndex, setActiveIndex] = useState(0);
-  const images = [properties.cover_image, "image2_url", "image3_url"];
-
-  // Auto-slide effect
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setActiveIndex((prevIndex) => (prevIndex + 1) % images.length);
-    }, 3000); // 3000ms = 3 seconds for auto-slide
-
-    return () => clearInterval(interval); // Cleanup on component unmount
-  }, [images.length]);
-
-  //  Add to favorites
-  const addToFavorites = async (PropertyId) => {
-    if (!accessToken) {
-      toast.error("You must be logged in to perform this action");
-      return;
-    }
-
-    try {
-      const response = await axios.post(
-        `${API_URL}/cust_api/add_to_favorite`,
-        {
-          user_id: accessToken,
-          property_id: PropertyId,
-        },
-      );
-
-      // Update property in local state
-      if (response.data.status === 1) {
-        fetchProperties(searchCity, type, searchQuery);
-      } else {
-        console.error("Failed to remove:", response.data.message);
-      }
-    } catch (error) {
-      console.error("Error adding property to favorites:", error);
-    }
-  };
-
-  //  Remove to favorites
-  const removeFromFavorites = async (favoriteId) => {
-    const formData = new FormData();
-    formData.append("favorite_id", favoriteId);
-
-    try {
-      const response = await axios.delete(
-        `${API_URL}/cust_api/remove_from_favorite`,
-        { data: formData },
-      );
-
-      if (response.data.status === 1) {
-        fetchProperties(searchCity, type, searchQuery);
-      } else {
-        console.error("Failed to remove:", response.data.message);
-      }
-    } catch (error) {
-      console.error("Error unfavoriting:", error);
-    }
-  };
-
-  const handleSaveSearch = async () => {
-    if (!accessToken) {
-      toast.error("Please login first to save search.");
-      setIsLoginModalOpen(true);
-      return;
-    }
-
-    try {
-      const propertyIds = [];
-      const propertyNames = [];
-      const propertyCategories = [];
-      const buildingTypes = [];
-
-      properties.forEach((prop) => {
-        propertyIds.push(prop._id || "");
-        propertyNames.push(prop.property_name || "");
-        propertyCategories.push(prop.property_category_type || "");
-        buildingTypes.push(prop.building_type || "");
-      });
-
-      const formData = new FormData();
-
-      // =========================
-      // USER + PROPERTY
-      // =========================
-      formData.append("user_id", accessToken);
-      formData.append("property_id", propertyIds.join("|"));
-      formData.append("property_name", propertyNames.join("|"));
-      formData.append("property_category_type", propertyCategories.join("|"));
-      formData.append("building_type", buildingTypes.join("|"));
-
-      // =========================
-      // SEARCH INFO
-      // =========================
-      formData.append("city_name", searchCity || "");
-      formData.append("search_keyword", searchQuery || "");
-
-      // =========================
-      // COMMERCIAL MAPPING (CRITICAL)
-      // =========================
-      if (
-        propertyType === "Commercial Lease" &&
-        buildingType === "Commercial"
-      ) {
-        const mapped = mapCommercialLeaseTypes({
-          propertyType2,
-          officeType,
-          retailType,
-          otherCommercialType,
-          plotLandTypes,
-        });
-
-        if (mapped.property_type.length)
-          formData.append("property_type", mapped.property_type.join(","));
-
-        if (mapped.office_type.length)
-          formData.append("office_type", mapped.office_type.join(","));
-
-        if (mapped.sub_sub_property_type.length)
-          formData.append(
-            "sub_sub_property_type",
-            mapped.sub_sub_property_type.join(","),
-          );
-      } else if (propertyType === "Commercial Buy") {
-        const mapped = mapCommercialTypes(propertyType2);
-
-        if (mapped.property_type.length)
-          formData.append("property_type", mapped.property_type.join(","));
-
-        if (mapped.office_type.length)
-          formData.append("office_type", mapped.office_type.join(","));
-
-        if (mapped.sub_sub_property_type.length)
-          formData.append(
-            "sub_sub_property_type",
-            mapped.sub_sub_property_type.join(","),
-          );
-      } else {
-        if (propertyType2.length > 0) {
-          formData.append("property_type", propertyType2.join(","));
-        }
-      }
-
-      // =========================
-      // BASIC FILTERS
-      // =========================
-      if (bhkType) formData.append("bhk_type", bhkType);
-      if (furnishedStatus) formData.append("furnished_type", furnishedStatus);
-      if (minPrice) formData.append("min_price", minPrice);
-      if (maxPrice) formData.append("max_price", maxPrice);
-      if (minSquareFt) formData.append("min_area", minSquareFt);
-      if (maxSquareFt) formData.append("max_area", maxSquareFt);
-      if (areaIn) formData.append("area_in", areaIn);
-      if (postedBy) formData.append("user_type", postedBy);
-
-      // =========================
-      // MULTI SELECT
-      // =========================
-      if (constructionStatus.length > 0) {
-        formData.append("construction_status", constructionStatus.join(","));
-      }
-
-      if (selectedAmenities.length > 0) {
-        formData.append("amenities", selectedAmenities.join(","));
-      }
-
-      // =========================
-      // EXTRA FILTERS
-      // =========================
-      if (bathrooms) formData.append("no_of_bathrooms", bathrooms);
-      if (facing) formData.append("facing", facing);
-      if (withPhoto) formData.append("with_photo", withPhoto);
-      if (withVideos) formData.append("with_videos", withVideos);
-
-      if (availableFor.length > 0) {
-        formData.append("available_for", availableFor.join(","));
-      }
-
-      if (sharingType.length > 0) {
-        formData.append("sharing_type", sharingType.join(","));
-      }
-
-      if (availableFrom.length > 0) {
-        formData.append("available_from", availableFrom.join(","));
-      }
-
-      if (capacity.length > 0) {
-        formData.append("available_beds", mapCapacityToBeds(capacity));
-      }
-
-      if (investmentOptions.length > 0) {
-        formData.append("investment_options", investmentOptions.join(","));
-      }
-
-      if (purchaseType) {
-        formData.append("purchase_type", purchaseType);
-      }
-
-      // =========================
-      // API CALL
-      // =========================
-      const response = await fetch(
-        `${API_URL}/cust_api/add_save_search_property`,
-        {
-          method: "POST",
-          body: formData,
-        },
-      );
-
-      const result = await response.json();
-
-      if (response.ok && result.status === 1) {
-        toast.success("Search saved successfully!");
-      } else {
-        toast.error(result.message || "Failed to save search.");
-      }
-    } catch (error) {
-      console.error("Save Search Error:", error);
-      toast.error("Something went wrong.");
-    }
-  };
-
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [currentPage]);
-
-  const fetchAmenities = async () => {
-    try {
-      const formData = new FormData();
-
-      const response = await axios.post(
-        "https://api.nowaybroker.com/cust_api/get_amenities",
-        formData,
-      );
-
-      if (response.data.status === 1) {
-        setAmenitiesList(response.data.data);
-      }
-    } catch (error) {
-      console.log("Amenities fetch failed", error);
-    }
-  };
-
+  // TOGGLES
   const toggleAmenity = (id) => {
     const value = String(id);
-
     setSelectedAmenities((prev) =>
-      prev.includes(value)
-        ? prev.filter((item) => item !== value)
-        : [...prev, value],
+      prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value]
     );
   };
 
   const togglePropertyType = (type) => {
     if (propertyType === "Commercial Lease" && buildingType === "Commercial") {
-      // Single select behavior
-      setPropertyType2(propertyType2.includes(type) ? [] : [type]);
+      setPropertyType2([type]);
     } else {
-      // Existing multi-select behavior
       setPropertyType2((prev) =>
-        prev.includes(type)
-          ? prev.filter((item) => item !== type)
-          : [...prev, type],
+        prev.includes(type) ? prev.filter((item) => item !== type) : [...prev, type]
       );
     }
+  };
+
+  const toggleConstructionStatus = (value) => {
+    setConstructionStatus((prev) =>
+      prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value]
+    );
+  };
+
+  const toggleAvailableFor = (value) => {
+    setAvailableFor((prev) =>
+      prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value]
+    );
+  };
+
+  const toggleSharingType = (value) => {
+    setSharingType((prev) =>
+      prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value]
+    );
+  };
+
+  const toggleAvailableFrom = (value) => {
+    setAvailableFrom((prev) =>
+      prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value]
+    );
+  };
+
+  const toggleCapacity = (value) => {
+    setCapacity((prev) =>
+      prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value]
+    );
   };
 
   const incrementBathrooms = () => {
@@ -1577,136 +947,178 @@ useEffect(() => {
 
   const handleBathroomInput = (e) => {
     const value = e.target.value;
-
     if (value === "") {
       setBathrooms("");
       return;
     }
-
     const numericValue = parseInt(value);
-
     if (!isNaN(numericValue) && numericValue >= 0 && numericValue <= 20) {
       setBathrooms(String(numericValue));
     }
   };
 
-  useEffect(() => {
-    fetchAmenities();
-  }, []);
-
-  const shouldShowFacingFilter = () => {
-    return propertyType2.includes("Plot/Land");
+  // FAVORITES
+  const addToFavorites = async (PropertyId) => {
+    if (!accessToken) {
+      toast.error("You must be logged in to perform this action");
+      return;
+    }
+    try {
+      await axios.post(`${process.env.REACT_APP_API_URL}/cust_api/add_to_favorite`, {
+        user_id: accessToken,
+        property_id: PropertyId,
+      });
+      if (activeApi === "filter") fetchFilteredProperties(currentPage);
+      else fetchProperties(selectedLocations.join(", "), type, selectedLocations.join(", "));
+    } catch (err) {
+      console.error("Error adding property to favorites:", err);
+    }
   };
+
+  const removeFromFavorites = async (favoriteId) => {
+    const formData = new FormData();
+    formData.append("favorite_id", favoriteId);
+    try {
+      const response = await axios.delete(
+        `${process.env.REACT_APP_API_URL}/cust_api/remove_from_favorite`,
+        { data: formData }
+      );
+      if (response.data.status === 1) {
+        if (activeApi === "filter") fetchFilteredProperties(currentPage);
+        else fetchProperties(selectedLocations.join(", "), type, selectedLocations.join(", "));
+      }
+    } catch (err) {
+      console.error("Error unfavoriting:", err);
+    }
+  };
+
+  // SHARE
+  const openShareModal1 = (url, propertyId) => {
+    setCurrentShareUrl(url);
+    setActiveShareId(propertyId);
+    setIsShareModalOpen(true);
+  };
+
+  const handleCloseShareModal = () => {
+    setIsShareModalOpen(false);
+    setActiveShareId(null);
+  };
+
+  // SAVE SEARCH
+  const handleSaveSearch = async () => {
+    if (!accessToken) {
+      toast.error("Please login first to save search.");
+      setIsLoginModalOpen(true);
+      return;
+    }
+    try {
+      const propertyIds = [];
+      const propertyNames = [];
+      const propertyCategories = [];
+      const buildingTypes = [];
+
+      properties.forEach((prop) => {
+        propertyIds.push(prop._id || "");
+        propertyNames.push(prop.property_name || "");
+        propertyCategories.push(prop.property_category_type || "");
+        buildingTypes.push(prop.building_type || "");
+      });
+
+      const formData = new FormData();
+      formData.append("user_id", accessToken);
+      formData.append("property_id", propertyIds.join("|"));
+      formData.append("property_name", propertyNames.join("|"));
+      formData.append("property_category_type", propertyCategories.join("|"));
+      formData.append("building_type", buildingTypes.join("|"));
+
+      const citiesStr = selectedLocations.join(", ");
+      formData.append("city_name", citiesStr || searchCity || "");
+      formData.append("search_keyword", citiesStr || searchQuery || "");
+
+      if (propertyType === "Commercial Lease" && buildingType === "Commercial") {
+        const mapped = mapCommercialLeaseTypes({
+          propertyType2, officeType, retailType, otherCommercialType, plotLandTypes,
+        });
+        if (mapped.property_type.length) formData.append("property_type", mapped.property_type.join(","));
+        if (mapped.office_type.length) formData.append("office_type", mapped.office_type.join(","));
+        if (mapped.sub_sub_property_type.length) formData.append("sub_sub_property_type", mapped.sub_sub_property_type.join(","));
+      } else if (propertyType === "Commercial Buy") {
+        const mapped = mapCommercialTypes(propertyType2);
+        if (mapped.property_type.length) formData.append("property_type", mapped.property_type.join(","));
+        if (mapped.office_type.length) formData.append("office_type", mapped.office_type.join(","));
+        if (mapped.sub_sub_property_type.length) formData.append("sub_sub_property_type", mapped.sub_sub_property_type.join(","));
+      } else if (propertyType2.length > 0) {
+        formData.append("property_type", propertyType2.join(","));
+      }
+
+      if (bhkType) formData.append("bhk_type", bhkType);
+      if (furnishedStatus) formData.append("furnished_type", furnishedStatus);
+      if (minPrice) formData.append("min_price", minPrice);
+      if (maxPrice) formData.append("max_price", maxPrice);
+      if (minSquareFt) formData.append("min_area", minSquareFt);
+      if (maxSquareFt) formData.append("max_area", maxSquareFt);
+      if (areaIn) formData.append("area_in", areaIn);
+      if (postedBy) formData.append("user_type", postedBy);
+      if (constructionStatus.length > 0) formData.append("construction_status", constructionStatus.join(","));
+      if (selectedAmenities.length > 0) formData.append("amenities", selectedAmenities.join(","));
+      if (bathrooms) formData.append("no_of_bathrooms", bathrooms);
+      if (facing) formData.append("facing", facing);
+      if (withPhoto) formData.append("with_photo", withPhoto);
+      if (withVideos) formData.append("with_videos", withVideos);
+      if (availableFor.length > 0) formData.append("available_for", availableFor.join(","));
+      if (sharingType.length > 0) formData.append("sharing_type", sharingType.join(","));
+      if (availableFrom.length > 0) formData.append("available_from", availableFrom.join(","));
+      if (capacity.length > 0) formData.append("available_beds", mapCapacityToBeds(capacity));
+      if (investmentOptions.length > 0) formData.append("investment_options", investmentOptions.join(","));
+      if (purchaseType) formData.append("purchase_type", purchaseType);
+
+      const response = await fetch(
+        `${process.env.REACT_APP_API_URL}/cust_api/add_save_search_property`,
+        { method: "POST", body: formData }
+      );
+      const result = await response.json();
+      if (response.ok && result.status === 1) {
+        toast.success("Search saved successfully!");
+      } else {
+        toast.error(result.message || "Failed to save search.");
+      }
+    } catch (err) {
+      console.error("Save Search Error:", err);
+      toast.error("Something went wrong.");
+    }
+  };
+
+  // MAPPING HELPERS
+  const shouldShowFacingFilter = () => propertyType2.includes("Plot/Land");
 
   const getFilteredPropertyTypes = () => {
     if (propertyType === "Commercial Lease" && buildingType === "Commercial") {
-      return [
-        "Office Space",
-        "Retail Shops/Showrooms",
-        "Other Commercial spaces",
-        "Plot/Land",
-      ];
+      return ["Office Space", "Retail Shops/Showrooms", "Other Commercial spaces", "Plot/Land"];
     }
     if (propertyType === "Commercial Buy" || buildingType === "Commercial") {
       return commercialPropertyOptions;
     }
-
     if (propertyType === "Buy") {
-      return [
-        "Flat/Apartment",
-        "Home/Villa",
-        "Service Apartment",
-        "Farmhouse",
-        "Plot/Land",
-        "Builder Floor",
-        "1RK/Studio Apartment",
-      ];
+      return ["Flat/Apartment", "Home/Villa", "Service Apartment", "Farmhouse", "Plot/Land", "Builder Floor", "1RK/Studio Apartment"];
     }
-
     if (propertyType === "Rent") {
-      return [
-        "Flat/Apartment",
-        "Builder Floor",
-        "1RK/Studio Apartment",
-        "Independent House/Villa",
-        "Service Apartment",
-        "Farmhouse",
-      ];
+      return ["Flat/Apartment", "Builder Floor", "1RK/Studio Apartment", "Independent House/Villa", "Service Apartment", "Farmhouse"];
     }
-
     if (propertyType === "PG/Co-living") {
-      return [
-        "Flat/Apartment",
-        "Builder Floor",
-        "1RK/Studio Apartment",
-        "Independent House/Villa",
-        "Service Apartment",
-      ];
+      return ["Flat/Apartment", "Builder Floor", "1RK/Studio Apartment", "Independent House/Villa", "Service Apartment"];
     }
-
-    // Default
     return [
-      "Apartment",
-      "Flat/Apartment",
-      "Builder Floor",
-      "Independent House/Villa",
-      "Independent/Builder Floor",
-      "1RK/Studio Apartment",
-      "Service Apartment",
-      "Farmhouse",
-      "Office",
-      "Retail",
-      "Plot/Land",
-      "Storage",
-      "Industry",
-      "Hospitality",
-      "Other",
-      "Home/Villa",
+      "Apartment", "Flat/Apartment", "Builder Floor", "Independent House/Villa",
+      "Independent/Builder Floor", "1RK/Studio Apartment", "Service Apartment",
+      "Farmhouse", "Office", "Retail", "Plot/Land", "Storage", "Industry",
+      "Hospitality", "Other", "Home/Villa",
     ];
   };
 
-  const toggleAvailableFor = (value) => {
-    setAvailableFor((prev) =>
-      prev.includes(value)
-        ? prev.filter((item) => item !== value)
-        : [...prev, value],
-    );
-  };
-
   const getAvailableForOptions = () => {
-    if (propertyType === "Rent") {
-      return ["Family", "Single Women", "Single Men", "Company Guest House"];
-    }
-
-    if (propertyType === "PG/Co-living") {
-      return ["Boys", "Girls", "Working"];
-    }
-
+    if (propertyType === "Rent") return ["Family", "Single Women", "Single Men", "Company Guest House"];
+    if (propertyType === "PG/Co-living") return ["Boys", "Girls", "Working"];
     return [];
-  };
-
-  const toggleSharingType = (value) => {
-    setSharingType((prev) =>
-      prev.includes(value)
-        ? prev.filter((item) => item !== value)
-        : [...prev, value],
-    );
-  };
-
-  const toggleAvailableFrom = (value) => {
-    setAvailableFrom((prev) =>
-      prev.includes(value)
-        ? prev.filter((item) => item !== value)
-        : [...prev, value],
-    );
-  };
-
-  const toggleCapacity = (value) => {
-    setCapacity((prev) =>
-      prev.includes(value)
-        ? prev.filter((item) => item !== value)
-        : [...prev, value],
-    );
   };
 
   const mapCapacityToBeds = (capacityArr) => {
@@ -1716,72 +1128,18 @@ useEffect(() => {
       "4-10 guest": "4-10",
       "10+ guest": "10+",
     };
-
     return capacityArr.map((item) => mapping[item]).join(",");
   };
-
-  const toggleInvestmentOption = (value) => {
-    setInvestmentOptions((prev) =>
-      prev.includes(value)
-        ? prev.filter((item) => item !== value)
-        : [...prev, value],
-    );
-  };
-
-  const togglePlotLandType = (value) => {
-    setPlotLandTypes((prev) =>
-      prev.includes(value)
-        ? prev.filter((item) => item !== value)
-        : [...prev, value],
-    );
-  };
-
-  const toggleConstructionStatus = (value) => {
-    setConstructionStatus((prev) =>
-      prev.includes(value)
-        ? prev.filter((item) => item !== value)
-        : [...prev, value],
-    );
-  };
-
-  useEffect(() => {
-    if (!propertyType2.includes("Plot/Land")) {
-      setPlotLandTypes([]);
-    }
-  }, [propertyType2]);
-
-  useEffect(() => {
-    if (!propertyType2.includes("Office Space")) {
-      setOfficeType([]);
-    }
-  }, [propertyType2]);
-
-  useEffect(() => {
-    if (!propertyType2.includes("Retail Shops/Showrooms")) {
-      setRetailType([]);
-    }
-  }, [propertyType2]);
-
-  useEffect(() => {
-    if (!propertyType2.includes("Other Commercial spaces")) {
-      setOtherCommercialType([]);
-    }
-  }, [propertyType2]);
 
   const mapCommercialTypes = (selectedTypes) => {
     const property_type = [];
     const office_type = [];
     const sub_sub_property_type = [];
-
     selectedTypes.forEach((item) => {
       const val = item.trim();
-
       if (val === "Plot/Land") {
         property_type.push("Plot/Land");
-
-        if (plotLandTypes.length > 0) {
-          office_type.push(...plotLandTypes);
-        }
+        if (plotLandTypes.length > 0) office_type.push(...plotLandTypes);
       } else if (val === "Retail") {
         property_type.push("Retail");
       } else if (val === "Others") {
@@ -1790,147 +1148,72 @@ useEffect(() => {
         office_type.push(val);
       }
     });
-
     return { property_type, office_type, sub_sub_property_type };
   };
 
   const mapCommercialLeaseTypes = ({
-    propertyType2,
-    officeType,
-    retailType,
-    otherCommercialType,
-    plotLandTypes,
+    propertyType2, officeType, retailType, otherCommercialType, plotLandTypes,
   }) => {
     let property_type = [];
     let office_type = [];
     let sub_sub_property_type = [];
-
     propertyType2.forEach((type) => {
-      //  OFFICE SPACE
       if (type === "Office Space") {
         property_type.push("Office");
         office_type.push(...officeType);
-      }
-
-      //  RETAIL
-      else if (type === "Retail Shops/Showrooms") {
+      } else if (type === "Retail Shops/Showrooms") {
         property_type.push("Retail");
         sub_sub_property_type.push(...retailType);
-      }
-
-      //  OTHER COMMERCIAL
-      else if (type === "Other Commercial spaces") {
+      } else if (type === "Other Commercial spaces") {
         otherCommercialType.forEach((item) => {
-          if (item === "Others") {
-            sub_sub_property_type.push("Others");
-          } else {
-            office_type.push(item);
-          }
+          if (item === "Others") sub_sub_property_type.push("Others");
+          else office_type.push(item);
         });
-      }
-
-      //  PLOT/LAND (same as before)
-      else if (type === "Plot/Land") {
+      } else if (type === "Plot/Land") {
         property_type.push("Plot/Land");
-
-        // send plot sub-types in office_type (same as Buy logic)
-        if (plotLandTypes.length > 0) {
-          office_type.push(...plotLandTypes);
-        }
+        if (plotLandTypes.length > 0) office_type.push(...plotLandTypes);
       }
     });
-
-    return {
-      property_type,
-      office_type,
-      sub_sub_property_type,
-      plotLandTypes,
-    };
+    return { property_type, office_type, sub_sub_property_type, plotLandTypes };
   };
-  const getDisplayProperties = () => {
-    let list = [...properties];
 
-    if (appliedVerifiedOnly) {
-      list = list.filter(
-        (property) =>
-          property.admin_approval === "Approved" || property.isVerified === true,
-      );
-    }
-
-    if (appliedSortBy) {
-      list.sort((a, b) => {
-        if (appliedSortBy === "newest") {
-          return new Date(b.created_at) - new Date(a.created_at);
-        }
-        if (appliedSortBy === "oldest") {
-          return new Date(a.created_at) - new Date(b.created_at);
-        }
-        const priceA = Number(a.property_price ?? a.rent ?? 0);
-        const priceB = Number(b.property_price ?? b.rent ?? 0);
-        return appliedSortBy === "price_low" ? priceA - priceB : priceB - priceA;
-      });
-    }
-
-    return list;
-  };
+  // CONTACT LIMITS
   const checkPostLimits = async () => {
     try {
       const profileForm = new FormData();
       profileForm.append("user_id", accessToken);
-
       const profileResponse = await axios.post(
-        `${API_URL}/cust_api/get_profile`,
+        `${process.env.REACT_APP_API_URL}/cust_api/get_profile`,
         profileForm,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        },
+        { headers: { "Content-Type": "multipart/form-data" } }
       );
-
       const countData = profileResponse?.data?.count_data;
-
       if (countData) {
         setFreeViewCount(countData.free_view_count || 0);
         setPaidViewCount(countData.paid_view_count || 0);
       }
-    } catch (error) {
-      console.error("Error checking post limits:", error);
+    } catch (err) {
+      console.error("Error checking post limits:", err);
     }
   };
 
   useEffect(() => {
-    if (accessToken) {
-      checkPostLimits();
-    }
+    if (accessToken) checkPostLimits();
   }, [accessToken]);
 
-  const handleAddCount = async (updatedCount) => {
+  const handleAddCount = async () => {
     try {
       const addCountFormData = new FormData();
-
-      if (freeViewCount > 0) {
-        addCountFormData.append("free_view_count", -1);
-      } else {
-        addCountFormData.append("paid_view_count", -1);
-      }
-
+      if (freeViewCount > 0) addCountFormData.append("free_view_count", -1);
+      else addCountFormData.append("paid_view_count", -1);
       addCountFormData.append("user_id", accessToken);
-
-      const response = await fetch(`${API_URL}/cust_api/add_count`, {
-        method: "POST",
-        body: addCountFormData,
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        checkPostLimits();
-      } else {
-        console.error("Failed to update count:", data.message);
-      }
-    } catch (error) {
-      console.error("API error:", error);
+      const response = await fetch(
+        `${process.env.REACT_APP_API_URL}/cust_api/add_count`,
+        { method: "POST", body: addCountFormData }
+      );
+      if (response.ok) checkPostLimits();
+    } catch (err) {
+      console.error("API error:", err);
     }
   };
 
@@ -1939,1930 +1222,211 @@ useEffect(() => {
       setIsLoginModalOpen(true);
       return;
     }
-
     setSelectedProperty(property);
-
-    // CASE 1 -> FREE VIEWS AVAILABLE
-    if (freeViewCount > 0) {
-      await handleAddCount(freeViewCount);
-
+    if (freeViewCount > 0 || paidViewCount > 0) {
+      await handleAddCount();
       setShowUpgradePrompt(false);
       setIsContactModalOpen(true);
-      return;
-    }
-
-    // CASE 2 -> PAID VIEWS AVAILABLE
-    if (paidViewCount > 0) {
-      await handleAddCount(paidViewCount);
-
-      setShowUpgradePrompt(false);
+    } else {
+      setShowUpgradePrompt(true);
       setIsContactModalOpen(true);
-      return;
     }
-
-    // CASE 3 -> NO COUNTS LEFT
-    setShowUpgradePrompt(true);
-    setIsContactModalOpen(true);
   };
 
-  const closeAllDropdowns = () => {
-    setPropertyTypeOpen(false);
-    setAmenitiesOpen(false);
-    setConstructionOpen(false);
-    setAvailableForOpen(false);
-    setAvailableFromOpen(false);
-    setCapacityOpen(false);
-    setInvestmentOpen(false);
-    setSharingTypeOpen(false);
-    setPriceDropdownOpen(false);
-    setSquareFtDropdownOpen(false);
-    setPlotLandOpen(false);
-    setOfficeTypeOpen(false);
-    setRetailTypeOpen(false);
-    setOtherCommercialOpen(false);
+  // MAP ICON
+  const createCustomIcon = (price, isActive = false) => houseMarkerIcon(isActive);
+
+  const getCategoryText = (type) => {
+    const raw = (type || "").replace(/\s+/g, " ").replace(/-/g, " ").replace(/\//g, " ").trim().toLowerCase();
+    if (raw === "buy") return "FOR BUY";
+    if (raw === "rent") return "FOR RENT";
+    if (raw.includes("commercial buy")) return "COMMERCIAL BUY";
+    if (raw.includes("commercial lease")) return "COMMERCIAL LEASE";
+    if (raw.includes("pg") || raw.includes("co living") || raw.includes("coliving")) return "PG / CO-LIVING";
+    if (raw.includes("residential")) return "RESIDENTIAL";
+    return "UNKNOWN";
   };
 
-  useEffect(() => {
-    const handleScroll = () => {
-      closeAllDropdowns();
-    };
-
-    window.addEventListener("scroll", handleScroll);
-
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
-  }, []);
-
-  const FILTER_WIDTH = "w-[220px]";
-  const DROPDOWN_WIDTH = 320;
-
-//   return (
-//     <>
-//       <div className="flex flex-col p-1 space-y-4 sm:p-6 bg-rose-50 rounded-xl">
-//         {/* Search and Filter Section */}
-//         <div className="relative">
-//           <div
-//             className="flex gap-2 overflow-x-auto pb-2 whitespace-nowrap"
-//             onScroll={closeAllDropdowns}
-//           >
-//             {/* Sort By Dropdown */}
-//             <div className={`relative ${FILTER_WIDTH} flex-shrink-0`}>
-//               <select
-//                 value={sortBy}
-//                 onChange={(e) => setSortBy(e.target.value)}
-//                 className="w-full h-16 p-2 border-2 border-gray-300 rounded-md appearance-none focus:outline-none hover:bg-gray-300"
-//               >
-//                 <option value="">Sort By</option>
-//                 <option value="newest">Newest</option>
-//                 <option value="price_low">Price Low to High</option>
-//                 <option value="price_high">Price High to Low</option>
-//                 <option value="oldest">Oldest</option>
-//               </select>
-//               <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2" />
-//             </div>
-
-//             {/* Verified Filter Dropdown */}
-//             <div className={`relativ ${FILTER_WIDTH} flex-shrink-0`}>
-//               <select
-//                 value="verified"
-//                 onChange={() => { }}
-//                 onMouseDown={(e) => {
-//                   e.preventDefault();
-//                   setVerifiedOnly((prev) => !prev);
-//                 }}
-//                 className={`relative w-full h-16 p-2 border-2 rounded-md appearance-none focus:outline-none cursor-pointer ${verifiedOnly
-//                   ? "border-[#8B1E3F] bg-[#8B1E3F] text-white"
-//                   : "border-gray-300 bg-white hover:bg-gray-300"
-//                   }`}
-//               >
-//                 <option value="verified">Verified Properties</option>
-//               </select>
-//               <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2" />
-//             </div>
-
-//             {/* Property Category Dropdown */}
-//             <div className={`relative ${FILTER_WIDTH} flex-shrink-0`}>
-//               <select
-//                 value={propertyType}
-//                 onChange={(e) => {
-//                   const val = e.target.value;
-
-//                   setPropertyType(val);
-
-//                   setPropertyType2([]);
-//                   setOfficeType([]);
-//                   setRetailType([]);
-//                   setOtherCommercialType([]);
-//                   setPlotLandTypes([]);
-//                   setAvailableFor([]);
-//                   setSharingType([]);
-//                   setAvailableFrom([]);
-//                   setCapacity([]);
-//                   setInvestmentOptions([]);
-//                   setPurchaseType("");
-
-//                   // Auto-set building type
-//                   if (val === "Commercial Buy" || val === "Commercial Lease") {
-//   setBuildingType("Commercial");
-// } else if (val === "Buy" || val === "Rent") {
-//   setBuildingType("Residential");
-// } else {
-//   setBuildingType("");
-// }
-//                 }}
-//                 className="w-full h-16 p-2 border-2 border-gray-300 rounded-md appearance-none"
-//               >
-//                 <option value="">Property Category</option>
-//                 <option value="Buy">Buy</option>
-//                 <option value="Rent">Rent</option>
-//                 <option value="Commercial Buy">Commercial Buy</option>
-//                 <option value="Commercial Lease">Commercial Lease</option>
-//                 <option value="PG/Co-living">PG/Co-living</option>
-//               </select>
-//               <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2" />
-//             </div>
-
-//             {/* Building Type Dropdown */}
-//             <div className={`relative ${FILTER_WIDTH} flex-shrink-0`}>
-//               <select
-//                 value={buildingType}
-//                 onChange={(e) => setBuildingType(e.target.value)}
-//                 disabled={
-//                   propertyType === "Buy" ||
-//                   propertyType === "Rent" ||
-//                   propertyType === "Commercial Buy" ||
-//                   propertyType === "Commercial Lease"
-//                 }
-//                 className="w-full h-16 p-2 border-2 border-gray-300 rounded-md focus:outline-none hover:bg-gray-300 appearance-none"
-//               >
-//                 <option value="">Building Type</option>
-//                 <option value="Commercial">Commercial</option>
-//                 <option value="Residential">Residential</option>
-//               </select>
-//               <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2" />
-//             </div>
-
-//             {/*Property Type*/}
-//             <div className={`relative ${FILTER_WIDTH} flex-shrink-0`}>
-//               <button
-//                 ref={propertyTypeButtonRef}
-//                 type="button"
-//                 onClick={() => {
-//                   const rect =
-//                     propertyTypeButtonRef.current.getBoundingClientRect();
-
-//                   setPropertyTypeDropdownPos({
-//                     top: rect.bottom + 4,
-//                     left: rect.left,
-//                     width: rect.width,
-//                   });
-//                   const wasOpen = propertyTypeOpen;
-//                   closeAllDropdowns();
-//                   setTimeout(() => {
-//                     setPropertyTypeOpen(!wasOpen);
-//                   }, 0);
-//                 }}
-//                 className="relative flex items-center w-full h-16 p-2 bg-white border-2 border-gray-300 rounded-md text-left"
-//               >
-//                 <span className="block pr-8 truncate text-left">
-//                   {propertyType2.length > 0
-//                     ? propertyType2.join(", ")
-//                     : "Property Type"}
-//                 </span>
-
-//                 <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2" />
-//               </button>
-
-//               {propertyTypeOpen &&
-//                 createPortal(
-//                   <div
-//                     className="fixed z-[99999] bg-white border rounded-md shadow-lg max-h-72 overflow-y-auto"
-//                     style={{
-//                       top: propertyTypeDropdownPos.top,
-//                       left: propertyTypeDropdownPos.left,
-//                       width: DROPDOWN_WIDTH,
-//                     }}
-//                   >
-//                     <div className="sticky top-0 flex justify-end p-2 bg-white border-b">
-//                       <button
-//                         onClick={() => setPropertyTypeOpen(false)}
-//                         className="p-1 rounded hover:bg-gray-100"
-//                       >
-//                         <IoClose size={20} />
-//                       </button>
-//                     </div>
-//                     {getFilteredPropertyTypes().map((type) => (
-//                       <label
-//                         key={type}
-//                         className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-100"
-//                       >
-//                         <input
-//                           type={
-//                             propertyType === "Commercial Lease" &&
-//                               buildingType === "Commercial"
-//                               ? "radio"
-//                               : "checkbox"
-//                           }
-//                           name="propertyType"
-//                           checked={propertyType2.includes(type)}
-//                           onChange={() => togglePropertyType(type)}
-//                         />
-
-//                         <span>{type}</span>
-//                       </label>
-//                     ))}
-
-//                     <div className="sticky bottom-0 flex gap-2 p-2 bg-white border-t">
-//                       <button
-//                         onClick={() => setPropertyType2([])}
-//                         className="w-1/2 py-2 border rounded-md"
-//                       >
-//                         Clear
-//                       </button>
-
-//                       <button
-//                         onClick={() => setPropertyTypeOpen(false)}
-//                         className="w-1/2 py-2 text-white bg-rose-500 rounded-md"
-//                       >
-//                         Done
-//                       </button>
-//                     </div>
-//                   </div>,
-//                   document.body,
-//                 )}
-//             </div>
-
-//             {/* Budget Dropdown */}
-//             <div className={`relative ${FILTER_WIDTH} flex-shrink-0`}>
-//               <button
-//                 ref={budgetButtonRef}
-//                 onClick={() => {
-//                   const rect = budgetButtonRef.current.getBoundingClientRect();
-//                   setBudgetDropdownPos({
-//                     top: rect.bottom + 4,
-//                     left: rect.left,
-//                     width: rect.width,
-//                   });
-//                   const wasOpen = priceDropdownOpen;
-//                   closeAllDropdowns();
-//                   setTimeout(() => {
-//                     setPriceDropdownOpen(!wasOpen);
-//                   }, 0);
-//                 }}
-//                 className="relative flex items-center w-full h-16 p-2 bg-white border-2 border-gray-300 rounded-md text-left"
-//               >
-//                 <span className="block pr-8 truncate">
-//                   {minPrice && maxPrice
-//                     ? `${formatPriceMinMax(minPrice)} - ${formatPriceMinMax(maxPrice)}`
-//                     : minPrice
-//                       ? `Above ${formatPriceMinMax(minPrice)}`
-//                       : maxPrice
-//                         ? `Below ${formatPriceMinMax(maxPrice)}`
-//                         : "Budget"}
-//                 </span>
-
-//                 <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2" />
-//               </button>
-
-//               {priceDropdownOpen &&
-//                 createPortal(
-//                   <div
-//                     className="fixed p-4 bg-white border-2 border-gray-300 rounded-md shadow-lg z-[99999]"
-//                     style={{
-//                       top: budgetDropdownPos.top,
-//                       left: budgetDropdownPos.left,
-//                       width: DROPDOWN_WIDTH,
-//                     }}
-//                   >
-//                     <div className="flex justify-end mb-2">
-//                       <button
-//                         onClick={() => setPriceDropdownOpen(false)}
-//                         className="p-1 rounded hover:bg-gray-100"
-//                       >
-//                         <IoClose size={20} />
-//                       </button>
-//                     </div>
-//                     <div className="flex flex-col gap-2">
-//                       <label className="text-sm text-gray-600">Min Price</label>
-//                       <select
-//                         value={minPrice}
-//                         onChange={(e) => setMinPrice(e.target.value)}
-//                         className="p-2 border-2 border-gray-300 rounded-md focus:outline-none"
-//                       >
-//                         <option value="">Min</option>
-//                         {budgetOptions
-//                           .filter((price) => !maxPrice || price < Number(maxPrice))
-//                           .map((price) => (
-//                             <option key={price} value={price}>
-//                               {formatPriceMinMax(price)}
-//                             </option>
-//                           ))}
-//                       </select>
-
-//                       <label className="text-sm text-gray-600">Max Price</label>
-//                       <select
-//                         value={maxPrice}
-//                         onChange={(e) => setMaxPrice(e.target.value)}
-//                         className="p-2 border-2 border-gray-300 rounded-md focus:outline-none"
-//                       >
-//                         <option value="">Max</option>
-//                         {budgetOptions
-//                           .filter((price) => !minPrice || price > Number(minPrice))
-//                           .map((price) => (
-//                             <option key={price} value={price}>
-//                               {formatPriceMinMax(price)}
-//                             </option>
-//                           ))}
-//                       </select>
-//                     </div>
-//                   </div>,
-//                   document.body,
-//                 )}
-//             </div>
-//             {/* Furnished Status Dropdown */}
-//             <div className={`relative ${FILTER_WIDTH} flex-shrink-0`}>
-//               <select
-//                 value={furnishedStatus}
-//                 onChange={(e) => setFurnishedStatus(e.target.value)}
-//                 className="w-full h-16 p-2 border-2 border-gray-300 rounded-md focus:outline-none hover:bg-gray-300 appearance-none"
-//               >
-//                 <option value="">Select Furnished</option>
-//                 <option value="Furnished">Furnished</option>
-//                 <option value="Semi-Furnished">Semi-Furnished</option>
-//                 <option value="Unfurnished">Unfurnished</option>
-//               </select>
-//               <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2" />
-//             </div>
-
-//             {/* BHK Type Dropdown */}
-//             <div className={`relative ${FILTER_WIDTH} flex-shrink-0`}>
-//               <select
-//                 value={bhkType}
-//                 onChange={(e) => setBhkType(e.target.value)}
-//                 className="w-full h-16 p-2 border-2 border-gray-300 rounded-md focus:outline-none hover:bg-gray-300 appearance-none"
-//               >
-//                 <option value="">Select BHK</option>
-//                 <option value="Studio">Studio/Single Room</option>
-//                 <option value="1 RK">1 RK</option>
-//                 <option value="1 BHK">1 BHK</option>
-//                 <option value="1.5 BHK">1.5 BHK</option>
-//                 <option value="2 BHK">2 BHK</option>
-//                 <option value="2.5 BHK">2.5 BHK</option>
-//                 <option value="3 BHK">3 BHK</option>
-//                 <option value="3.5 BHK">3.5 BHK</option>
-//                 <option value="4 BHK">4 BHK</option>
-//                 <option value="5 BHK">5 BHK</option>
-//                 <option value="6+ BHK">6+ BHK</option>
-//               </select>
-//               <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2" />
-//             </div>
-
-//             {/* Posted By Dropdown */}
-//             <div className={`relative ${FILTER_WIDTH} flex-shrink-0`}>
-//               <select
-//                 value={postedBy}
-//                 onChange={(e) => setPostedBy(e.target.value)}
-//                 className="w-full h-16 p-2 border-2 border-gray-300 rounded-md focus:outline-none hover:bg-gray-300 appearance-none"
-//               >
-//                 <option value="">Posted By</option>
-//                 <option value="Owner">Owner</option>
-//                 <option value="Builder">Builder</option>
-//               </select>
-//               <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2" />
-//             </div>
-
-//             {/* Construction Status */}
-//             <div className={`relative ${FILTER_WIDTH} flex-shrink-0`}>
-//               <button
-//                 ref={constructionButtonRef}
-//                 type="button"
-//                 onClick={() => {
-//                   const rect =
-//                     constructionButtonRef.current.getBoundingClientRect();
-//                   setConstructionDropdownPos({
-//                     top: rect.bottom + 4,
-//                     left: rect.left,
-//                     width: rect.width,
-//                   });
-//                   const wasOpen = constructionOpen;
-//                   closeAllDropdowns();
-//                   setTimeout(() => {
-//                     setConstructionOpen(!wasOpen);
-//                   }, 0);
-//                 }}
-//                 className="relative flex items-center w-full h-16 p-2 bg-white border-2 border-gray-300 rounded-md text-left"
-//               >
-//                 <span className="block pr-8 truncate text-left">
-//                   {constructionStatus.length > 0
-//                     ? constructionStatus.join(", ")
-//                     : "Construction Status"}
-//                 </span>
-
-//                 <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2" />
-//               </button>
-
-//               {constructionOpen &&
-//                 createPortal(
-//                   <div
-//                     className="fixed z-[99999] bg-white border rounded-md shadow-lg"
-//                     style={{
-//                       top: constructionDropdownPos.top,
-//                       left: constructionDropdownPos.left,
-//                       width: DROPDOWN_WIDTH,
-//                     }}
-//                   >
-//                     <div className="sticky top-0 flex justify-end p-2 bg-white border-b">
-//                       <button
-//                         onClick={() => setConstructionOpen(false)}
-//                         className="p-1 rounded hover:bg-gray-100"
-//                       >
-//                         <IoClose size={20} />
-//                       </button>
-//                     </div>
-//                     {["Ready To Move", "New Launch", "Under Construction"].map(
-//                       (option) => (
-//                         <label
-//                           key={option}
-//                           className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-100"
-//                         >
-//                           <input
-//                             type="checkbox"
-//                             checked={constructionStatus.includes(option)}
-//                             onChange={() => toggleConstructionStatus(option)}
-//                           />
-//                           <span>{option}</span>
-//                         </label>
-//                       ),
-//                     )}
-
-//                     <div className="sticky bottom-0 flex gap-2 p-2 bg-white border-t">
-//                       <button
-//                         onClick={() => setConstructionStatus([])}
-//                         className="w-1/2 py-2 border rounded-md"
-//                       >
-//                         Clear
-//                       </button>
-
-//                       <button
-//                         onClick={() => setConstructionOpen(false)}
-//                         className="w-1/2 py-2 text-white bg-rose-500 rounded-md"
-//                       >
-//                         Done
-//                       </button>
-//                     </div>
-//                   </div>,
-//                   document.body,
-//                 )}
-//             </div>
-
-//             {/*Amenities */}
-//             <div className={`relative ${FILTER_WIDTH} flex-shrink-0`}>
-//               <button
-//                 ref={amenitiesButtonRef}
-//                 type="button"
-//                 onClick={() => {
-//                   const rect =
-//                     amenitiesButtonRef.current.getBoundingClientRect();
-
-//                   setAmenitiesDropdownPos({
-//                     top: rect.bottom + 4,
-//                     left: rect.left,
-//                     width: rect.width,
-//                   });
-//                   const wasOpen = amenitiesOpen;
-//                   closeAllDropdowns();
-//                   setTimeout(() => {
-//                     setAmenitiesOpen(!wasOpen);
-//                   }, 0);
-//                 }}
-//                 className="relative flex items-center w-full h-16 p-2 bg-white border-2 border-gray-300 rounded-md text-left"
-//               >
-//                 <span className="block pr-8 truncate text-left">
-//                   {selectedAmenities.length > 0
-//                     ? amenitiesList
-//                       .filter((item) =>
-//                         selectedAmenities.includes(String(item._id)),
-//                       )
-//                       .map((item) => item.amenity_name)
-//                       .join(", ")
-//                     : "Amenities"}
-//                 </span>
-
-//                 <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2" />
-//               </button>
-
-//               {amenitiesOpen &&
-//                 createPortal(
-//                   <div
-//                     className="fixed z-[99999] bg-white border rounded-md shadow-lg max-h-72 overflow-y-auto"
-//                     style={{
-//                       top: amenitiesDropdownPos.top,
-//                       left: amenitiesDropdownPos.left,
-//                       width: DROPDOWN_WIDTH,
-//                     }}
-//                   >
-//                     <div className="sticky top-0 flex justify-end p-2 bg-white border-b">
-//                       <button
-//                         onClick={() => setAmenitiesOpen(false)}
-//                         className="p-1 rounded hover:bg-gray-100"
-//                       >
-//                         <IoClose size={20} />
-//                       </button>
-//                     </div>
-//                     {amenitiesList.map((item) => (
-//                       <label
-//                         key={item._id}
-//                         className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-100"
-//                       >
-//                         <input
-//                           type="checkbox"
-//                           checked={selectedAmenities.includes(String(item._id))}
-//                           onChange={() => toggleAmenity(item._id)}
-//                         />
-
-//                         <span>{item.amenity_name}</span>
-//                       </label>
-//                     ))}
-
-//                     <div className="sticky bottom-0 flex gap-2 p-2 bg-white border-t">
-//                       <button
-//                         onClick={() => setSelectedAmenities([])}
-//                         className="w-1/2 py-2 border rounded-md"
-//                       >
-//                         Clear
-//                       </button>
-
-//                       <button
-//                         onClick={() => setAmenitiesOpen(false)}
-//                         className="w-1/2 py-2 text-white bg-rose-500 rounded-md"
-//                       >
-//                         Done
-//                       </button>
-//                     </div>
-//                   </div>,
-//                   document.body,
-//                 )}
-//             </div>
-
-//             {/*Bathroom*/}
-//             <div className={`${FILTER_WIDTH} flex-shrink-0`}>
-//               <div className="flex items-center h-16 overflow-hidden bg-white border-2 border-gray-300 rounded-md">
-//                 <button
-//                   type="button"
-//                   onClick={decrementBathrooms}
-//                   className="flex items-center justify-center w-14 h-full text-2xl font-bold border-r hover:bg-gray-200"
-//                 >
-//                   -
-//                 </button>
-
-//                 <input
-//                   type="number"
-//                   min="0"
-//                   max="20"
-//                   value={bathrooms}
-//                   onChange={handleBathroomInput}
-//                   placeholder="Bathrooms"
-//                   className="w-full h-full text-center focus:outline-none"
-//                 />
-
-//                 <button
-//                   type="button"
-//                   onClick={incrementBathrooms}
-//                   className="flex items-center justify-center w-14 h-full text-2xl font-bold border-l hover:bg-gray-200"
-//                 >
-//                   +
-//                 </button>
-//               </div>
-//             </div>
-
-//             {/* Facing */}
-//             {shouldShowFacingFilter() && (
-//               <div className={`relative ${FILTER_WIDTH} flex-shrink-0`}>
-//                 <select
-//                   value={facing}
-//                   onChange={(e) => setFacing(e.target.value)}
-//                   className="w-full h-16 p-2 border-2 border-gray-300 rounded-md focus:outline-none hover:bg-gray-300 appearance-none"
-//                 >
-//                   <option value="">Facing</option>
-//                   <option value="North">North</option>
-//                   <option value="East">East</option>
-//                   <option value="North-East">North-East</option>
-//                   <option value="South-East">South-East</option>
-//                   <option value="North-West">North-West</option>
-//                   <option value="West">West</option>
-//                   <option value="South">South</option>
-//                   <option value="South-West">South-West</option>
-//                 </select>
-
-//                 <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2" />
-//               </div>
-//             )}
-
-//             {/*Set Photos*/}
-//             <div className={`relative ${FILTER_WIDTH} flex-shrink-0`}>
-//               <select
-//                 value={withPhoto}
-//                 onChange={(e) => setWithPhoto(e.target.value)}
-//                 className="w-full h-16 p-2 border-2 border-gray-300 rounded-md focus:outline-none hover:bg-gray-300 appearance-none"
-//               >
-//                 <option value="">With Photo</option>
-//                 <option value="Yes">Yes</option>
-//                 <option value="No">No</option>
-//               </select>
-//               <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2" />
-//             </div>
-
-//             {/*Set Video*/}
-//             <div className={`relative ${FILTER_WIDTH} flex-shrink-0`}>
-//               <select
-//                 value={withVideos}
-//                 onChange={(e) => setWithVideos(e.target.value)}
-//                 className="w-full h-16 p-2 border-2 border-gray-300 rounded-md focus:outline-none hover:bg-gray-300 appearance-none"
-//               >
-//                 <option value="">With Video</option>
-//                 <option value="Yes">Yes</option>
-//                 <option value="No">No</option>
-//               </select>
-//               <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2" />
-//             </div>
-
-//             {/* Sq. Ft Range Dropdown */}
-//             <div className={`relative ${FILTER_WIDTH} flex-shrink-0`}>
-//               <button
-//                 ref={areaButtonRef}
-//                 onClick={() => {
-//                   const rect = areaButtonRef.current.getBoundingClientRect();
-//                   let left = rect.left;
-//                   const overflow =
-//                     rect.left + DROPDOWN_WIDTH - window.innerWidth;
-//                   if (overflow > 0) {
-//                     left = rect.left - overflow - 10;
-//                   }
-//                   setAreaDropdownPos({
-//                     top: rect.bottom + 4,
-//                     left,
-//                     width: rect.width,
-//                   });
-
-//                   const wasOpen = squareFtDropdownOpen;
-//                   closeAllDropdowns();
-//                   setTimeout(() => {
-//                     setSquareFtDropdownOpen(!wasOpen);
-//                   }, 0);
-//                 }}
-//                 className="relative flex items-center w-full h-16 p-2 bg-white border-2 border-gray-300 rounded-md text-left"
-//               >
-//                 <span className="block pr-8 truncate text-left">
-//                   {minSquareFt || maxSquareFt
-//                     ? `${minSquareFt || 0} - ${maxSquareFt || "Any"} ${areaIn}`
-//                     : "Area"}
-//                 </span>
-
-//                 <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2" />
-//               </button>
-
-//               {squareFtDropdownOpen &&
-//                 createPortal(
-//                   <div
-//                     className="fixed p-4 bg-white border-2 border-gray-300 rounded-md shadow-lg z-[99999]"
-//                     style={{
-//                       top: areaDropdownPos.top,
-//                       left: areaDropdownPos.left,
-//                       width: DROPDOWN_WIDTH,
-//                     }}
-//                   >
-//                     <div className="flex justify-end mb-2">
-//                       <button
-//                         onClick={() => setSquareFtDropdownOpen(false)}
-//                         className="p-1 rounded hover:bg-gray-100"
-//                       >
-//                         <IoClose size={20} />
-//                       </button>
-//                     </div>
-//                     {/* Area Unit */}
-//                     <label className="text-sm text-gray-600">Area Unit</label>
-//                     <select
-//                       value={areaIn}
-//                       onChange={(e) => setAreaIn(e.target.value)}
-//                       className="w-full p-2 mb-3 border-2 border-gray-300 rounded-md focus:outline-none"
-//                     >
-//                       {areaUnits.map((unit) => (
-//                         <option key={unit} value={unit}>
-//                           {unit}
-//                         </option>
-//                       ))}
-//                     </select>
-
-//                     {/* Min Area */}
-//                     <label className="text-sm text-gray-600">Min Area</label>
-//                     <input
-//                       type="number"
-//                       value={minSquareFt}
-//                       onChange={(e) => setMinSquareFt(e.target.value)}
-//                       className="w-full p-2 mb-3 border-2 border-gray-300 rounded-md focus:outline-none"
-//                       placeholder="Min"
-//                     />
-
-//                     {/* Max Area */}
-//                     <label className="text-sm text-gray-600">Max Area</label>
-//                     <input
-//                       type="number"
-//                       value={maxSquareFt}
-//                       onChange={(e) => setMaxSquareFt(e.target.value)}
-//                       className="w-full p-2 border-2 border-gray-300 rounded-md focus:outline-none"
-//                       placeholder="Max"
-//                     />
-//                   </div>,
-//                   document.body,
-//                 )}
-//             </div>
-
-//             {/*Sharing Type */}
-//             {propertyType === "PG/Co-living" && (
-//               <div className={`relative ${FILTER_WIDTH} flex-shrink-0`}>
-//                 <button
-//                   ref={sharingTypeButtonRef}
-//                   type="button"
-//                   onClick={() => {
-//                     const rect =
-//                       sharingTypeButtonRef.current.getBoundingClientRect();
-//                     let left = rect.left;
-//                     const overflow =
-//                       rect.left + DROPDOWN_WIDTH - window.innerWidth;
-
-//                     if (overflow > 0) {
-//                       left = rect.left - overflow - 10;
-//                     }
-//                     setSharingTypeDropdownPos({
-//                       top: rect.bottom + 4,
-//                       left,
-//                       width: rect.width,
-//                     });
-//                     const wasOpen = sharingTypeOpen;
-//                     closeAllDropdowns();
-//                     setTimeout(() => {
-//                       setSharingTypeOpen(!wasOpen);
-//                     }, 0);
-//                   }}
-//                   className="relative flex items-center w-full h-16 p-2 bg-white border-2 border-gray-300 rounded-md text-left"
-//                 >
-//                   <span className="block pr-8 truncate text-left">
-//                     {sharingType.length > 0
-//                       ? sharingType.join(", ")
-//                       : "Sharing Type"}
-//                   </span>
-
-//                   <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2" />
-//                 </button>
-
-//                 {sharingTypeOpen &&
-//                   createPortal(
-//                     <div
-//                       className="fixed z-[99999] bg-white border rounded-md shadow-lg"
-//                       style={{
-//                         top: sharingTypeDropdownPos.top,
-//                         left: sharingTypeDropdownPos.left,
-//                         width: DROPDOWN_WIDTH,
-//                       }}
-//                     >
-//                       <div className="sticky top-0 flex justify-end p-2 bg-white border-b">
-//                         <button
-//                           onClick={() => setSharingTypeOpen(false)}
-//                           className="p-1 rounded hover:bg-gray-100"
-//                         >
-//                           <IoClose size={20} />
-//                         </button>
-//                       </div>
-//                       {[
-//                         "Private Rooms",
-//                         "2 Per Room",
-//                         "More than 2 per room",
-//                       ].map((option) => (
-//                         <label
-//                           key={option}
-//                           className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-100"
-//                         >
-//                           <input
-//                             type="checkbox"
-//                             checked={sharingType.includes(option)}
-//                             onChange={() => toggleSharingType(option)}
-//                           />
-//                           <span>{option}</span>
-//                         </label>
-//                       ))}
-
-//                       <div className="sticky bottom-0 flex gap-2 p-2 bg-white border-t">
-//                         <button
-//                           onClick={() => setSharingType([])}
-//                           className="w-1/2 py-2 border rounded-md"
-//                         >
-//                           Clear
-//                         </button>
-
-//                         <button
-//                           onClick={() => setSharingTypeOpen(false)}
-//                           className="w-1/2 py-2 text-white bg-rose-500 rounded-md"
-//                         >
-//                           Done
-//                         </button>
-//                       </div>
-//                     </div>,
-//                     document.body,
-//                   )}
-//               </div>
-//             )}
-
-//             {/*Available Form*/}
-//             {propertyType === "Rent" && (
-//               <div className={`relative ${FILTER_WIDTH} flex-shrink-0`}>
-//                 <button
-//                   ref={availableFromButtonRef}
-//                   type="button"
-//                   onClick={() => {
-//                     const rect =
-//                       availableFromButtonRef.current.getBoundingClientRect();
-//                     let left = rect.left;
-//                     const overflow =
-//                       rect.left + DROPDOWN_WIDTH - window.innerWidth;
-//                     if (overflow > 0) {
-//                       left = rect.left - overflow - 10;
-//                     }
-//                     setAvailableFromDropdownPos({
-//                       top: rect.bottom + 4,
-//                       left,
-//                       width: rect.width,
-//                     });
-//                     const wasOpen = availableFromOpen;
-//                     closeAllDropdowns();
-//                     setTimeout(() => {
-//                       setAvailableFromOpen(!wasOpen);
-//                     }, 0);
-//                   }}
-//                   className="relative flex items-center w-full h-16 p-2 bg-white border-2 border-gray-300 rounded-md text-left"
-//                 >
-//                   <span className="block pr-8 truncate text-left">
-//                     {availableFrom.length > 0
-//                       ? availableFrom.join(", ")
-//                       : "Available From"}
-//                   </span>
-
-//                   <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2" />
-//                 </button>
-
-//                 {availableFromOpen &&
-//                   createPortal(
-//                     <div
-//                       className="fixed z-[99999] bg-white border rounded-md shadow-lg"
-//                       style={{
-//                         top: availableFromDropdownPos.top,
-//                         left: availableFromDropdownPos.left,
-//                         width: DROPDOWN_WIDTH,
-//                       }}
-//                     >
-//                       <div className="sticky top-0 flex justify-end p-2 bg-white border-b">
-//                         <button
-//                           onClick={() => setAvailableFromOpen(false)}
-//                           className="p-1 rounded hover:bg-gray-100"
-//                         >
-//                           <IoClose size={20} />
-//                         </button>
-//                       </div>
-//                       {[
-//                         "Immediately",
-//                         "Any Time",
-//                         "Within 1 Month",
-//                         "After 1 Month",
-//                         "Within 3 Month",
-//                         "After 3 Month",
-//                       ].map((option) => (
-//                         <label
-//                           key={option}
-//                           className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-100"
-//                         >
-//                           <input
-//                             type="checkbox"
-//                             checked={availableFrom.includes(option)}
-//                             onChange={() => toggleAvailableFrom(option)}
-//                           />
-//                           <span>{option}</span>
-//                         </label>
-//                       ))}
-
-//                       <div className="sticky bottom-0 flex gap-2 p-2 bg-white border-t">
-//                         <button
-//                           onClick={() => setAvailableFrom([])}
-//                           className="w-1/2 py-2 border rounded-md"
-//                         >
-//                           Clear
-//                         </button>
-
-//                         <button
-//                           onClick={() => setAvailableFromOpen(false)}
-//                           className="w-1/2 py-2 text-white bg-rose-500 rounded-md"
-//                         >
-//                           Done
-//                         </button>
-//                       </div>
-//                     </div>,
-//                     document.body,
-//                   )}
-//               </div>
-//             )}
-
-//             {/*Available For*/}
-//             {(propertyType === "Rent" || propertyType === "PG/Co-living") && (
-//               <div className={`relative ${FILTER_WIDTH} flex-shrink-0`}>
-//                 <button
-//                   ref={availableForButtonRef}
-//                   type="button"
-//                   onClick={() => {
-//                     const rect =
-//                       availableForButtonRef.current.getBoundingClientRect();
-
-//                     let left = rect.left;
-//                     const overflow =
-//                       rect.left + DROPDOWN_WIDTH - window.innerWidth;
-//                     if (overflow > 0) {
-//                       left = rect.left - overflow - 10;
-//                     }
-//                     setAvailableForDropdownPos({
-//                       top: rect.bottom + 4,
-//                       left,
-//                       width: rect.width,
-//                     });
-
-//                     const wasOpen = availableForOpen;
-//                     closeAllDropdowns();
-//                     setTimeout(() => {
-//                       setAvailableForOpen(!wasOpen);
-//                     }, 0);
-//                   }}
-//                   className="relative flex items-center w-full h-16 p-2 bg-white border-2 border-gray-300 rounded-md text-left"
-//                 >
-//                   <span className="block pr-8 truncate text-left">
-//                     {availableFor.length > 0
-//                       ? availableFor.join(", ")
-//                       : "Available For"}
-//                   </span>
-
-//                   <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2" />
-//                 </button>
-
-//                 {availableForOpen &&
-//                   createPortal(
-//                     <div
-//                       className="fixed z-[99999] bg-white border rounded-md shadow-lg max-h-72 overflow-y-auto"
-//                       style={{
-//                         top: availableForDropdownPos.top,
-//                         left: availableForDropdownPos.left,
-//                         width: DROPDOWN_WIDTH,
-//                       }}
-//                     >
-//                       <div className="sticky top-0 flex justify-end p-2 bg-white border-b">
-//                         <button
-//                           onClick={() => setAvailableForOpen(false)}
-//                           className="p-1 rounded hover:bg-gray-100"
-//                         >
-//                           <IoClose size={20} />
-//                         </button>
-//                       </div>
-//                       {getAvailableForOptions().map((option) => (
-//                         <label
-//                           key={option}
-//                           className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-100"
-//                         >
-//                           <input
-//                             type="checkbox"
-//                             checked={availableFor.includes(option)}
-//                             onChange={() => toggleAvailableFor(option)}
-//                           />
-//                           <span>{option}</span>
-//                         </label>
-//                       ))}
-
-//                       <div className="sticky bottom-0 flex gap-2 p-2 bg-white border-t">
-//                         <button
-//                           onClick={() => setAvailableFor([])}
-//                           className="w-1/2 py-2 border rounded-md"
-//                         >
-//                           Clear
-//                         </button>
-
-//                         <button
-//                           onClick={() => setAvailableForOpen(false)}
-//                           className="w-1/2 py-2 text-white bg-rose-500 rounded-md"
-//                         >
-//                           Done
-//                         </button>
-//                       </div>
-//                     </div>,
-//                     document.body,
-//                   )}
-//               </div>
-//             )}
-
-//             {/*Set Capacity */}
-//             {propertyType === "PG/Co-living" && (
-//               <div className={`relative ${FILTER_WIDTH} flex-shrink-0`}>
-//                 <button
-//                   ref={capacityButtonRef}
-//                   type="button"
-//                   onClick={() => {
-//                     const rect =
-//                       capacityButtonRef.current.getBoundingClientRect();
-
-//                     let left = rect.left;
-//                     const overflow =
-//                       rect.left + DROPDOWN_WIDTH - window.innerWidth;
-//                     if (overflow > 0) {
-//                       left = rect.left - overflow - 10;
-//                     }
-//                     setCapacityDropdownPos({
-//                       top: rect.bottom + 4,
-//                       left,
-//                       width: DROPDOWN_WIDTH,
-//                     });
-//                     const wasOpen = capacityOpen;
-//                     closeAllDropdowns();
-
-//                     setTimeout(() => {
-//                       setCapacityOpen(!wasOpen);
-//                     }, 0);
-//                   }}
-//                   className="relative flex items-center w-full h-16 p-2 bg-white border-2 border-gray-300 rounded-md text-left"
-//                 >
-//                   <span className="block pr-8 truncate text-left">
-//                     {capacity.length > 0
-//                       ? capacity.join(", ")
-//                       : "Total Capacity"}
-//                   </span>
-
-//                   <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2" />
-//                 </button>
-
-//                 {capacityOpen &&
-//                   createPortal(
-//                     <div
-//                       className="fixed z-[99999] bg-white border rounded-md shadow-lg"
-//                       style={{
-//                         top: capacityDropdownPos.top,
-//                         left: capacityDropdownPos.left,
-//                         width: capacityDropdownPos.width,
-//                       }}
-//                     >
-//                       <div className="sticky top-0 flex justify-end p-2 bg-white border-b">
-//                         <button
-//                           onClick={() => setCapacityOpen(false)}
-//                           className="p-1 rounded hover:bg-gray-100"
-//                         >
-//                           <IoClose size={20} />
-//                         </button>
-//                       </div>
-
-//                       {[
-//                         "1-2 guest",
-//                         "2-4 guest",
-//                         "4-10 guest",
-//                         "10+ guest",
-//                       ].map((option) => (
-//                         <label
-//                           key={option}
-//                           className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-100"
-//                         >
-//                           <input
-//                             type="checkbox"
-//                             checked={capacity.includes(option)}
-//                             onChange={() => toggleCapacity(option)}
-//                           />
-//                           <span>{option}</span>
-//                         </label>
-//                       ))}
-
-//                       <div className="sticky bottom-0 flex gap-2 p-2 bg-white border-t">
-//                         <button
-//                           onClick={() => setCapacity([])}
-//                           className="w-1/2 py-2 border rounded-md"
-//                         >
-//                           Clear
-//                         </button>
-
-//                         <button
-//                           onClick={() => setCapacityOpen(false)}
-//                           className="w-1/2 py-2 text-white bg-rose-500 rounded-md"
-//                         >
-//                           Done
-//                         </button>
-//                       </div>
-//                     </div>,
-//                     document.body,
-//                   )}
-//               </div>
-//             )}
-
-//             {/*Investment Option */}
-//             {propertyType === "Commercial Buy" && (
-//               <div className={`relative ${FILTER_WIDTH} flex-shrink-0`}>
-//                 <button
-//                   ref={investmentButtonRef}
-//                   type="button"
-//                   onClick={() => {
-//                     const rect =
-//                       investmentButtonRef.current.getBoundingClientRect();
-
-//                     let left = rect.left;
-//                     const overflow =
-//                       rect.left + DROPDOWN_WIDTH - window.innerWidth;
-//                     if (overflow > 0) {
-//                       left = rect.left - overflow - 10;
-//                     }
-//                     setInvestmentDropdownPos({
-//                       top: rect.bottom + 4,
-//                       left,
-//                       width: rect.width,
-//                     });
-//                     const wasOpen = investmentOpen;
-//                     closeAllDropdowns();
-//                     setTimeout(() => {
-//                       setInvestmentOpen(!wasOpen);
-//                     }, 0);
-//                   }}
-//                   className="relative flex items-center w-full h-16 p-2 bg-white border-2 border-gray-300 rounded-md text-left"
-//                 >
-//                   <span className="block pr-8 truncate text-left">
-//                     {investmentOptions.length > 0
-//                       ? investmentOptions.join(", ")
-//                       : "Property Usage"}
-//                   </span>
-//                   <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2" />
-//                 </button>
-
-//                 {investmentOpen &&
-//                   createPortal(
-//                     <div
-//                       className="fixed z-[99999] bg-white border rounded-md shadow-lg"
-//                       style={{
-//                         top: investmentDropdownPos.top,
-//                         left: investmentDropdownPos.left,
-//                         width: DROPDOWN_WIDTH,
-//                       }}
-//                     >
-//                       <div className="sticky top-0 flex justify-end p-2 bg-white border-b">
-//                         <button
-//                           onClick={() => setInvestmentOpen(false)}
-//                           className="p-1 rounded hover:bg-gray-100"
-//                         >
-//                           <IoClose size={20} />
-//                         </button>
-//                       </div>
-//                       {investmentOptionsList.map((option) => (
-//                         <label
-//                           key={option}
-//                           className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-100"
-//                         >
-//                           <input
-//                             type="checkbox"
-//                             checked={investmentOptions.includes(option)}
-//                             onChange={() => toggleInvestmentOption(option)}
-//                           />
-//                           <span>{option}</span>
-//                         </label>
-//                       ))}
-
-//                       <div className="sticky bottom-0 flex gap-2 p-2 bg-white border-t">
-//                         <button
-//                           onClick={() => setInvestmentOptions([])}
-//                           className="w-1/2 py-2 border rounded-md"
-//                         >
-//                           Clear
-//                         </button>
-
-//                         <button
-//                           onClick={() => setInvestmentOpen(false)}
-//                           className="w-1/2 py-2 text-white bg-rose-500 rounded-md"
-//                         >
-//                           Done
-//                         </button>
-//                       </div>
-//                     </div>,
-//                     document.body,
-//                   )}
-//               </div>
-//             )}
-
-//             {/*Resale*/}
-//             {propertyType === "Commercial Buy" && (
-//               <div className={`relative ${FILTER_WIDTH} flex-shrink-0`}>
-//                 <select
-//                   value={purchaseType}
-//                   onChange={(e) => setPurchaseType(e.target.value)}
-//                   className="w-full h-16 p-2 border-2 border-gray-300 rounded-md focus:outline-none hover:bg-gray-300 appearance-none"
-//                 >
-//                   <option value="">Purchase Type</option>
-//                   {purchaseTypeOptions.map((option) => (
-//                     <option key={option} value={option}>
-//                       {option}
-//                     </option>
-//                   ))}
-//                 </select>
-//                 <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2" />
-//               </div>
-//             )}
-
-//             {/* Plot/Land */}
-//             {(propertyType === "Commercial Buy" ||
-//               propertyType === "Commercial Lease") &&
-//               buildingType === "Commercial" &&
-//               propertyType2.includes("Plot/Land") && (
-//                 <div className={`relative ${FILTER_WIDTH} flex-shrink-0`}>
-//                   <button
-//                     ref={plotLandButtonRef}
-//                     type="button"
-//                     onClick={() => {
-//                       const rect =
-//                         plotLandButtonRef.current.getBoundingClientRect();
-
-//                       let left = rect.left;
-//                       const overflow =
-//                         rect.left + DROPDOWN_WIDTH - window.innerWidth;
-
-//                       if (overflow > 0) {
-//                         left = rect.left - overflow - 10;
-//                       }
-
-//                       setPlotLandDropdownPos({
-//                         top: rect.bottom + 4,
-//                         left,
-//                         width: DROPDOWN_WIDTH,
-//                       });
-
-//                       const wasOpen = plotLandOpen;
-//                       closeAllDropdowns();
-
-//                       setTimeout(() => {
-//                         setPlotLandOpen(!wasOpen);
-//                       }, 0);
-//                     }}
-//                     className="relative flex items-center w-full h-16 p-2 bg-white border-2 border-gray-300 rounded-md text-left"
-//                   >
-//                     <span className="block pr-8 truncate text-left">
-//                       {plotLandTypes.length > 0
-//                         ? plotLandTypes.join(", ")
-//                         : "Plot/Land Type"}
-//                     </span>
-
-//                     <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2" />
-//                   </button>
-
-//                   {plotLandOpen &&
-//                     createPortal(
-//                       <div
-//                         className="fixed z-[99999] bg-white border rounded-md shadow-lg"
-//                         style={{
-//                           top: plotLandDropdownPos.top,
-//                           left: plotLandDropdownPos.left,
-//                           width: plotLandDropdownPos.width,
-//                         }}
-//                       >
-//                         <div className="sticky top-0 flex justify-end p-2 bg-white border-b">
-//                           <button
-//                             onClick={() => setPlotLandOpen(false)}
-//                             className="p-1 rounded hover:bg-gray-100"
-//                           >
-//                             <IoClose size={20} />
-//                           </button>
-//                         </div>
-
-//                         {plotLandOptions.map((option) => (
-//                           <label
-//                             key={option}
-//                             className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-100"
-//                           >
-//                             <input
-//                               type="checkbox"
-//                               checked={plotLandTypes.includes(option)}
-//                               onChange={() => togglePlotLandType(option)}
-//                             />
-//                             <span>{option}</span>
-//                           </label>
-//                         ))}
-
-//                         <div className="sticky bottom-0 flex gap-2 p-2 bg-white border-t">
-//                           <button
-//                             onClick={() => setPlotLandTypes([])}
-//                             className="w-1/2 py-2 border rounded-md"
-//                           >
-//                             Clear
-//                           </button>
-
-//                           <button
-//                             onClick={() => setPlotLandOpen(false)}
-//                             className="w-1/2 py-2 text-white bg-rose-500 rounded-md"
-//                           >
-//                             Done
-//                           </button>
-//                         </div>
-//                       </div>,
-//                       document.body,
-//                     )}
-//                 </div>
-//               )}
-
-//             {/* Office Type */}
-//             {propertyType === "Commercial Lease" &&
-//               buildingType === "Commercial" &&
-//               propertyType2.includes("Office Space") && (
-//                 <div className={`relative ${FILTER_WIDTH} flex-shrink-0`}>
-//                   <button
-//                     ref={officeTypeButtonRef}
-//                     type="button"
-//                     onClick={() => {
-//                       const rect =
-//                         officeTypeButtonRef.current.getBoundingClientRect();
-
-//                       let left = rect.left;
-//                       const overflow =
-//                         rect.left + DROPDOWN_WIDTH - window.innerWidth;
-
-//                       if (overflow > 0) {
-//                         left = rect.left - overflow - 10;
-//                       }
-
-//                       setOfficeTypeDropdownPos({
-//                         top: rect.bottom + 4,
-//                         left,
-//                         width: DROPDOWN_WIDTH,
-//                       });
-
-//                       const wasOpen = officeTypeOpen;
-//                       closeAllDropdowns();
-
-//                       setTimeout(() => {
-//                         setOfficeTypeOpen(!wasOpen);
-//                       }, 0);
-//                     }}
-//                     className="relative flex items-center w-full h-16 p-2 bg-white border-2 border-gray-300 rounded-md text-left"
-//                   >
-//                     <span className="block pr-8 truncate text-left">
-//                       {officeType.length > 0
-//                         ? officeType.join(", ")
-//                         : "Office Type"}
-//                     </span>
-
-//                     <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2" />
-//                   </button>
-
-//                   {officeTypeOpen &&
-//                     createPortal(
-//                       <div
-//                         className="fixed z-[99999] bg-white border rounded-md shadow-lg"
-//                         style={{
-//                           top: officeTypeDropdownPos.top,
-//                           left: officeTypeDropdownPos.left,
-//                           width: officeTypeDropdownPos.width,
-//                         }}
-//                       >
-//                         <div className="sticky top-0 flex justify-end p-2 bg-white border-b">
-//                           <button
-//                             onClick={() => setOfficeTypeOpen(false)}
-//                             className="p-1 rounded hover:bg-gray-100"
-//                           >
-//                             <IoClose size={20} />
-//                           </button>
-//                         </div>
-
-//                         {officeTypeOptions.map((option) => (
-//                           <label
-//                             key={option}
-//                             className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-100"
-//                           >
-//                             <input
-//                               type="checkbox"
-//                               checked={officeType.includes(option)}
-//                               onChange={() =>
-//                                 setOfficeType((prev) =>
-//                                   prev.includes(option)
-//                                     ? prev.filter((i) => i !== option)
-//                                     : [...prev, option],
-//                                 )
-//                               }
-//                             />
-//                             <span>{option}</span>
-//                           </label>
-//                         ))}
-
-//                         <div className="sticky bottom-0 flex gap-2 p-2 bg-white border-t">
-//                           <button
-//                             onClick={() => setOfficeType([])}
-//                             className="w-1/2 py-2 border rounded-md"
-//                           >
-//                             Clear
-//                           </button>
-
-//                           <button
-//                             onClick={() => setOfficeTypeOpen(false)}
-//                             className="w-1/2 py-2 text-white bg-rose-500 rounded-md"
-//                           >
-//                             Done
-//                           </button>
-//                         </div>
-//                       </div>,
-//                       document.body,
-//                     )}
-//                 </div>
-//               )}
-
-//             {/* Retail Type */}
-//             {propertyType === "Commercial Lease" &&
-//               buildingType === "Commercial" &&
-//               propertyType2.includes("Retail Shops/Showrooms") && (
-//                 <div className={`relative ${FILTER_WIDTH} flex-shrink-0`}>
-//                   <button
-//                     ref={retailTypeButtonRef}
-//                     type="button"
-//                     onClick={() => {
-//                       const rect =
-//                         retailTypeButtonRef.current.getBoundingClientRect();
-
-//                       let left = rect.left;
-//                       const overflow =
-//                         rect.left + DROPDOWN_WIDTH - window.innerWidth;
-
-//                       if (overflow > 0) {
-//                         left = rect.left - overflow - 10;
-//                       }
-
-//                       setRetailTypeDropdownPos({
-//                         top: rect.bottom + 4,
-//                         left,
-//                         width: DROPDOWN_WIDTH,
-//                       });
-
-//                       const wasOpen = retailTypeOpen;
-//                       closeAllDropdowns();
-
-//                       setTimeout(() => {
-//                         setRetailTypeOpen(!wasOpen);
-//                       }, 0);
-//                     }}
-//                     className="relative flex items-center w-full h-16 p-2 bg-white border-2 border-gray-300 rounded-md text-left"
-//                   >
-//                     <span className="block pr-8 truncate text-left">
-//                       {retailType.length > 0
-//                         ? retailType.join(", ")
-//                         : "Retail Type"}
-//                     </span>
-
-//                     <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2" />
-//                   </button>
-
-//                   {retailTypeOpen &&
-//                     createPortal(
-//                       <div
-//                         className="fixed z-[99999] bg-white border rounded-md shadow-lg"
-//                         style={{
-//                           top: retailTypeDropdownPos.top,
-//                           left: retailTypeDropdownPos.left,
-//                           width: retailTypeDropdownPos.width,
-//                         }}
-//                       >
-//                         <div className="sticky top-0 flex justify-end p-2 bg-white border-b">
-//                           <button
-//                             onClick={() => setRetailTypeOpen(false)}
-//                             className="p-1 rounded hover:bg-gray-100"
-//                           >
-//                             <IoClose size={20} />
-//                           </button>
-//                         </div>
-
-//                         {retailTypeOptions.map((option) => (
-//                           <label
-//                             key={option}
-//                             className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-100"
-//                           >
-//                             <input
-//                               type="checkbox"
-//                               checked={retailType.includes(option)}
-//                               onChange={() =>
-//                                 setRetailType((prev) =>
-//                                   prev.includes(option)
-//                                     ? prev.filter((i) => i !== option)
-//                                     : [...prev, option],
-//                                 )
-//                               }
-//                             />
-//                             <span>{option}</span>
-//                           </label>
-//                         ))}
-
-//                         <div className="sticky bottom-0 flex gap-2 p-2 bg-white border-t">
-//                           <button
-//                             onClick={() => setRetailType([])}
-//                             className="w-1/2 py-2 border rounded-md"
-//                           >
-//                             Clear
-//                           </button>
-
-//                           <button
-//                             onClick={() => setRetailTypeOpen(false)}
-//                             className="w-1/2 py-2 text-white bg-rose-500 rounded-md"
-//                           >
-//                             Done
-//                           </button>
-//                         </div>
-//                       </div>,
-//                       document.body,
-//                     )}
-//                 </div>
-//               )}
-
-//             {/* Other Commercial Type */}
-//             {propertyType === "Commercial Lease" &&
-//               buildingType === "Commercial" &&
-//               propertyType2.includes("Other Commercial spaces") && (
-//                 <div className={`relative ${FILTER_WIDTH} flex-shrink-0`}>
-//                   <button
-//                     ref={otherCommercialButtonRef}
-//                     type="button"
-//                     onClick={() => {
-//                       const rect =
-//                         otherCommercialButtonRef.current.getBoundingClientRect();
-
-//                       let left = rect.left;
-//                       const overflow =
-//                         rect.left + DROPDOWN_WIDTH - window.innerWidth;
-
-//                       if (overflow > 0) {
-//                         left = rect.left - overflow - 10;
-//                       }
-
-//                       setOtherCommercialDropdownPos({
-//                         top: rect.bottom + 4,
-//                         left,
-//                         width: DROPDOWN_WIDTH,
-//                       });
-
-//                       const wasOpen = otherCommercialOpen;
-//                       closeAllDropdowns();
-
-//                       setTimeout(() => {
-//                         setOtherCommercialOpen(!wasOpen);
-//                       }, 0);
-//                     }}
-//                     className="relative flex items-center w-full h-16 p-2 bg-white border-2 border-gray-300 rounded-md text-left"
-//                   >
-//                     <span className="block pr-8 truncate text-left">
-//                       {otherCommercialType.length > 0
-//                         ? otherCommercialType.join(", ")
-//                         : "Other Commercial Type"}
-//                     </span>
-
-//                     <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2" />
-//                   </button>
-
-//                   {otherCommercialOpen &&
-//                     createPortal(
-//                       <div
-//                         className="fixed z-[99999] bg-white border rounded-md shadow-lg"
-//                         style={{
-//                           top: otherCommercialDropdownPos.top,
-//                           left: otherCommercialDropdownPos.left,
-//                           width: otherCommercialDropdownPos.width,
-//                         }}
-//                       >
-//                         <div className="sticky top-0 flex justify-end p-2 bg-white border-b">
-//                           <button
-//                             onClick={() => setOtherCommercialOpen(false)}
-//                             className="p-1 rounded hover:bg-gray-100"
-//                           >
-//                             <IoClose size={20} />
-//                           </button>
-//                         </div>
-
-//                         {otherCommercialOptions.map((option) => (
-//                           <label
-//                             key={option}
-//                             className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-100"
-//                           >
-//                             <input
-//                               type="checkbox"
-//                               checked={otherCommercialType.includes(option)}
-//                               onChange={() =>
-//                                 setOtherCommercialType((prev) =>
-//                                   prev.includes(option)
-//                                     ? prev.filter((i) => i !== option)
-//                                     : [...prev, option],
-//                                 )
-//                               }
-//                             />
-//                             <span>{option}</span>
-//                           </label>
-//                         ))}
-
-//                         <div className="sticky bottom-0 flex gap-2 p-2 bg-white border-t">
-//                           <button
-//                             onClick={() => setOtherCommercialType([])}
-//                             className="w-1/2 py-2 border rounded-md"
-//                           >
-//                             Clear
-//                           </button>
-
-//                           <button
-//                             onClick={() => setOtherCommercialOpen(false)}
-//                             className="w-1/2 py-2 text-white bg-rose-500 rounded-md"
-//                           >
-//                             Done
-//                           </button>
-//                         </div>
-//                       </div>,
-//                       document.body,
-//                     )}
-//                 </div>
-//               )}
-//           </div>
-//         </div>
-
-//         {/* Action Buttons */}
-//         <div className="flex items-center justify-between px-6 mt-4 mb-3">
-//   <h2 className="text-2xl font-bold text-gray-900">
-//     <span className="text-[#8B1E3F]">{totalResults}</span> Results
-
-//     {(searchQuery || filtersApplied) && (
-//   <>
-//     <span className="mx-3 text-gray-400">|</span>
-//     <span>{filtersApplied ? getResultsTitle({
-//   bhkType,
-//   propertyType,
-//   propertyType2,
-//   searchLocation: searchLocation || searchCity,
-//   filtersApplied,
-//   buildingType: type,
-//   isNearMe,
-// }) : searchQuery}</span>
-//   </>
-// )}
-// {!filtersApplied && homeSearchTitle && (
-//   <span className="text-2xl font-bold text-gray-900">
-//     <span className="mx-3 text-gray-400">|</span>
-//     {homeSearchTitle}
-//   </span>
-// )}
-//   </h2>
-  
-
-
-//   <div className="flex gap-4">
-//     <button
-//       onClick={handleButtonClick}
-//       className="w-40 p-3 text-rose-700 my-border rounded-md hover:bg-gray-300"
-//     >
-//       {filtersApplied ? "Reset Filters" : "Apply Filter"}
-//     </button>
-
-//     <button
-//       onClick={handleSaveSearch}
-//       className="w-40 p-3 my-border rounded-md hover:bg-gray-300"
-//     >
-//       Save Search
-//     </button>
-//   </div>
-// </div>
-//       </div>
+  const formatAmount = (value) => {
+    const n = Number(value);
+    if (!n) return value || "N/A";
+    if (n >= 10000000) return (n / 10000000).toFixed(1).replace(/\.0$/, "") + " Cr";
+    if (n >= 100000) return (n / 100000).toFixed(1).replace(/\.0$/, "") + " L";
+    if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, "") + " K";
+    return String(n);
+  };
+
+  const getListedPrice = (property) => {
+    const isRent = property.property_category_type === "Rent";
+    const primary = isRent ? property.rent : property.property_price;
+    return primary ?? property.property_price ?? property.rent ?? null;
+  };
+
+  // A typed locality ("flat in Baner, Pune") narrows the loaded listings. When none of them
+  // mention it, every result stays visible and a note says so, instead of an empty page.
+  // Everything the page renders below uses this list.
+  const localityView = useMemo(
+    () => filterByLocality(properties, universal?.locality),
+    [properties, universal]
+  );
+  const visibleProperties = localityView.list;
+  const localityNarrowed = !!universal?.locality && localityView.matched;
+  const localityMissed = !!universal?.locality && !localityView.matched && properties.length > 0;
+
+  // Heading above the results: "1785 results | 3 BHK Flats for Sale in Pune".
+  // It is built from the filters in force, so it stays right when a filter is changed by hand.
+  const resultsTitle = describeFilters({
+    category: propertyType,
+    buildingType,
+    typeLabels: propertyType2,
+    bhk: bhkType,
+    furnishing: furnishedStatus,
+    construction: constructionStatus,
+    postedBy,
+    locations: selectedLocations,
+    locality: localityNarrowed ? universal.locality : "",
+    minPrice,
+    maxPrice,
+  });
+  const resultCount = localityNarrowed
+    ? String(visibleProperties.length)
+    : totalCount
+      ? totalCount.toLocaleString("en-IN")
+      : totalPages > 1
+        ? `${(totalPages - 1) * itemsPerPage}+` // the API reports pages, not a total
+        : String(visibleProperties.length);
+  const resultsHeading = `${resultCount} ${resultCount === "1" ? "result" : "results"}${
+    localityNarrowed && totalPages > 1 ? " on this page" : ""
+  } | ${resultsTitle}`;
 
   return (
     <>
-      <div className="flex flex-col p-1 space-y-4 sm:p-6 bg-rose-50 rounded-xl">
-        {/* Search and Filter Section */}
-        <div className="relative">
-          <div
-            className="flex gap-2 overflow-x-auto pb-2 whitespace-nowrap"
-            onScroll={closeAllDropdowns}
-          >
-            {/* Sort By Dropdown */}
-            <div className={`relative ${FILTER_WIDTH} flex-shrink-0 max-[767px]:w-36`}>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="w-full h-16 p-2 border-2 border-gray-300 rounded-md appearance-none focus:outline-none hover:bg-gray-300 max-[767px]:h-11 max-[767px]:px-2 max-[767px]:text-xs"
-              >
-                <option value="">Sort By</option>
-                <option value="newest">Newest</option>
-                <option value="price_low">Price Low to High</option>
-                <option value="price_high">Price High to Low</option>
-                <option value="oldest">Oldest</option>
-              </select>
-              <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2 max-[767px]:right-2 max-[767px]:text-lg" />
-            </div>
-
-            {/* Verified Filter Dropdown */}
-            {/* <div className={`relative ${FILTER_WIDTH} flex-shrink-0 max-[767px]:w-40`}>
-              <select
-                value="verified"
-                onChange={() => { }}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  setVerifiedOnly((prev) => !prev);
-                }}
-                className={`relative w-full h-16 p-2 border-2 rounded-md appearance-none focus:outline-none cursor-pointer max-[767px]:h-11 max-[767px]:px-2 max-[767px]:text-xs ${verifiedOnly
-                  ? "border-[#8B1E3F] bg-[#8B1E3F] text-white"
-                  : "border-gray-300 bg-white hover:bg-gray-300"
-                  }`}
-              >
-                <option value="verified">Verified Properties</option>
-              </select>
-              <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2 max-[767px]:right-2 max-[767px]:text-lg" />
-            </div> */}
-            {/* Verified Filter Dropdown */}
-              <div className={`relative ${FILTER_WIDTH} flex-shrink-0 max-[767px]:w-40`}>
-                <select
-                  value="verified"
-                  onChange={() => { }}
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    setVerifiedOnly((prev) => !prev);
-                  }}
-                  className={`w-full h-16 p-2 border-2 rounded-md appearance-none focus:outline-none focus:ring-0 cursor-pointer max-[767px]:h-11 max-[767px]:px-2 max-[767px]:text-xs ${verifiedOnly
-                    ? "border-[#8B1E3F] bg-[#8B1E3F] text-white"
-                    : "border-gray-300 bg-white hover:bg-gray-300"
-                    }`}
-                >
-                  <option value="verified">Verified Properties</option>
-                </select>
-                {/* <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2 max-[767px]:right-2 max-[767px]:text-lg" /> */}
-              </div>
-
-            {/* Property Category Dropdown */}
-            <div className={`relative ${FILTER_WIDTH} flex-shrink-0 max-[767px]:w-40`}>
+      {/* ===================== FILTERS ===================== */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm relative z-20 mb-4 mx-4 sm:mx-6">
+        <div className="p-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-1.5">
+            {/* Category */}
+            <div>
               <select
                 value={propertyType}
                 onChange={(e) => {
                   const val = e.target.value;
-
                   setPropertyType(val);
-
                   setPropertyType2([]);
                   setOfficeType([]);
                   setRetailType([]);
                   setOtherCommercialType([]);
                   setPlotLandTypes([]);
-                  setAvailableFor([]);
-                  setSharingType([]);
-                  setAvailableFrom([]);
-                  setCapacity([]);
-                  setInvestmentOptions([]);
-                  setPurchaseType("");
-
-                  // Auto-set building type
                   if (val === "Commercial Buy" || val === "Commercial Lease") {
-  setBuildingType("Commercial");
-} else if (val === "Buy" || val === "Rent") {
-  setBuildingType("Residential");
-} else {
-  setBuildingType("");
-}
+                    setBuildingType("Commercial");
+                  } else {
+                    setBuildingType("");
+                  }
+                  handleAutoApply();
                 }}
-                className="w-full h-16 p-2 border-2 border-gray-300 rounded-md appearance-none max-[767px]:h-11 max-[767px]:px-2 max-[767px]:text-xs"
+                onFocus={() => setOpenDropdown(null)}
+                className="w-full h-8 px-2 text-xs border border-gray-300 rounded-lg bg-white hover:border-[#8B1E3F] focus:outline-none focus:ring-1 focus:ring-[#8B1E3F] transition-colors"
               >
                 <option value="">Property Category</option>
                 <option value="Buy">Buy</option>
                 <option value="Rent">Rent</option>
                 <option value="Commercial Buy">Commercial Buy</option>
                 <option value="Commercial Lease">Commercial Lease</option>
-                <option value="PG/Co-living">PG/Co-living</option>
+                <option value="PG/Co-living">PG / Co-living</option>
               </select>
-              <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2 max-[767px]:right-2 max-[767px]:text-lg" />
             </div>
 
-            {/* Building Type Dropdown */}
-            <div className={`relative ${FILTER_WIDTH} flex-shrink-0 max-[767px]:w-36`}>
+            {/* Building Type */}
+            <div>
               <select
                 value={buildingType}
-                onChange={(e) => setBuildingType(e.target.value)}
+                onChange={(e) => {
+                  setBuildingType(e.target.value);
+                  handleAutoApply();
+                }}
+                onFocus={() => setOpenDropdown(null)}
                 disabled={
-                  propertyType === "Buy" ||
-                  propertyType === "Rent" ||
                   propertyType === "Commercial Buy" ||
                   propertyType === "Commercial Lease"
                 }
-                className="w-full h-16 p-2 border-2 border-gray-300 rounded-md focus:outline-none hover:bg-gray-300 appearance-none max-[767px]:h-11 max-[767px]:px-2 max-[767px]:text-xs"
+                className="w-full h-8 px-2 text-xs border border-gray-300 rounded-lg bg-white hover:border-[#8B1E3F] focus:outline-none focus:ring-1 focus:ring-[#8B1E3F] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <option value="">Building Type</option>
-                <option value="Commercial">Commercial</option>
                 <option value="Residential">Residential</option>
+                <option value="Commercial">Commercial</option>
               </select>
-              <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2 max-[767px]:right-2 max-[767px]:text-lg" />
             </div>
 
-            {/*Property Type*/}
-            <div className={`relative ${FILTER_WIDTH} flex-shrink-0 max-[767px]:w-40`}>
+            {/* Property Type Dropdown */}
+            <div className="relative">
               <button
-                ref={propertyTypeButtonRef}
                 type="button"
-                onClick={() => {
-                  const rect =
-                    propertyTypeButtonRef.current.getBoundingClientRect();
-
-                  setPropertyTypeDropdownPos({
-                    top: rect.bottom + 4,
-                    left: rect.left,
-                    width: rect.width,
-                  });
-                  const wasOpen = propertyTypeOpen;
-                  closeAllDropdowns();
-                  setTimeout(() => {
-                    setPropertyTypeOpen(!wasOpen);
-                  }, 0);
-                }}
-                className="relative flex items-center w-full h-16 p-2 bg-white border-2 border-gray-300 rounded-md text-left max-[767px]:h-11 max-[767px]:px-2 max-[767px]:text-xs"
+                onClick={() => toggleDropdown("propertyType")}
+                className="flex items-center justify-between w-full h-8 px-2 text-xs bg-white border border-gray-300 rounded-lg hover:border-[#8B1E3F] focus:outline-none focus:ring-1 focus:ring-[#8B1E3F] transition-colors"
               >
-                <span className="block pr-8 truncate text-left">
+                <span className="truncate text-gray-700">
                   {propertyType2.length > 0
-                    ? propertyType2.join(", ")
+                    ? `${propertyType2.length} selected`
                     : "Property Type"}
                 </span>
-
-                <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2 max-[767px]:right-2 max-[767px]:text-lg" />
+                <RiArrowDropDownLine className="text-lg text-gray-500" />
               </button>
 
-              {propertyTypeOpen &&
-                createPortal(
-                  <div
-                    className="fixed z-[99999] bg-white border rounded-md shadow-lg max-h-72 overflow-y-auto"
-                    style={{
-                      top: propertyTypeDropdownPos.top,
-                      left: propertyTypeDropdownPos.left,
-                      width: DROPDOWN_WIDTH,
-                    }}
-                  >
-                    <div className="sticky top-0 flex justify-end p-2 bg-white border-b">
-                      <button
-                        onClick={() => setPropertyTypeOpen(false)}
-                        className="p-1 rounded hover:bg-gray-100"
-                      >
-                        <IoClose size={20} />
-                      </button>
-                    </div>
-                    {getFilteredPropertyTypes().map((type) => (
-                      <label
-                        key={type}
-                        className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-100"
-                      >
-                        <input
-                          type={
-                            propertyType === "Commercial Lease" &&
-                              buildingType === "Commercial"
-                              ? "radio"
-                              : "checkbox"
-                          }
-                          name="propertyType"
-                          checked={propertyType2.includes(type)}
-                          onChange={() => togglePropertyType(type)}
-                        />
-
-                        <span>{type}</span>
-                      </label>
-                    ))}
-
-                    <div className="sticky bottom-0 flex gap-2 p-2 bg-white border-t">
-                      <button
-                        onClick={() => setPropertyType2([])}
-                        className="w-1/2 py-2 border rounded-md"
-                      >
-                        Clear
-                      </button>
-
-                      <button
-                        onClick={() => setPropertyTypeOpen(false)}
-                        className="w-1/2 py-2 text-white bg-rose-500 rounded-md"
-                      >
-                        Done
-                      </button>
-                    </div>
-                  </div>,
-                  document.body,
-                )}
+              {openDropdown === "propertyType" && (
+                <div className="absolute left-0 right-0 z-[999] mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                  {[...new Set([...getFilteredPropertyTypes(), ...propertyType2])].map((type) => (
+                    <label
+                      key={type}
+                      className="flex items-center gap-2 px-3 py-2 hover:bg-[#8B1E3F]/5 cursor-pointer text-sm transition-colors"
+                    >
+                      <input
+                        type={
+                          propertyType === "Commercial Lease" &&
+                            buildingType === "Commercial"
+                            ? "radio"
+                            : "checkbox"
+                        }
+                        checked={propertyType2.includes(type)}
+                        onChange={() => {
+                          togglePropertyType(type);
+                          handleAutoApply();
+                        }}
+                        className="accent-[#8B1E3F]"
+                      />
+                      <span>{type}</span>
+                    </label>
+                  ))}
+                  <div className="flex gap-2 p-2 border-t sticky bottom-0 bg-white">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPropertyType2([]);
+                        handleAutoApply();
+                      }}
+                      className="flex-1 py-1.5 text-xs border rounded-md hover:bg-gray-50"
+                    >
+                      Clear
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setOpenDropdown(null)}
+                      className="flex-1 py-1.5 text-xs text-white bg-[#8B1E3F] rounded-md hover:bg-[#7a1a37]"
+                    >
+                      Done
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Budget Dropdown */}
-            <div className={`relative ${FILTER_WIDTH} flex-shrink-0 max-[767px]:w-36`}>
+            <div className="relative">
               <button
-                ref={budgetButtonRef}
-                onClick={() => {
-                  const rect = budgetButtonRef.current.getBoundingClientRect();
-                  setBudgetDropdownPos({
-                    top: rect.bottom + 4,
-                    left: rect.left,
-                    width: rect.width,
-                  });
-                  const wasOpen = priceDropdownOpen;
-                  closeAllDropdowns();
-                  setTimeout(() => {
-                    setPriceDropdownOpen(!wasOpen);
-                  }, 0);
-                }}
-                className="relative flex items-center w-full h-16 p-2 bg-white border-2 border-gray-300 rounded-md text-left max-[767px]:h-11 max-[767px]:px-2 max-[767px]:text-xs"
+                type="button"
+                onClick={() => toggleDropdown("budget")}
+                className="flex items-center justify-between w-full h-8 px-2 text-xs bg-white border border-gray-300 rounded-lg hover:border-[#8B1E3F] focus:outline-none focus:ring-1 focus:ring-[#8B1E3F] transition-colors"
               >
-                <span className="block pr-8 truncate">
+                <span className="truncate text-gray-700">
                   {minPrice && maxPrice
                     ? `${formatPriceMinMax(minPrice)} - ${formatPriceMinMax(maxPrice)}`
                     : minPrice
@@ -3871,89 +1435,74 @@ useEffect(() => {
                         ? `Below ${formatPriceMinMax(maxPrice)}`
                         : "Budget"}
                 </span>
-
-                <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2 max-[767px]:right-2 max-[767px]:text-lg" />
+                <RiArrowDropDownLine className="text-lg text-gray-500" />
               </button>
 
-              {priceDropdownOpen &&
-                createPortal(
-                  <div
-                    className="fixed p-4 bg-white border-2 border-gray-300 rounded-md shadow-lg z-[99999]"
-                    style={{
-                      top: budgetDropdownPos.top,
-                      left: budgetDropdownPos.left,
-                      width: DROPDOWN_WIDTH,
-                    }}
-                  >
-                    <div className="flex justify-end mb-2">
-                      <button
-                        onClick={() => setPriceDropdownOpen(false)}
-                        className="p-1 rounded hover:bg-gray-100"
-                      >
-                        <IoClose size={20} />
-                      </button>
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      <label className="text-sm text-gray-600">Min Price</label>
-                      <select
-                        value={minPrice}
-                        onChange={(e) => setMinPrice(e.target.value)}
-                        className="p-2 border-2 border-gray-300 rounded-md focus:outline-none"
-                      >
-                        <option value="">Min</option>
-                        {budgetOptions
-                          .filter((price) => !maxPrice || price < Number(maxPrice))
-                          .map((price) => (
-                            <option key={price} value={price}>
-                              {formatPriceMinMax(price)}
-                            </option>
-                          ))}
-                      </select>
-
-                      <label className="text-sm text-gray-600">Max Price</label>
-                      <select
-                        value={maxPrice}
-                        onChange={(e) => setMaxPrice(e.target.value)}
-                        className="p-2 border-2 border-gray-300 rounded-md focus:outline-none"
-                      >
-                        <option value="">Max</option>
-                        {budgetOptions
-                          .filter((price) => !minPrice || price > Number(minPrice))
-                          .map((price) => (
-                            <option key={price} value={price}>
-                              {formatPriceMinMax(price)}
-                            </option>
-                          ))}
-                      </select>
-                    </div>
-                  </div>,
-                  document.body,
-                )}
-            </div>
-            {/* Furnished Status Dropdown */}
-            <div className={`relative ${FILTER_WIDTH} flex-shrink-0 max-[767px]:w-36`}>
-              <select
-                value={furnishedStatus}
-                onChange={(e) => setFurnishedStatus(e.target.value)}
-                className="w-full h-16 p-2 border-2 border-gray-300 rounded-md focus:outline-none hover:bg-gray-300 appearance-none max-[767px]:h-11 max-[767px]:px-2 max-[767px]:text-xs"
-              >
-                <option value="">Select Furnished</option>
-                <option value="Furnished">Furnished</option>
-                <option value="Semi-Furnished">Semi-Furnished</option>
-                <option value="Unfurnished">Unfurnished</option>
-              </select>
-              <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2 max-[767px]:right-2 max-[767px]:text-lg" />
+              {openDropdown === "budget" && (
+                <div className="absolute left-0 right-0 mt-1 p-3 bg-white border border-gray-200 rounded-lg shadow-xl z-[999] space-y-2">
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Min Price</label>
+                    <select
+                      value={minPrice}
+                      onChange={(e) => {
+                        setMinPrice(e.target.value);
+                        handleAutoApply();
+                      }}
+                      className="w-full p-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#8B1E3F]"
+                    >
+                      <option value="">Min</option>
+                      {minPrice && !priceOptions.includes(Number(minPrice)) && (
+                        <option value={minPrice}>{formatPriceMinMax(minPrice)}</option>
+                      )}
+                      {priceOptions
+                        .filter((price) => !maxPrice || price < maxPrice)
+                        .map((price) => (
+                          <option key={price} value={price}>
+                            {formatPriceMinMax(price)}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Max Price</label>
+                    <select
+                      value={maxPrice}
+                      onChange={(e) => {
+                        setMaxPrice(e.target.value);
+                        handleAutoApply();
+                      }}
+                      className="w-full p-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#8B1E3F]"
+                    >
+                      <option value="">Max</option>
+                      {maxPrice && !priceOptions.includes(Number(maxPrice)) && (
+                        <option value={maxPrice}>{formatPriceMinMax(maxPrice)}</option>
+                      )}
+                      {priceOptions
+                        .filter((price) => !minPrice || price > minPrice)
+                        .map((price) => (
+                          <option key={price} value={price}>
+                            {formatPriceMinMax(price)}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* BHK Type Dropdown */}
-            <div className={`relative ${FILTER_WIDTH} flex-shrink-0 max-[767px]:w-36`}>
+            {/* BHK */}
+            <div>
               <select
                 value={bhkType}
-                onChange={(e) => setBhkType(e.target.value)}
-                className="w-full h-16 p-2 border-2 border-gray-300 rounded-md focus:outline-none hover:bg-gray-300 appearance-none max-[767px]:h-11 max-[767px]:px-2 max-[767px]:text-xs"
+                onChange={(e) => {
+                  setBhkType(e.target.value);
+                  handleAutoApply();
+                }}
+                onFocus={() => setOpenDropdown(null)}
+                className="w-full h-8 px-2 text-xs border border-gray-300 rounded-lg bg-white hover:border-[#8B1E3F] focus:outline-none focus:ring-1 focus:ring-[#8B1E3F] transition-colors"
               >
-                <option value="">Select BHK</option>
-                <option value="Studio">Studio/Single Room</option>
+                <option value="">BHK</option>
+                <option value="Studio">Studio</option>
                 <option value="1 RK">1 RK</option>
                 <option value="1 BHK">1 BHK</option>
                 <option value="1.5 BHK">1.5 BHK</option>
@@ -3965,234 +1514,224 @@ useEffect(() => {
                 <option value="5 BHK">5 BHK</option>
                 <option value="6+ BHK">6+ BHK</option>
               </select>
-              <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2 max-[767px]:right-2 max-[767px]:text-lg" />
             </div>
 
-            {/* Posted By Dropdown */}
-            <div className={`relative ${FILTER_WIDTH} flex-shrink-0 max-[767px]:w-36`}>
+            {/* More Filters Toggle */}
+            <div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowMoreFilters(!showMoreFilters);
+                  setOpenDropdown(null);
+                }}
+                className={`flex items-center justify-center gap-1 w-full h-8 px-2 text-xs font-medium rounded-lg border transition-all ${showMoreFilters
+                  ? "bg-[#8B1E3F] text-white border-[#8B1E3F]"
+                  : "bg-white text-gray-700 border-gray-300 hover:border-[#8B1E3F] hover:text-[#8B1E3F]"
+                  }`}
+              >
+                <span>More Filters</span>
+                <RiArrowDropDownLine
+                  className={`text-lg transition-transform ${showMoreFilters ? "rotate-180" : ""}`}
+                />
+              </button>
+            </div>
+
+            {/* Reset + Save */}
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={handleResetFilters}
+                className="h-8 flex-1 px-2 text-xs font-medium text-[#8B1E3F] border border-[#8B1E3F] rounded-lg hover:bg-[#8B1E3F]/5 transition-colors"
+              >
+                Reset
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveSearch}
+                className="h-8 flex-1 px-2 text-xs font-medium text-white bg-[#8B1E3F] rounded-lg hover:bg-[#7a1a37] transition-colors"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* MORE FILTERS EXPANDED */}
+        {showMoreFilters && (
+          <div className="border-t border-gray-200 bg-gray-50/70 p-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5">
+              {/* Furnished */}
+              <select
+                value={furnishedStatus}
+                onChange={(e) => {
+                  setFurnishedStatus(e.target.value);
+                  handleAutoApply();
+                }}
+                onFocus={() => setOpenDropdown(null)}
+                className="h-8 px-2.5 text-xs border border-gray-300 rounded-lg bg-white hover:border-[#8B1E3F] focus:outline-none focus:ring-1 focus:ring-[#8B1E3F] transition-colors"
+              >
+                <option value="">Furnished</option>
+                <option value="Furnished">Furnished</option>
+                <option value="Semi-Furnished">Semi-Furnished</option>
+                <option value="Unfurnished">Unfurnished</option>
+              </select>
+
+              {/* Posted By */}
               <select
                 value={postedBy}
-                onChange={(e) => setPostedBy(e.target.value)}
-                className="w-full h-16 p-2 border-2 border-gray-300 rounded-md focus:outline-none hover:bg-gray-300 appearance-none max-[767px]:h-11 max-[767px]:px-2 max-[767px]:text-xs"
+                onChange={(e) => {
+                  setPostedBy(e.target.value);
+                  handleAutoApply();
+                }}
+                onFocus={() => setOpenDropdown(null)}
+                className="h-8 px-2.5 text-xs border border-gray-300 rounded-lg bg-white hover:border-[#8B1E3F] focus:outline-none focus:ring-1 focus:ring-[#8B1E3F] transition-colors"
               >
                 <option value="">Posted By</option>
                 <option value="Owner">Owner</option>
                 <option value="Builder">Builder</option>
               </select>
-              <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2 max-[767px]:right-2 max-[767px]:text-lg" />
-            </div>
 
-            {/* Construction Status */}
-            <div className={`relative ${FILTER_WIDTH} flex-shrink-0 max-[767px]:w-40`}>
-              <button
-                ref={constructionButtonRef}
-                type="button"
-                onClick={() => {
-                  const rect =
-                    constructionButtonRef.current.getBoundingClientRect();
-                  setConstructionDropdownPos({
-                    top: rect.bottom + 4,
-                    left: rect.left,
-                    width: rect.width,
-                  });
-                  const wasOpen = constructionOpen;
-                  closeAllDropdowns();
-                  setTimeout(() => {
-                    setConstructionOpen(!wasOpen);
-                  }, 0);
-                }}
-                className="relative flex items-center w-full h-16 p-2 bg-white border-2 border-gray-300 rounded-md text-left max-[767px]:h-11 max-[767px]:px-2 max-[767px]:text-xs"
-              >
-                <span className="block pr-8 truncate text-left">
-                  {constructionStatus.length > 0
-                    ? constructionStatus.join(", ")
-                    : "Construction Status"}
-                </span>
+              {/* Construction Status */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => toggleDropdown("construction")}
+                  className="flex items-center justify-between w-full h-8 px-2.5 text-xs bg-white border border-gray-300 rounded-lg hover:border-[#8B1E3F] transition-colors"
+                >
+                  <span className="truncate">
+                    {constructionStatus.length > 0
+                      ? `${constructionStatus.length} selected`
+                      : "Construction"}
+                  </span>
+                  <RiArrowDropDownLine className="text-base text-gray-500" />
+                </button>
 
-                <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2 max-[767px]:right-2 max-[767px]:text-lg" />
-              </button>
-
-              {constructionOpen &&
-                createPortal(
-                  <div
-                    className="fixed z-[99999] bg-white border rounded-md shadow-lg"
-                    style={{
-                      top: constructionDropdownPos.top,
-                      left: constructionDropdownPos.left,
-                      width: DROPDOWN_WIDTH,
-                    }}
-                  >
-                    <div className="sticky top-0 flex justify-end p-2 bg-white border-b">
-                      <button
-                        onClick={() => setConstructionOpen(false)}
-                        className="p-1 rounded hover:bg-gray-100"
+                {openDropdown === "construction" && (
+                  <div className="absolute left-0 right-0 z-[999] mt-1 bg-white border border-gray-200 rounded-lg shadow-xl">
+                    {["Ready To Move", "New Launch", "Under Construction"].map((option) => (
+                      <label
+                        key={option}
+                        className="flex items-center gap-2 px-3 py-2 hover:bg-[#8B1E3F]/5 cursor-pointer text-sm"
                       >
-                        <IoClose size={20} />
-                      </button>
-                    </div>
-                    {["Ready To Move", "New Launch", "Under Construction"].map(
-                      (option) => (
-                        <label
-                          key={option}
-                          className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-100"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={constructionStatus.includes(option)}
-                            onChange={() => toggleConstructionStatus(option)}
-                          />
-                          <span>{option}</span>
-                        </label>
-                      ),
-                    )}
-
-                    <div className="sticky bottom-0 flex gap-2 p-2 bg-white border-t">
+                        <input
+                          type="checkbox"
+                          checked={constructionStatus.includes(option)}
+                          onChange={() => {
+                            toggleConstructionStatus(option);
+                            handleAutoApply();
+                          }}
+                          className="accent-[#8B1E3F]"
+                        />
+                        {option}
+                      </label>
+                    ))}
+                    <div className="p-2 border-t">
                       <button
-                        onClick={() => setConstructionStatus([])}
-                        className="w-1/2 py-2 border rounded-md"
-                      >
-                        Clear
-                      </button>
-
-                      <button
-                        onClick={() => setConstructionOpen(false)}
-                        className="w-1/2 py-2 text-white bg-rose-500 rounded-md"
+                        type="button"
+                        onClick={() => setOpenDropdown(null)}
+                        className="w-full py-1.5 text-xs text-white bg-[#8B1E3F] rounded-md hover:bg-[#7a1a37]"
                       >
                         Done
                       </button>
                     </div>
-                  </div>,
-                  document.body,
+                  </div>
                 )}
-            </div>
+              </div>
 
-            {/*Amenities */}
-            <div className={`relative ${FILTER_WIDTH} flex-shrink-0 max-[767px]:w-36`}>
-              <button
-                ref={amenitiesButtonRef}
-                type="button"
-                onClick={() => {
-                  const rect =
-                    amenitiesButtonRef.current.getBoundingClientRect();
+              {/* Amenities */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => toggleDropdown("amenities")}
+                  className="flex items-center justify-between w-full h-8 px-2.5 text-xs bg-white border border-gray-300 rounded-lg hover:border-[#8B1E3F] transition-colors"
+                >
+                  <span className="truncate">
+                    {selectedAmenities.length > 0
+                      ? `${selectedAmenities.length} amenities`
+                      : "Amenities"}
+                  </span>
+                  <RiArrowDropDownLine className="text-base text-gray-500" />
+                </button>
 
-                  setAmenitiesDropdownPos({
-                    top: rect.bottom + 4,
-                    left: rect.left,
-                    width: rect.width,
-                  });
-                  const wasOpen = amenitiesOpen;
-                  closeAllDropdowns();
-                  setTimeout(() => {
-                    setAmenitiesOpen(!wasOpen);
-                  }, 0);
-                }}
-                className="relative flex items-center w-full h-16 p-2 bg-white border-2 border-gray-300 rounded-md text-left max-[767px]:h-11 max-[767px]:px-2 max-[767px]:text-xs"
-              >
-                <span className="block pr-8 truncate text-left">
-                  {selectedAmenities.length > 0
-                    ? amenitiesList
-                      .filter((item) =>
-                        selectedAmenities.includes(String(item._id)),
-                      )
-                      .map((item) => item.amenity_name)
-                      .join(", ")
-                    : "Amenities"}
-                </span>
-
-                <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2 max-[767px]:right-2 max-[767px]:text-lg" />
-              </button>
-
-              {amenitiesOpen &&
-                createPortal(
-                  <div
-                    className="fixed z-[99999] bg-white border rounded-md shadow-lg max-h-72 overflow-y-auto"
-                    style={{
-                      top: amenitiesDropdownPos.top,
-                      left: amenitiesDropdownPos.left,
-                      width: DROPDOWN_WIDTH,
-                    }}
-                  >
-                    <div className="sticky top-0 flex justify-end p-2 bg-white border-b">
-                      <button
-                        onClick={() => setAmenitiesOpen(false)}
-                        className="p-1 rounded hover:bg-gray-100"
-                      >
-                        <IoClose size={20} />
-                      </button>
-                    </div>
+                {openDropdown === "amenities" && (
+                  <div className="absolute left-0 right-0 z-[999] mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-52 overflow-y-auto">
                     {amenitiesList.map((item) => (
                       <label
                         key={item._id}
-                        className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-100"
+                        className="flex items-center gap-2 px-3 py-2 hover:bg-[#8B1E3F]/5 cursor-pointer text-sm"
                       >
                         <input
                           type="checkbox"
                           checked={selectedAmenities.includes(String(item._id))}
-                          onChange={() => toggleAmenity(item._id)}
+                          onChange={() => {
+                            toggleAmenity(item._id);
+                            handleAutoApply();
+                          }}
+                          className="accent-[#8B1E3F]"
                         />
-
-                        <span>{item.amenity_name}</span>
+                        {item.amenity_name}
                       </label>
                     ))}
-
-                    <div className="sticky bottom-0 flex gap-2 p-2 bg-white border-t">
+                    <div className="sticky bottom-0 p-2 border-t bg-white">
                       <button
-                        onClick={() => setSelectedAmenities([])}
-                        className="w-1/2 py-2 border rounded-md"
-                      >
-                        Clear
-                      </button>
-
-                      <button
-                        onClick={() => setAmenitiesOpen(false)}
-                        className="w-1/2 py-2 text-white bg-rose-500 rounded-md"
+                        type="button"
+                        onClick={() => setOpenDropdown(null)}
+                        className="w-full py-1.5 text-xs text-white bg-[#8B1E3F] rounded-md hover:bg-[#7a1a37]"
                       >
                         Done
                       </button>
                     </div>
-                  </div>,
-                  document.body,
+                  </div>
                 )}
-            </div>
+              </div>
 
-            {/*Bathroom*/}
-            <div className={`${FILTER_WIDTH} flex-shrink-0 max-[767px]:w-36`}>
-              <div className="flex items-center h-16 overflow-hidden bg-white border-2 border-gray-300 rounded-md max-[767px]:h-11">
+              {/* Bathrooms */}
+              <div className="flex items-center h-8 border border-gray-300 rounded-lg overflow-hidden bg-white hover:border-[#8B1E3F] transition-colors">
                 <button
                   type="button"
-                  onClick={decrementBathrooms}
-                  className="flex items-center justify-center w-14 h-full text-2xl font-bold border-r hover:bg-gray-200 max-[767px]:w-8 max-[767px]:text-lg"
+                  onClick={() => {
+                    decrementBathrooms();
+                    handleAutoApply();
+                  }}
+                  className="w-8 h-full flex items-center justify-center border-r hover:bg-gray-50 text-base"
                 >
-                  -
+                  −
                 </button>
-
                 <input
                   type="number"
                   min="0"
                   max="20"
                   value={bathrooms}
-                  onChange={handleBathroomInput}
-                  placeholder="Bathrooms"
-                  className="w-full h-full text-center focus:outline-none max-[767px]:text-xs"
+                  onChange={(e) => {
+                    handleBathroomInput(e);
+                    handleAutoApply();
+                  }}
+                  onFocus={() => setOpenDropdown(null)}
+                  placeholder="Bath"
+                  className="w-full h-full text-center text-xs focus:outline-none"
                 />
-
                 <button
                   type="button"
-                  onClick={incrementBathrooms}
-                  className="flex items-center justify-center w-14 h-full text-2xl font-bold border-l hover:bg-gray-200 max-[767px]:w-8 max-[767px]:text-lg"
+                  onClick={() => {
+                    incrementBathrooms();
+                    handleAutoApply();
+                  }}
+                  className="w-8 h-full flex items-center justify-center border-l hover:bg-gray-50 text-base"
                 >
                   +
                 </button>
               </div>
-            </div>
 
-            {/* Facing */}
-            {shouldShowFacingFilter() && (
-              <div className={`relative ${FILTER_WIDTH} flex-shrink-0 max-[767px]:w-36`}>
+              {/* Facing */}
+              {shouldShowFacingFilter() && (
                 <select
                   value={facing}
-                  onChange={(e) => setFacing(e.target.value)}
-                  className="w-full h-16 p-2 border-2 border-gray-300 rounded-md focus:outline-none hover:bg-gray-300 appearance-none max-[767px]:h-11 max-[767px]:px-2 max-[767px]:text-xs"
+                  onChange={(e) => {
+                    setFacing(e.target.value);
+                    handleAutoApply();
+                  }}
+                  onFocus={() => setOpenDropdown(null)}
+                  className="h-8 px-2.5 text-xs border border-gray-300 rounded-lg bg-white hover:border-[#8B1E3F] focus:outline-none focus:ring-1 focus:ring-[#8B1E3F] transition-colors"
                 >
                   <option value="">Facing</option>
                   <option value="North">North</option>
@@ -4204,1558 +1743,510 @@ useEffect(() => {
                   <option value="South">South</option>
                   <option value="South-West">South-West</option>
                 </select>
+              )}
 
-                <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2 max-[767px]:right-2 max-[767px]:text-lg" />
-              </div>
-            )}
-
-            {/*Set Photos*/}
-            <div className={`relative ${FILTER_WIDTH} flex-shrink-0 max-[767px]:w-36`}>
+              {/* With Photo */}
               <select
                 value={withPhoto}
-                onChange={(e) => setWithPhoto(e.target.value)}
-                className="w-full h-16 p-2 border-2 border-gray-300 rounded-md focus:outline-none hover:bg-gray-300 appearance-none max-[767px]:h-11 max-[767px]:px-2 max-[767px]:text-xs"
+                onChange={(e) => {
+                  setWithPhoto(e.target.value);
+                  handleAutoApply();
+                }}
+                onFocus={() => setOpenDropdown(null)}
+                className="h-8 px-2.5 text-xs border border-gray-300 rounded-lg bg-white hover:border-[#8B1E3F] focus:outline-none focus:ring-1 focus:ring-[#8B1E3F] transition-colors"
               >
                 <option value="">With Photo</option>
                 <option value="Yes">Yes</option>
                 <option value="No">No</option>
               </select>
-              <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2 max-[767px]:right-2 max-[767px]:text-lg" />
-            </div>
 
-            {/*Set Video*/}
-            <div className={`relative ${FILTER_WIDTH} flex-shrink-0 max-[767px]:w-36`}>
+              {/* With Video */}
               <select
                 value={withVideos}
-                onChange={(e) => setWithVideos(e.target.value)}
-                className="w-full h-16 p-2 border-2 border-gray-300 rounded-md focus:outline-none hover:bg-gray-300 appearance-none max-[767px]:h-11 max-[767px]:px-2 max-[767px]:text-xs"
+                onChange={(e) => {
+                  setWithVideos(e.target.value);
+                  handleAutoApply();
+                }}
+                onFocus={() => setOpenDropdown(null)}
+                className="h-8 px-2.5 text-xs border border-gray-300 rounded-lg bg-white hover:border-[#8B1E3F] focus:outline-none focus:ring-1 focus:ring-[#8B1E3F] transition-colors"
               >
                 <option value="">With Video</option>
                 <option value="Yes">Yes</option>
                 <option value="No">No</option>
               </select>
-              <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2 max-[767px]:right-2 max-[767px]:text-lg" />
-            </div>
 
-            {/* Sq. Ft Range Dropdown */}
-            <div className={`relative ${FILTER_WIDTH} flex-shrink-0 max-[767px]:w-36`}>
-              <button
-                ref={areaButtonRef}
-                onClick={() => {
-                  const rect = areaButtonRef.current.getBoundingClientRect();
-                  let left = rect.left;
-                  const overflow =
-                    rect.left + DROPDOWN_WIDTH - window.innerWidth;
-                  if (overflow > 0) {
-                    left = rect.left - overflow - 10;
-                  }
-                  setAreaDropdownPos({
-                    top: rect.bottom + 4,
-                    left,
-                    width: rect.width,
-                  });
+              {/* Area */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => toggleDropdown("area")}
+                  className="flex items-center justify-between w-full h-8 px-2.5 text-xs bg-white border border-gray-300 rounded-lg hover:border-[#8B1E3F] transition-colors"
+                >
+                  <span className="truncate">
+                    {minSquareFt || maxSquareFt
+                      ? `${minSquareFt || 0} - ${maxSquareFt || "Any"} ${areaIn}`
+                      : "Area"}
+                  </span>
+                  <RiArrowDropDownLine className="text-base text-gray-500" />
+                </button>
 
-                  const wasOpen = squareFtDropdownOpen;
-                  closeAllDropdowns();
-                  setTimeout(() => {
-                    setSquareFtDropdownOpen(!wasOpen);
-                  }, 0);
-                }}
-                className="relative flex items-center w-full h-16 p-2 bg-white border-2 border-gray-300 rounded-md text-left max-[767px]:h-11 max-[767px]:px-2 max-[767px]:text-xs"
-              >
-                <span className="block pr-8 truncate text-left">
-                  {minSquareFt || maxSquareFt
-                    ? `${minSquareFt || 0} - ${maxSquareFt || "Any"} ${areaIn}`
-                    : "Area"}
-                </span>
-
-                <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2 max-[767px]:right-2 max-[767px]:text-lg" />
-              </button>
-
-              {squareFtDropdownOpen &&
-                createPortal(
-                  <div
-                    className="fixed p-4 bg-white border-2 border-gray-300 rounded-md shadow-lg z-[99999]"
-                    style={{
-                      top: areaDropdownPos.top,
-                      left: areaDropdownPos.left,
-                      width: DROPDOWN_WIDTH,
-                    }}
-                  >
-                    <div className="flex justify-end mb-2">
-                      <button
-                        onClick={() => setSquareFtDropdownOpen(false)}
-                        className="p-1 rounded hover:bg-gray-100"
-                      >
-                        <IoClose size={20} />
-                      </button>
-                    </div>
-                    {/* Area Unit */}
-                    <label className="text-sm text-gray-600">Area Unit</label>
+                {openDropdown === "area" && (
+                  <div className="absolute left-0 right-0 mt-1 p-3 bg-white border border-gray-200 rounded-lg shadow-xl z-[999] space-y-2">
                     <select
                       value={areaIn}
-                      onChange={(e) => setAreaIn(e.target.value)}
-                      className="w-full p-2 mb-3 border-2 border-gray-300 rounded-md focus:outline-none"
+                      onChange={(e) => {
+                        setAreaIn(e.target.value);
+                        handleAutoApply();
+                      }}
+                      className="w-full p-2 text-xs border border-gray-300 rounded-md"
                     >
-                      {areaUnits.map((unit) => (
-                        <option key={unit} value={unit}>
-                          {unit}
-                        </option>
+                      {areaUnits.map((u) => (
+                        <option key={u} value={u}>{u}</option>
                       ))}
                     </select>
-
-                    {/* Min Area */}
-                    <label className="text-sm text-gray-600">Min Area</label>
                     <input
                       type="number"
                       value={minSquareFt}
-                      onChange={(e) => setMinSquareFt(e.target.value)}
-                      className="w-full p-2 mb-3 border-2 border-gray-300 rounded-md focus:outline-none"
-                      placeholder="Min"
+                      onChange={(e) => {
+                        setMinSquareFt(e.target.value);
+                        handleAutoApply();
+                      }}
+                      placeholder="Min Area"
+                      className="w-full p-2 text-xs border border-gray-300 rounded-md"
                     />
-
-                    {/* Max Area */}
-                    <label className="text-sm text-gray-600">Max Area</label>
                     <input
                       type="number"
                       value={maxSquareFt}
-                      onChange={(e) => setMaxSquareFt(e.target.value)}
-                      className="w-full p-2 border-2 border-gray-300 rounded-md focus:outline-none"
-                      placeholder="Max"
+                      onChange={(e) => {
+                        setMaxSquareFt(e.target.value);
+                        handleAutoApply();
+                      }}
+                      placeholder="Max Area"
+                      className="w-full p-2 text-xs border border-gray-300 rounded-md"
                     />
-                  </div>,
-                  document.body,
-                )}
-            </div>
-
-            {/*Sharing Type */}
-            {propertyType === "PG/Co-living" && (
-              <div className={`relative ${FILTER_WIDTH} flex-shrink-0 max-[767px]:w-40`}>
-                <button
-                  ref={sharingTypeButtonRef}
-                  type="button"
-                  onClick={() => {
-                    const rect =
-                      sharingTypeButtonRef.current.getBoundingClientRect();
-                    let left = rect.left;
-                    const overflow =
-                      rect.left + DROPDOWN_WIDTH - window.innerWidth;
-
-                    if (overflow > 0) {
-                      left = rect.left - overflow - 10;
-                    }
-                    setSharingTypeDropdownPos({
-                      top: rect.bottom + 4,
-                      left,
-                      width: rect.width,
-                    });
-                    const wasOpen = sharingTypeOpen;
-                    closeAllDropdowns();
-                    setTimeout(() => {
-                      setSharingTypeOpen(!wasOpen);
-                    }, 0);
-                  }}
-                  className="relative flex items-center w-full h-16 p-2 bg-white border-2 border-gray-300 rounded-md text-left max-[767px]:h-11 max-[767px]:px-2 max-[767px]:text-xs"
-                >
-                  <span className="block pr-8 truncate text-left">
-                    {sharingType.length > 0
-                      ? sharingType.join(", ")
-                      : "Sharing Type"}
-                  </span>
-
-                  <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2 max-[767px]:right-2 max-[767px]:text-lg" />
-                </button>
-
-                {sharingTypeOpen &&
-                  createPortal(
-                    <div
-                      className="fixed z-[99999] bg-white border rounded-md shadow-lg"
-                      style={{
-                        top: sharingTypeDropdownPos.top,
-                        left: sharingTypeDropdownPos.left,
-                        width: DROPDOWN_WIDTH,
-                      }}
+                    <button
+                      type="button"
+                      onClick={() => setOpenDropdown(null)}
+                      className="w-full py-1.5 text-xs text-white bg-[#8B1E3F] rounded-md hover:bg-[#7a1a37]"
                     >
-                      <div className="sticky top-0 flex justify-end p-2 bg-white border-b">
-                        <button
-                          onClick={() => setSharingTypeOpen(false)}
-                          className="p-1 rounded hover:bg-gray-100"
-                        >
-                          <IoClose size={20} />
-                        </button>
-                      </div>
-                      {[
-                        "Private Rooms",
-                        "2 Per Room",
-                        "More than 2 per room",
-                      ].map((option) => (
-                        <label
-                          key={option}
-                          className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-100"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={sharingType.includes(option)}
-                            onChange={() => toggleSharingType(option)}
-                          />
-                          <span>{option}</span>
-                        </label>
-                      ))}
-
-                      <div className="sticky bottom-0 flex gap-2 p-2 bg-white border-t">
-                        <button
-                          onClick={() => setSharingType([])}
-                          className="w-1/2 py-2 border rounded-md"
-                        >
-                          Clear
-                        </button>
-
-                        <button
-                          onClick={() => setSharingTypeOpen(false)}
-                          className="w-1/2 py-2 text-white bg-rose-500 rounded-md"
-                        >
-                          Done
-                        </button>
-                      </div>
-                    </div>,
-                    document.body,
-                  )}
-              </div>
-            )}
-
-            {/*Available Form*/}
-            {propertyType === "Rent" && (
-              <div className={`relative ${FILTER_WIDTH} flex-shrink-0 max-[767px]:w-40`}>
-                <button
-                  ref={availableFromButtonRef}
-                  type="button"
-                  onClick={() => {
-                    const rect =
-                      availableFromButtonRef.current.getBoundingClientRect();
-                    let left = rect.left;
-                    const overflow =
-                      rect.left + DROPDOWN_WIDTH - window.innerWidth;
-                    if (overflow > 0) {
-                      left = rect.left - overflow - 10;
-                    }
-                    setAvailableFromDropdownPos({
-                      top: rect.bottom + 4,
-                      left,
-                      width: rect.width,
-                    });
-                    const wasOpen = availableFromOpen;
-                    closeAllDropdowns();
-                    setTimeout(() => {
-                      setAvailableFromOpen(!wasOpen);
-                    }, 0);
-                  }}
-                  className="relative flex items-center w-full h-16 p-2 bg-white border-2 border-gray-300 rounded-md text-left max-[767px]:h-11 max-[767px]:px-2 max-[767px]:text-xs"
-                >
-                  <span className="block pr-8 truncate text-left">
-                    {availableFrom.length > 0
-                      ? availableFrom.join(", ")
-                      : "Available From"}
-                  </span>
-
-                  <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2 max-[767px]:right-2 max-[767px]:text-lg" />
-                </button>
-
-                {availableFromOpen &&
-                  createPortal(
-                    <div
-                      className="fixed z-[99999] bg-white border rounded-md shadow-lg"
-                      style={{
-                        top: availableFromDropdownPos.top,
-                        left: availableFromDropdownPos.left,
-                        width: DROPDOWN_WIDTH,
-                      }}
-                    >
-                      <div className="sticky top-0 flex justify-end p-2 bg-white border-b">
-                        <button
-                          onClick={() => setAvailableFromOpen(false)}
-                          className="p-1 rounded hover:bg-gray-100"
-                        >
-                          <IoClose size={20} />
-                        </button>
-                      </div>
-                      {[
-                        "Immediately",
-                        "Any Time",
-                        "Within 1 Month",
-                        "After 1 Month",
-                        "Within 3 Month",
-                        "After 3 Month",
-                      ].map((option) => (
-                        <label
-                          key={option}
-                          className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-100"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={availableFrom.includes(option)}
-                            onChange={() => toggleAvailableFrom(option)}
-                          />
-                          <span>{option}</span>
-                        </label>
-                      ))}
-
-                      <div className="sticky bottom-0 flex gap-2 p-2 bg-white border-t">
-                        <button
-                          onClick={() => setAvailableFrom([])}
-                          className="w-1/2 py-2 border rounded-md"
-                        >
-                          Clear
-                        </button>
-
-                        <button
-                          onClick={() => setAvailableFromOpen(false)}
-                          className="w-1/2 py-2 text-white bg-rose-500 rounded-md"
-                        >
-                          Done
-                        </button>
-                      </div>
-                    </div>,
-                    document.body,
-                  )}
-              </div>
-            )}
-
-            {/*Available For*/}
-            {(propertyType === "Rent" || propertyType === "PG/Co-living") && (
-              <div className={`relative ${FILTER_WIDTH} flex-shrink-0 max-[767px]:w-40`}>
-                <button
-                  ref={availableForButtonRef}
-                  type="button"
-                  onClick={() => {
-                    const rect =
-                      availableForButtonRef.current.getBoundingClientRect();
-
-                    let left = rect.left;
-                    const overflow =
-                      rect.left + DROPDOWN_WIDTH - window.innerWidth;
-                    if (overflow > 0) {
-                      left = rect.left - overflow - 10;
-                    }
-                    setAvailableForDropdownPos({
-                      top: rect.bottom + 4,
-                      left,
-                      width: rect.width,
-                    });
-
-                    const wasOpen = availableForOpen;
-                    closeAllDropdowns();
-                    setTimeout(() => {
-                      setAvailableForOpen(!wasOpen);
-                    }, 0);
-                  }}
-                  className="relative flex items-center w-full h-16 p-2 bg-white border-2 border-gray-300 rounded-md text-left max-[767px]:h-11 max-[767px]:px-2 max-[767px]:text-xs"
-                >
-                  <span className="block pr-8 truncate text-left">
-                    {availableFor.length > 0
-                      ? availableFor.join(", ")
-                      : "Available For"}
-                  </span>
-
-                  <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2 max-[767px]:right-2 max-[767px]:text-lg" />
-                </button>
-
-                {availableForOpen &&
-                  createPortal(
-                    <div
-                      className="fixed z-[99999] bg-white border rounded-md shadow-lg max-h-72 overflow-y-auto"
-                      style={{
-                        top: availableForDropdownPos.top,
-                        left: availableForDropdownPos.left,
-                        width: DROPDOWN_WIDTH,
-                      }}
-                    >
-                      <div className="sticky top-0 flex justify-end p-2 bg-white border-b">
-                        <button
-                          onClick={() => setAvailableForOpen(false)}
-                          className="p-1 rounded hover:bg-gray-100"
-                        >
-                          <IoClose size={20} />
-                        </button>
-                      </div>
-                      {getAvailableForOptions().map((option) => (
-                        <label
-                          key={option}
-                          className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-100"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={availableFor.includes(option)}
-                            onChange={() => toggleAvailableFor(option)}
-                          />
-                          <span>{option}</span>
-                        </label>
-                      ))}
-
-                      <div className="sticky bottom-0 flex gap-2 p-2 bg-white border-t">
-                        <button
-                          onClick={() => setAvailableFor([])}
-                          className="w-1/2 py-2 border rounded-md"
-                        >
-                          Clear
-                        </button>
-
-                        <button
-                          onClick={() => setAvailableForOpen(false)}
-                          className="w-1/2 py-2 text-white bg-rose-500 rounded-md"
-                        >
-                          Done
-                        </button>
-                      </div>
-                    </div>,
-                    document.body,
-                  )}
-              </div>
-            )}
-
-            {/*Set Capacity */}
-            {propertyType === "PG/Co-living" && (
-              <div className={`relative ${FILTER_WIDTH} flex-shrink-0 max-[767px]:w-40`}>
-                <button
-                  ref={capacityButtonRef}
-                  type="button"
-                  onClick={() => {
-                    const rect =
-                      capacityButtonRef.current.getBoundingClientRect();
-
-                    let left = rect.left;
-                    const overflow =
-                      rect.left + DROPDOWN_WIDTH - window.innerWidth;
-                    if (overflow > 0) {
-                      left = rect.left - overflow - 10;
-                    }
-                    setCapacityDropdownPos({
-                      top: rect.bottom + 4,
-                      left,
-                      width: DROPDOWN_WIDTH,
-                    });
-                    const wasOpen = capacityOpen;
-                    closeAllDropdowns();
-
-                    setTimeout(() => {
-                      setCapacityOpen(!wasOpen);
-                    }, 0);
-                  }}
-                  className="relative flex items-center w-full h-16 p-2 bg-white border-2 border-gray-300 rounded-md text-left max-[767px]:h-11 max-[767px]:px-2 max-[767px]:text-xs"
-                >
-                  <span className="block pr-8 truncate text-left">
-                    {capacity.length > 0
-                      ? capacity.join(", ")
-                      : "Total Capacity"}
-                  </span>
-
-                  <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2 max-[767px]:right-2 max-[767px]:text-lg" />
-                </button>
-
-                {capacityOpen &&
-                  createPortal(
-                    <div
-                      className="fixed z-[99999] bg-white border rounded-md shadow-lg"
-                      style={{
-                        top: capacityDropdownPos.top,
-                        left: capacityDropdownPos.left,
-                        width: capacityDropdownPos.width,
-                      }}
-                    >
-                      <div className="sticky top-0 flex justify-end p-2 bg-white border-b">
-                        <button
-                          onClick={() => setCapacityOpen(false)}
-                          className="p-1 rounded hover:bg-gray-100"
-                        >
-                          <IoClose size={20} />
-                        </button>
-                      </div>
-
-                      {[
-                        "1-2 guest",
-                        "2-4 guest",
-                        "4-10 guest",
-                        "10+ guest",
-                      ].map((option) => (
-                        <label
-                          key={option}
-                          className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-100"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={capacity.includes(option)}
-                            onChange={() => toggleCapacity(option)}
-                          />
-                          <span>{option}</span>
-                        </label>
-                      ))}
-
-                      <div className="sticky bottom-0 flex gap-2 p-2 bg-white border-t">
-                        <button
-                          onClick={() => setCapacity([])}
-                          className="w-1/2 py-2 border rounded-md"
-                        >
-                          Clear
-                        </button>
-
-                        <button
-                          onClick={() => setCapacityOpen(false)}
-                          className="w-1/2 py-2 text-white bg-rose-500 rounded-md"
-                        >
-                          Done
-                        </button>
-                      </div>
-                    </div>,
-                    document.body,
-                  )}
-              </div>
-            )}
-
-            {/*Investment Option */}
-            {propertyType === "Commercial Buy" && (
-              <div className={`relative ${FILTER_WIDTH} flex-shrink-0 max-[767px]:w-40`}>
-                <button
-                  ref={investmentButtonRef}
-                  type="button"
-                  onClick={() => {
-                    const rect =
-                      investmentButtonRef.current.getBoundingClientRect();
-
-                    let left = rect.left;
-                    const overflow =
-                      rect.left + DROPDOWN_WIDTH - window.innerWidth;
-                    if (overflow > 0) {
-                      left = rect.left - overflow - 10;
-                    }
-                    setInvestmentDropdownPos({
-                      top: rect.bottom + 4,
-                      left,
-                      width: rect.width,
-                    });
-                    const wasOpen = investmentOpen;
-                    closeAllDropdowns();
-                    setTimeout(() => {
-                      setInvestmentOpen(!wasOpen);
-                    }, 0);
-                  }}
-                  className="relative flex items-center w-full h-16 p-2 bg-white border-2 border-gray-300 rounded-md text-left max-[767px]:h-11 max-[767px]:px-2 max-[767px]:text-xs"
-                >
-                  <span className="block pr-8 truncate text-left">
-                    {investmentOptions.length > 0
-                      ? investmentOptions.join(", ")
-                      : "Property Usage"}
-                  </span>
-                  <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2 max-[767px]:right-2 max-[767px]:text-lg" />
-                </button>
-
-                {investmentOpen &&
-                  createPortal(
-                    <div
-                      className="fixed z-[99999] bg-white border rounded-md shadow-lg"
-                      style={{
-                        top: investmentDropdownPos.top,
-                        left: investmentDropdownPos.left,
-                        width: DROPDOWN_WIDTH,
-                      }}
-                    >
-                      <div className="sticky top-0 flex justify-end p-2 bg-white border-b">
-                        <button
-                          onClick={() => setInvestmentOpen(false)}
-                          className="p-1 rounded hover:bg-gray-100"
-                        >
-                          <IoClose size={20} />
-                        </button>
-                      </div>
-                      {investmentOptionsList.map((option) => (
-                        <label
-                          key={option}
-                          className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-100"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={investmentOptions.includes(option)}
-                            onChange={() => toggleInvestmentOption(option)}
-                          />
-                          <span>{option}</span>
-                        </label>
-                      ))}
-
-                      <div className="sticky bottom-0 flex gap-2 p-2 bg-white border-t">
-                        <button
-                          onClick={() => setInvestmentOptions([])}
-                          className="w-1/2 py-2 border rounded-md"
-                        >
-                          Clear
-                        </button>
-
-                        <button
-                          onClick={() => setInvestmentOpen(false)}
-                          className="w-1/2 py-2 text-white bg-rose-500 rounded-md"
-                        >
-                          Done
-                        </button>
-                      </div>
-                    </div>,
-                    document.body,
-                  )}
-              </div>
-            )}
-
-            {/*Resale*/}
-            {propertyType === "Commercial Buy" && (
-              <div className={`relative ${FILTER_WIDTH} flex-shrink-0 max-[767px]:w-36`}>
-                <select
-                  value={purchaseType}
-                  onChange={(e) => setPurchaseType(e.target.value)}
-                  className="w-full h-16 p-2 border-2 border-gray-300 rounded-md focus:outline-none hover:bg-gray-300 appearance-none max-[767px]:h-11 max-[767px]:px-2 max-[767px]:text-xs"
-                >
-                  <option value="">Purchase Type</option>
-                  {purchaseTypeOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-                <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2 max-[767px]:right-2 max-[767px]:text-lg" />
-              </div>
-            )}
-
-            {/* Plot/Land */}
-            {(propertyType === "Commercial Buy" ||
-              propertyType === "Commercial Lease") &&
-              buildingType === "Commercial" &&
-              propertyType2.includes("Plot/Land") && (
-                <div className={`relative ${FILTER_WIDTH} flex-shrink-0 max-[767px]:w-40`}>
-                  <button
-                    ref={plotLandButtonRef}
-                    type="button"
-                    onClick={() => {
-                      const rect =
-                        plotLandButtonRef.current.getBoundingClientRect();
-
-                      let left = rect.left;
-                      const overflow =
-                        rect.left + DROPDOWN_WIDTH - window.innerWidth;
-
-                      if (overflow > 0) {
-                        left = rect.left - overflow - 10;
-                      }
-
-                      setPlotLandDropdownPos({
-                        top: rect.bottom + 4,
-                        left,
-                        width: DROPDOWN_WIDTH,
-                      });
-
-                      const wasOpen = plotLandOpen;
-                      closeAllDropdowns();
-
-                      setTimeout(() => {
-                        setPlotLandOpen(!wasOpen);
-                      }, 0);
-                    }}
-                    className="relative flex items-center w-full h-16 p-2 bg-white border-2 border-gray-300 rounded-md text-left max-[767px]:h-11 max-[767px]:px-2 max-[767px]:text-xs"
-                  >
-                    <span className="block pr-8 truncate text-left">
-                      {plotLandTypes.length > 0
-                        ? plotLandTypes.join(", ")
-                        : "Plot/Land Type"}
-                    </span>
-
-                    <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2 max-[767px]:right-2 max-[767px]:text-lg" />
-                  </button>
-
-                  {plotLandOpen &&
-                    createPortal(
-                      <div
-                        className="fixed z-[99999] bg-white border rounded-md shadow-lg"
-                        style={{
-                          top: plotLandDropdownPos.top,
-                          left: plotLandDropdownPos.left,
-                          width: plotLandDropdownPos.width,
-                        }}
-                      >
-                        <div className="sticky top-0 flex justify-end p-2 bg-white border-b">
-                          <button
-                            onClick={() => setPlotLandOpen(false)}
-                            className="p-1 rounded hover:bg-gray-100"
-                          >
-                            <IoClose size={20} />
-                          </button>
-                        </div>
-
-                        {plotLandOptions.map((option) => (
-                          <label
-                            key={option}
-                            className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-100"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={plotLandTypes.includes(option)}
-                              onChange={() => togglePlotLandType(option)}
-                            />
-                            <span>{option}</span>
-                          </label>
-                        ))}
-
-                        <div className="sticky bottom-0 flex gap-2 p-2 bg-white border-t">
-                          <button
-                            onClick={() => setPlotLandTypes([])}
-                            className="w-1/2 py-2 border rounded-md"
-                          >
-                            Clear
-                          </button>
-
-                          <button
-                            onClick={() => setPlotLandOpen(false)}
-                            className="w-1/2 py-2 text-white bg-rose-500 rounded-md"
-                          >
-                            Done
-                          </button>
-                        </div>
-                      </div>,
-                      document.body,
-                    )}
-                </div>
-              )}
-
-            {/* Office Type */}
-            {propertyType === "Commercial Lease" &&
-              buildingType === "Commercial" &&
-              propertyType2.includes("Office Space") && (
-                <div className={`relative ${FILTER_WIDTH} flex-shrink-0 max-[767px]:w-36`}>
-                  <button
-                    ref={officeTypeButtonRef}
-                    type="button"
-                    onClick={() => {
-                      const rect =
-                        officeTypeButtonRef.current.getBoundingClientRect();
-
-                      let left = rect.left;
-                      const overflow =
-                        rect.left + DROPDOWN_WIDTH - window.innerWidth;
-
-                      if (overflow > 0) {
-                        left = rect.left - overflow - 10;
-                      }
-
-                      setOfficeTypeDropdownPos({
-                        top: rect.bottom + 4,
-                        left,
-                        width: DROPDOWN_WIDTH,
-                      });
-
-                      const wasOpen = officeTypeOpen;
-                      closeAllDropdowns();
-
-                      setTimeout(() => {
-                        setOfficeTypeOpen(!wasOpen);
-                      }, 0);
-                    }}
-                    className="relative flex items-center w-full h-16 p-2 bg-white border-2 border-gray-300 rounded-md text-left max-[767px]:h-11 max-[767px]:px-2 max-[767px]:text-xs"
-                  >
-                    <span className="block pr-8 truncate text-left">
-                      {officeType.length > 0
-                        ? officeType.join(", ")
-                        : "Office Type"}
-                    </span>
-
-                    <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2 max-[767px]:right-2 max-[767px]:text-lg" />
-                  </button>
-
-                  {officeTypeOpen &&
-                    createPortal(
-                      <div
-                        className="fixed z-[99999] bg-white border rounded-md shadow-lg"
-                        style={{
-                          top: officeTypeDropdownPos.top,
-                          left: officeTypeDropdownPos.left,
-                          width: officeTypeDropdownPos.width,
-                        }}
-                      >
-                        <div className="sticky top-0 flex justify-end p-2 bg-white border-b">
-                          <button
-                            onClick={() => setOfficeTypeOpen(false)}
-                            className="p-1 rounded hover:bg-gray-100"
-                          >
-                            <IoClose size={20} />
-                          </button>
-                        </div>
-
-                        {officeTypeOptions.map((option) => (
-                          <label
-                            key={option}
-                            className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-100"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={officeType.includes(option)}
-                              onChange={() =>
-                                setOfficeType((prev) =>
-                                  prev.includes(option)
-                                    ? prev.filter((i) => i !== option)
-                                    : [...prev, option],
-                                )
-                              }
-                            />
-                            <span>{option}</span>
-                          </label>
-                        ))}
-
-                        <div className="sticky bottom-0 flex gap-2 p-2 bg-white border-t">
-                          <button
-                            onClick={() => setOfficeType([])}
-                            className="w-1/2 py-2 border rounded-md"
-                          >
-                            Clear
-                          </button>
-
-                          <button
-                            onClick={() => setOfficeTypeOpen(false)}
-                            className="w-1/2 py-2 text-white bg-rose-500 rounded-md"
-                          >
-                            Done
-                          </button>
-                        </div>
-                      </div>,
-                      document.body,
-                    )}
-                </div>
-              )}
-
-            {/* Retail Type */}
-            {propertyType === "Commercial Lease" &&
-              buildingType === "Commercial" &&
-              propertyType2.includes("Retail Shops/Showrooms") && (
-                <div className={`relative ${FILTER_WIDTH} flex-shrink-0 max-[767px]:w-36`}>
-                  <button
-                    ref={retailTypeButtonRef}
-                    type="button"
-                    onClick={() => {
-                      const rect =
-                        retailTypeButtonRef.current.getBoundingClientRect();
-
-                      let left = rect.left;
-                      const overflow =
-                        rect.left + DROPDOWN_WIDTH - window.innerWidth;
-
-                      if (overflow > 0) {
-                        left = rect.left - overflow - 10;
-                      }
-
-                      setRetailTypeDropdownPos({
-                        top: rect.bottom + 4,
-                        left,
-                        width: DROPDOWN_WIDTH,
-                      });
-
-                      const wasOpen = retailTypeOpen;
-                      closeAllDropdowns();
-
-                      setTimeout(() => {
-                        setRetailTypeOpen(!wasOpen);
-                      }, 0);
-                    }}
-                    className="relative flex items-center w-full h-16 p-2 bg-white border-2 border-gray-300 rounded-md text-left max-[767px]:h-11 max-[767px]:px-2 max-[767px]:text-xs"
-                  >
-                    <span className="block pr-8 truncate text-left">
-                      {retailType.length > 0
-                        ? retailType.join(", ")
-                        : "Retail Type"}
-                    </span>
-
-                    <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2 max-[767px]:right-2 max-[767px]:text-lg" />
-                  </button>
-
-                  {retailTypeOpen &&
-                    createPortal(
-                      <div
-                        className="fixed z-[99999] bg-white border rounded-md shadow-lg"
-                        style={{
-                          top: retailTypeDropdownPos.top,
-                          left: retailTypeDropdownPos.left,
-                          width: retailTypeDropdownPos.width,
-                        }}
-                      >
-                        <div className="sticky top-0 flex justify-end p-2 bg-white border-b">
-                          <button
-                            onClick={() => setRetailTypeOpen(false)}
-                            className="p-1 rounded hover:bg-gray-100"
-                          >
-                            <IoClose size={20} />
-                          </button>
-                        </div>
-
-                        {retailTypeOptions.map((option) => (
-                          <label
-                            key={option}
-                            className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-100"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={retailType.includes(option)}
-                              onChange={() =>
-                                setRetailType((prev) =>
-                                  prev.includes(option)
-                                    ? prev.filter((i) => i !== option)
-                                    : [...prev, option],
-                                )
-                              }
-                            />
-                            <span>{option}</span>
-                          </label>
-                        ))}
-
-                        <div className="sticky bottom-0 flex gap-2 p-2 bg-white border-t">
-                          <button
-                            onClick={() => setRetailType([])}
-                            className="w-1/2 py-2 border rounded-md"
-                          >
-                            Clear
-                          </button>
-
-                          <button
-                            onClick={() => setRetailTypeOpen(false)}
-                            className="w-1/2 py-2 text-white bg-rose-500 rounded-md"
-                          >
-                            Done
-                          </button>
-                        </div>
-                      </div>,
-                      document.body,
-                    )}
-                </div>
-              )}
-
-            {/* Other Commercial Type */}
-            {propertyType === "Commercial Lease" &&
-              buildingType === "Commercial" &&
-              propertyType2.includes("Other Commercial spaces") && (
-                <div className={`relative ${FILTER_WIDTH} flex-shrink-0 max-[767px]:w-40`}>
-                  <button
-                    ref={otherCommercialButtonRef}
-                    type="button"
-                    onClick={() => {
-                      const rect =
-                        otherCommercialButtonRef.current.getBoundingClientRect();
-
-                      let left = rect.left;
-                      const overflow =
-                        rect.left + DROPDOWN_WIDTH - window.innerWidth;
-
-                      if (overflow > 0) {
-                        left = rect.left - overflow - 10;
-                      }
-
-                      setOtherCommercialDropdownPos({
-                        top: rect.bottom + 4,
-                        left,
-                        width: DROPDOWN_WIDTH,
-                      });
-
-                      const wasOpen = otherCommercialOpen;
-                      closeAllDropdowns();
-
-                      setTimeout(() => {
-                        setOtherCommercialOpen(!wasOpen);
-                      }, 0);
-                    }}
-                    className="relative flex items-center w-full h-16 p-2 bg-white border-2 border-gray-300 rounded-md text-left max-[767px]:h-11 max-[767px]:px-2 max-[767px]:text-xs"
-                  >
-                    <span className="block pr-8 truncate text-left">
-                      {otherCommercialType.length > 0
-                        ? otherCommercialType.join(", ")
-                        : "Other Commercial Type"}
-                    </span>
-
-                    <RiArrowDropDownLine className="absolute text-2xl -translate-y-1/2 pointer-events-none right-3 top-1/2 max-[767px]:right-2 max-[767px]:text-lg" />
-                  </button>
-
-                  {otherCommercialOpen &&
-                    createPortal(
-                      <div
-                        className="fixed z-[99999] bg-white border rounded-md shadow-lg"
-                        style={{
-                          top: otherCommercialDropdownPos.top,
-                          left: otherCommercialDropdownPos.left,
-                          width: otherCommercialDropdownPos.width,
-                        }}
-                      >
-                        <div className="sticky top-0 flex justify-end p-2 bg-white border-b">
-                          <button
-                            onClick={() => setOtherCommercialOpen(false)}
-                            className="p-1 rounded hover:bg-gray-100"
-                          >
-                            <IoClose size={20} />
-                          </button>
-                        </div>
-
-                        {otherCommercialOptions.map((option) => (
-                          <label
-                            key={option}
-                            className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-100"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={otherCommercialType.includes(option)}
-                              onChange={() =>
-                                setOtherCommercialType((prev) =>
-                                  prev.includes(option)
-                                    ? prev.filter((i) => i !== option)
-                                    : [...prev, option],
-                                )
-                              }
-                            />
-                            <span>{option}</span>
-                          </label>
-                        ))}
-
-                        <div className="sticky bottom-0 flex gap-2 p-2 bg-white border-t">
-                          <button
-                            onClick={() => setOtherCommercialType([])}
-                            className="w-1/2 py-2 border rounded-md"
-                          >
-                            Clear
-                          </button>
-
-                          <button
-                            onClick={() => setOtherCommercialOpen(false)}
-                            className="w-1/2 py-2 text-white bg-rose-500 rounded-md"
-                          >
-                            Done
-                          </button>
-                        </div>
-                      </div>,
-                      document.body,
-                    )}
-                </div>
-              )}
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex items-center justify-between px-6 mt-4 mb-3 max-[767px]:flex-col max-[767px]:items-stretch max-[767px]:gap-2 max-[767px]:px-3">
-  <h2 className="text-2xl font-bold text-gray-900 max-[767px]:text-base max-[767px]:leading-snug max-[767px]:whitespace-normal max-[767px]:w-full">
-  {loading ? (
-    <span>Loading properties...</span>
-  ) : (
-    <>
-      <span className="text-[#8B1E3F]">{totalResults}</span> Results
-
-      {(searchQuery || filtersApplied) && (
-        <>
-          <span className="mx-3 text-gray-400 max-[767px]:mx-2">|</span>
-
-          <span>
-            {filtersApplied
-              ? getResultsTitle({
-                  bhkType,
-                  propertyType,
-                  propertyType2,
-                  searchLocation: searchLocation || searchCity,
-                  filtersApplied,
-                  buildingType: type,
-                  isNearMe,
-                })
-              : searchQuery}
-          </span>
-        </>
-      )}
-
-      {!filtersApplied && homeSearchTitle && (
-        <span className="text-2xl font-bold text-gray-900 max-[767px]:text-base">
-          <span className="mx-3 text-gray-400 max-[767px]:mx-2">|</span>
-          {homeSearchTitle}
-        </span>
-      )}
-    </>
-  )}
-</h2>
-  
-
-
-  <div className="flex gap-4 max-[767px]:gap-2 max-[767px]:w-full">
-    <button
-      onClick={handleButtonClick}
-      className="w-40 p-3 text-rose-700 my-border rounded-md hover:bg-gray-300 max-[767px]:flex-1 max-[767px]:w-auto max-[767px]:py-2 max-[767px]:px-2 max-[767px]:text-xs"
-    >
-      {filtersApplied ? "Reset Filters" : "Apply Filter"}
-    </button>
-
-    <button
-      onClick={handleSaveSearch}
-      className="w-40 p-3 my-border rounded-md hover:bg-gray-300 max-[767px]:flex-1 max-[767px]:w-auto max-[767px]:py-2 max-[767px]:px-2 max-[767px]:text-xs"
-    >
-      Save Search
-    </button>
-  </div>
-</div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex flex-col p-1 space-y-4 sm:p-6 bg-rose-50 rounded-xl">
-        <div className="flex-grow">
-          <div className="flex flex-col bg-white border-white shadow-md sm:flex-row-reverse">
-            <div
-              className="z-10 w-full sm:w-1/2 p-4 border-white no-scrollbar"
-              style={{ scrollbarWidth: "none" }}
-            >
-              {/* Right: Properties - matched to FeaturedDashboard card design */}
-              <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-                {loading ? (
-  <div className="flex items-center justify-center w-full min-h-[400px]">
-    <div className="w-10 h-10 border-4 border-gray-200 border-t-[#8B1E3F] rounded-full animate-spin"></div>
-  </div>
-) : getDisplayProperties().length > 0 ? (
-                  getDisplayProperties().map((property) => {
-                    let distance = null;
-                    if (userLocation && property.latitude && property.longitude) {
-                      distance = calculateDistance(
-                        userLocation.latitude,
-                        userLocation.longitude,
-                        parseFloat(property.latitude),
-                        parseFloat(property.longitude),
-                      ).toFixed(1);
-                    }
-
-                    const subtitle = (() => {
-                      const area = property.address_area || "";
-                      const city = property.city_name || "";
-
-                      const location =
-                        area.toLowerCase().includes(city.toLowerCase())
-                          ? area
-                          : `${area}, ${city}`;
-
-                      const type =
-                        property.property_type === "Office"
-                          ? "Office Space"
-                          : property.property_type === "Retail"
-                            ? "Retail Space"
-                            : property.property_type || "";
-
-                      const category = property.property_category_type || "";
-
-                      if (
-                        category === "Commercial Buy" ||
-                        category === "Commercial Lease"
-                      ) {
-                        return `${type} for ${category === "Commercial Buy" ? "Sale" : "Lease"
-                          } in ${location}`;
-                      }
-
-                      if (
-                        category.includes("PG") ||
-                        category.includes("Co-Living") ||
-                        category.includes("Coliving")
-                      ) {
-                        return `${type} for Rent in ${location}`;
-                      }
-
-                      const action = category === "Buy" ? "Sale" : category;
-
-                      return `${property.bhk_type} ${type} for ${action} in ${location}`;
-                    })();
-
-                    return (
-                      <div
-                        key={property._id}
-                        className={`shadow-md rounded-2xl overflow-hidden flex flex-col h-full w-full max-w-full min-w-0 box-border block no-underline hover:no-underline ${hoveredPropertyId === property._id
-                          ? "bg-green-200"
-                          : ""
-                          }`}
-                        onMouseEnter={() => setHoveredPropertyId(property._id)}
-                        onMouseLeave={() => setHoveredPropertyId(null)}
-                      >
-                        <div className="relative w-full overflow-hidden rounded-t-2xl flex-shrink-0">
-                          <Link
-                            to={`/propertydetails/${property._id}`}
-                            className="block overflow-hidden no-underline bg-white hover:no-underline"
-                          >
-                            {1 + (property?.property_images?.length || 0) > 1 ? (
-                              <Slider
-                                dots
-                                infinite
-                                speed={500}
-                                slidesToShow={1}
-                                slidesToScroll={1}
-                                arrows
-                                autoplay
-                                autoplaySpeed={2000}
-                                beforeChange={(current, next) =>
-                                  setActiveIndexes((prev) => ({
-                                    ...prev,
-                                    [property._id]: next,
-                                  }))
-                                }
-                                initialSlide={activeIndexes[property._id] || 0}
-                                customPaging={(i) => {
-                                  const activeSlide =
-                                    activeIndexes[property._id] || 0;
-                                  const totalImages =
-                                    1 + (property?.property_images?.length || 0);
-                                  const isActive =
-                                    i === activeSlide % totalImages;
-                                  return (
-                                    <div
-                                      style={{
-                                        width: "10px",
-                                        height: "10px",
-                                        borderRadius: "50%",
-                                        background: isActive ? "#fff" : "#888",
-                                        margin: "0 5px",
-                                        cursor: "pointer",
-                                      }}
-                                    />
-                                  );
-                                }}
-                                appendDots={(dots) => {
-                                  const totalImages =
-                                    1 + (property?.property_images?.length || 0);
-                                  const visibleDots = dots.slice(0, totalImages);
-                                  return (
-                                    <div
-                                      style={{
-                                        position: "absolute",
-                                        bottom: "10px",
-                                        left: "50%",
-                                        transform: "translateX(-50%)",
-                                        display: "flex",
-                                        justifyContent: "center",
-                                        width: "100%",
-                                      }}
-                                    >
-                                      {visibleDots}
-                                    </div>
-                                  );
-                                }}
-                                className="rounded-t-2xl"
-                              >
-                                {/* First slide: cover image */}
-                                <div key={`cover-${property._id}`}>
-                                  <img
-                                    src={property.cover_image}
-                                    alt="Cover"
-                                    className="w-full aspect-video object-cover rounded-t-2xl"
-                                  />
-                                </div>
-
-                                {/* Other property images */}
-                                {(property?.property_images || []).map(
-                                  (imgObj) => (
-                                    <div key={imgObj._id}>
-                                      <img
-                                        src={imgObj.image}
-                                        alt="Property"
-                                        className="w-full aspect-video object-cover rounded-t-2xl"
-                                      />
-                                    </div>
-                                  ),
-                                )}
-                              </Slider>
-                            ) : (
-                              <div>
-                                <img
-                                  src={property.cover_image}
-                                  alt="Cover"
-                                  className="w-full aspect-video object-cover rounded-t-2xl"
-                                />
-                              </div>
-                            )}
-                          </Link>
-
-                          {/* Days Ago Tag (Top Left) */}
-                          {/* {property.days_since_created !== undefined &&
-                            property.days_since_created !== null && (
-                              <span className="absolute z-20 px-2 py-1 text-[10px] sm:text-xs font-normal text-white rounded-full top-2 left-2 bg-gray-800/60 backdrop-blur-sm whitespace-nowrap max-w-[55%] truncate">
-                                {property.days_since_created} days ago
-                              </span>
-                            )} */}
-
-                          {/* Admin Approval Badge (Top Left) */}
-                          {property.admin_approval === "Approved" && (
-                            <div className="absolute z-20 top-1.5 left-1.5 sm:top-2 sm:left-2 max-w-[55%]">
-                              <div className="flex items-center bg-[#8B1E3F] text-white rounded-sm shadow-md px-1.5 py-0.5 sm:px-2 sm:py-1">
-                                {/* Tick Icon */}
-                                <span className="mr-1 text-[10px] sm:text-xs font-bold text-white flex-shrink-0">
-                                  ✓
-                                </span>
-                                {/* Verified Text */}
-                                <span className="text-[9px] sm:text-[11px] font-semibold leading-none truncate">
-                                  Verified
-                                </span>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Virtual Tour & Heart Icon (Top Right) */}
-                          <div className="absolute z-20 flex items-center gap-1.5 sm:gap-2 top-2 right-2 max-w-[70%]">
-                            {property.virtual_tour_availability === "Yes" && (
-                              <span className="flex items-center gap-1 px-2 py-1 text-[10px] sm:text-xs font-normal text-white rounded-full bg-gray-800/60 backdrop-blur-sm whitespace-nowrap">
-                                <PiCubeFocus className="text-sm text-white flex-shrink-0" />
-                                <span className="hidden xs:inline sm:inline">Virtual Tour</span>
-                              </span>
-                            )}
-                            <button
-                              className="p-1.5 text-xs font-normal text-white bg-opacity-50 rounded-full bg-gray-800/60 backdrop-blur-sm flex-shrink-0"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                if (!accessToken) {
-                                  setIsLoginModalOpen(true);
-                                  return;
-                                }
-                                if (property.is_favorite) {
-                                  removeFromFavorites(property.favorite_id);
-                                } else {
-                                  addToFavorites(property._id);
-                                }
-                              }}
-                            >
-                              <Heart
-                                size={20}
-                                stroke={property.is_favorite ? "none" : "white"}
-                                color={
-                                  property.is_favorite
-                                    ? "red"
-                                    : "rgba(75, 85, 99, 0.4)"
-                                }
-                                fill={
-                                  property.is_favorite
-                                    ? "red"
-                                    : "rgba(75, 85, 99, 0.4)"
-                                }
-                                strokeWidth={2}
-                              />
-                            </button>
-                          </div>
-
-                          {/* Category Ribbon (Bottom Left) */}
-                          {(() => {
-                            const { badgeText, badgeColor } =
-                              getCategoryBadge(property);
-                            if (!badgeText) return null;
-                            return (
-                              <div className="absolute bottom-0 left-0 z-20 max-w-[65%]">
-                                <span
-                                  className={`block text-white text-[10px] sm:text-xs font-semibold px-2 sm:px-3 py-1 rounded-se-lg truncate ${badgeColor}`}
-                                >
-                                  {badgeText}
-                                </span>
-                              </div>
-                            );
-                          })()}
-
-                          {/* FEATURED tag - only if marked */}
-                          {property.mark_as_featured === "Yes" && (
-                            <div className="absolute bottom-0 right-0 z-20">
-                              <span className="px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-semibold text-white bg-yellow-500 rounded-ss-lg whitespace-nowrap">
-                                FEATURED
-                              </span>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Property Details — AdvisorDashboard card design */}
-                        <div className="flex flex-col flex-1 min-w-0 w-full p-2.5 xs:p-3 sm:p-4 text-black bg-white overflow-hidden">
-                          <div className="flex items-start justify-between gap-1.5 sm:gap-3 mb-0 min-w-0 flex-wrap xs:flex-nowrap">
-                            <h3
-                              className="flex-1 min-w-0 m-0 text-sm xs:text-base sm:text-lg font-semibold leading-5 sm:leading-6 text-gray-900 truncate whitespace-nowrap overflow-hidden text-ellipsis"
-                              title={property.property_name}
-                            >
-                              {property.property_name || "N/A"}
-                            </h3>
-                            <span
-                              className="flex-shrink-0 m-0 text-[10px] xs:text-xs sm:text-sm font-medium leading-5 sm:leading-6 text-black whitespace-nowrap"
-                              title={property.furnished_type}
-                            >
-                              {property.furnished_type}
-                            </span>
-                          </div>
-
-                          <p className="mt-0 mb-1 text-sm leading-5 text-gray-600 truncate min-w-0" title={subtitle}>
-                            {subtitle}
-                          </p>
-
-                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2 mb-1 min-w-0">
-                            <div className="flex items-center flex-wrap gap-1.5 sm:gap-2 min-w-0">
-                              <span className="text-lg xs:text-xl sm:text-2xl font-bold whitespace-nowrap">
-                                ₹{" "}
-                                {property.property_category_type === "Rent" ||
-                                  property.property_category_type === "PG/Co-living" ||
-                                  property.property_category_type === "PG / Co-Living"
-                                  ? formatPrice(property.rent).replace("₹ ", "")
-                                  : formatPrice(property.property_price).replace("₹ ", "")}
-                              </span>
-                              <span className="text-xs sm:text-sm text-[#8B1E3F] whitespace-nowrap">
-                                / {property.rent_duration}
-                              </span>
-                              {property.property_category_type?.includes("Buy") &&
-                                property.possession_status === "Ready To Move" && (
-                                  <div className="flex items-center gap-2 px-2 sm:px-3 py-1 text-white border rounded-full bg-[#8B1E3F] border-[#8B1E3F] flex-shrink-0">
-                                    <MdApartment className="text-base text-white flex-shrink-0" />
-                                    <span className="text-xs font-semibold text-white whitespace-nowrap">
-                                      Ready to Move
-                                    </span>
-                                  </div>
-                                )}
-                            </div>
-                            <div className="text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">
-                              {property.property_category_type?.includes("Buy") &&
-                                property.possession_status !== "Ready To Move" &&
-                                property.possession_date && (
-                                  <>
-                                    <span className="text-[#8B1E3F]">Possession:</span>
-                                    <span className="ml-1 font-semibold text-[#8B1E3F]">
-                                      {new Date(property.possession_date).toLocaleDateString("en-IN")}
-                                    </span>
-                                  </>
-                                )}
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-3 gap-0.5 xs:gap-1 py-2 sm:py-3 border-t border-b border-gray-100 min-w-0">
-                            <div className="flex items-center gap-1 sm:gap-2 px-0.5 xs:px-1 sm:px-3 min-w-0">
-                              <MdApartment className="text-base xs:text-lg sm:text-[22px] text-gray-700 flex-shrink-0" />
-                              <div className="flex flex-col justify-center min-w-0">
-                                <p className="m-0 text-xs sm:text-sm font-semibold leading-4 truncate">
-                                  {property.building_type === "Commercial"
-                                    ? property.property_type === "Office"
-                                      ? "Office Space"
-                                      : property.property_type === "Retail"
-                                        ? "Retail Space"
-                                        : property.property_type
-                                    : property.property_category_type?.includes("PG")
-                                      ? `${property.bathroom || 0} Bathrooms`
-                                      : property.bhk_type}
-                                </p>
-                                <p className="m-0 text-[10px] sm:text-xs leading-4 text-gray-500 truncate">
-                                  {property.building_type === "Commercial"
-                                    ? "Property Type"
-                                    : property.property_category_type?.includes("PG")
-                                      ? "Bathrooms"
-                                      : property.property_type}
-                                </p>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-1 sm:gap-2 px-1 sm:px-3 border-l border-gray-200 min-w-0">
-                              {property.property_category_type?.includes("PG") ? (
-                                <FaUser className="text-base sm:text-[20px] text-gray-700 flex-shrink-0" />
-                              ) : (
-                                <FaBath className="text-base sm:text-[20px] text-gray-700 flex-shrink-0" />
-                              )}
-                              <div className="flex flex-col justify-center min-w-0">
-                                <p className="m-0 text-xs sm:text-sm font-semibold leading-4 truncate">
-                                  {property.property_category_type?.includes("PG")
-                                    ? property.available_for
-                                    : `${property.bathroom || 0} Baths`}
-                                </p>
-                                <p className="m-0 text-[10px] sm:text-xs leading-4 text-gray-500 truncate">
-                                  {property.property_category_type?.includes("PG") ? "Available For" : "Bathrooms"}
-                                </p>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-1 sm:gap-2 px-1 sm:px-3 border-l border-gray-200 min-w-0">
-                              <RiRuler2Line className="text-lg sm:text-[22px] text-gray-700 flex-shrink-0" />
-                              <div className="flex flex-col justify-center min-w-0">
-                                <p className="m-0 text-xs sm:text-sm font-semibold leading-4 truncate">
-                                  {property.area} {property.area_in}
-                                </p>
-                                <p className="m-0 text-[10px] sm:text-xs leading-4 text-gray-500 truncate">Built Up Area</p>
-                              </div>
-                            </div>
-                          </div>
-
-                          <hr className="my-1 border-gray-100" />
-
-                          <div className="flex items-center justify-between gap-2 pt-1 pb-2 text-xs sm:text-[13px] text-gray-600 flex-nowrap min-w-0 overflow-hidden">
-                            <div className="flex items-center flex-nowrap min-w-0 gap-x-2 overflow-hidden">
-                              <div className="flex items-center min-w-0 flex-shrink">
-                                <AiOutlineClockCircle className="mr-1 text-[15px] text-gray-700 flex-shrink-0" />
-                                <span className="truncate min-w-0 whitespace-nowrap overflow-hidden text-ellipsis">Posted by {property.user_type || "Owner"}</span>
-                              </div>
-                              <span className="text-gray-400 hidden xs:inline flex-shrink-0">•</span>
-                              <span className="whitespace-nowrap flex-shrink-0">
-                                {property.days_since_created ? `${property.days_since_created} days ago` : "Recently"}
-                              </span>
-                              {distance && (
-                                <>
-                                  <span className="text-gray-400 hidden xs:inline flex-shrink-0">•</span>
-                                  <div className="flex items-center whitespace-nowrap flex-shrink-0">
-                                    <FaMapMarkerAlt className="mr-1 text-red-500 flex-shrink-0" />
-                                    {distance} km from you
-                                  </div>
-                                </>
-                              )}
-                            </div>
-                            <PiShareNetworkLight
-                              className="ml-2 text-[20px] text-gray-500 cursor-pointer hover:text-blue-500 flex-shrink-0"
-                              onClick={() =>
-                                openShareModal1(`${window.location.origin}/propertydetails/${property._id}`, property._id)
-                              }
-                            />
-                          </div>
-                          <div className="flex flex-nowrap items-center justify-between gap-1.5 xs:gap-2 pt-3 mt-auto min-w-0 w-full overflow-hidden">
-                            <div className="flex items-center min-w-0 flex-1 overflow-hidden">
-                              <div className="flex items-center justify-center flex-shrink-0 w-7 h-7 xs:w-8 xs:h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 overflow-hidden rounded-full bg-blue-100">
-                                {property.property_owner_image ? (
-                                  <img
-                                    src={`${API_URL}/media/${property.property_owner_image}`}
-                                    alt="Owner"
-                                    className="object-cover w-full h-full rounded-full"
-                                  />
-                                ) : (
-                                  <AiOutlineUser className="text-blue-600 text-xl sm:text-2xl" />
-                                )}
-                              </div>
-                              <div className="flex flex-col justify-center min-w-0 flex-1 ml-2 sm:ml-3 leading-tight overflow-hidden">
-                                <span className="block min-w-0 max-w-full truncate whitespace-nowrap overflow-hidden text-ellipsis text-xs sm:text-sm font-semibold text-gray-900" title={property.connect_to_name}>
-                                  {property.connect_to_name || "Owner"}
-                                </span>
-                                <span className="block min-w-0 max-w-full truncate whitespace-nowrap overflow-hidden text-ellipsis text-[10px] sm:text-xs text-gray-500">{property.user_type || "Owner"}</span>
-                              </div>
-                            </div>
-
-                            {/* RIGHT SIDE - Buttons */}
-                            <div className="flex items-center gap-1 xs:gap-1.5 sm:gap-2 flex-nowrap flex-shrink-0">
-                              {/* Contact */}
-                              <div
-                                className="flex items-center justify-center min-w-[3.25rem] xs:min-w-[3.75rem] sm:w-20 h-7 xs:h-8 sm:h-9 text-[10px] xs:text-[11px] sm:text-sm font-semibold text-white bg-red-800 rounded-md cursor-pointer hover:bg-red-900 whitespace-nowrap px-1.5 sm:px-2 flex-shrink-0"
-                                onClick={() => handleContactClick(property)}
-                              >
-                                Contact
-                              </div>
-
-                              {/* WhatsApp */}
-                              <a
-                                href={`https://wa.me/91${property.connect_to_no}?text=${encodeURIComponent("Hello, I am interested in your property")}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={(e) => e.stopPropagation()}
-                                className="flex items-center justify-center w-7 h-7 xs:w-8 xs:h-8 sm:w-9 sm:h-9 flex-shrink-0 text-white bg-green-500 rounded-md hover:bg-green-600 text-xs xs:text-sm"
-                              >
-                                <FaWhatsapp />
-                              </a>
-
-                              {/* Call */}
-                              <a
-                                href={`tel:+91${property.connect_to_no}`}
-                                onClick={(e) => e.stopPropagation()}
-                                className="flex items-center justify-center w-7 h-7 xs:w-8 xs:h-8 sm:w-9 sm:h-9 flex-shrink-0 rounded-lg bg-blue-500 text-white hover:bg-blue-600"
-                              >
-                                <FaPhoneAlt className="text-xs xs:text-sm sm:text-base" />
-                              </a>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <div className="text-center text-black">
-                    <p>No properties available at the moment.</p>
+                      Done
+                    </button>
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ===================== LISTING + MAP ===================== */}
+      <style>{`
+        .zb-popup .leaflet-popup-content-wrapper { padding: 0; overflow: hidden; border-radius: 12px; box-shadow: 0 14px 32px -12px rgba(94,13,40,0.35); border: 1px solid #eadfd6; }
+        .zb-popup .leaflet-popup-content { margin: 0 !important; width: auto !important; }
+        .zb-popup .leaflet-popup-content p { margin: 0; }
+        .zb-popup .leaflet-popup-tip { background: #fff; }
+        .zb-popup a.leaflet-popup-close-button { top: 8px; right: 8px; width: 26px; height: 26px; line-height: 24px; border-radius: 6px; background: rgba(255,255,255,.95); color: #7a1235; font-size: 18px; text-align: center; padding: 0; z-index: 20; }
+        .zb-map .leaflet-top.leaflet-left { top: 8px; left: 8px; }
+        .zb-map .leaflet-control-zoom { border: none !important; box-shadow: 0 6px 16px -6px rgba(94,13,40,.4) !important; border-radius: 10px; overflow: hidden; }
+        .zb-map .leaflet-control-zoom a { color: #7a1235; background: #fff; border-bottom: 1px solid #eadfd6; width: 34px; height: 34px; line-height: 34px; }
+        .zb-map .leaflet-control-zoom a:hover { background: #fbf3ec; color: #5e0d28; }
+        .zb-map .leaflet-control-attribution { font-size: 10px; background: rgba(255,255,255,.8); }
+
+        .marker-wrapper { position: relative; display: flex; justify-content: center; align-items: center; }
+        .custom-marker { display: flex; align-items: center; justify-content: center; }
+        .price-tooltip { position: relative; background: #fff; color: #1f2937; padding: 5px 10px; border-radius: 16px; border: 1px solid #eadfd6; font-size: 12px; font-weight: 700; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,.2); transition: background-color .2s ease, color .2s ease, border-color .2s ease, transform .2s ease; }
+        .price-tooltip .pointer { position: absolute; bottom: -7px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-top: 7px solid #fff; }
+        .custom-marker.active .price-tooltip { background: #7a1235; color: #fff; border-color: #7a1235; transform: scale(1.08); }
+        .custom-marker.active .price-tooltip .pointer { border-top-color: #7a1235; }
+
+        .zb-card .slick-slide img { transition: transform .6s ease; }
+        .zb-card:hover .slick-slide img { transform: scale(1.05); }
+        .zb-card .slick-prev, .zb-card .slick-next { z-index: 5; width: 28px; height: 28px; opacity: 0; transition: opacity .25s ease; }
+        .zb-card .slick-prev { left: 8px; }
+        .zb-card .slick-next { right: 8px; }
+        .zb-card:hover .slick-prev, .zb-card:hover .slick-next { opacity: 1; }
+        .zb-card .slick-prev:before, .zb-card .slick-next:before { font-size: 28px; text-shadow: 0 2px 6px rgba(0,0,0,.45); }
+      `}</style>
+
+      <div className="flex flex-col p-2 space-y-4 sm:p-5 rounded-2xl bg-[#fbf3ec] mx-4 sm:mx-6 mb-6">
+        <div className="flex-grow">
+          <div className="flex flex-col bg-white border border-[#eadfd6] shadow-sm rounded-2xl sm:flex-row-reverse">
+            {/* Properties List */}
+            <div className="z-10 flex-1 p-3 sm:p-5 no-scrollbar" style={{ scrollbarWidth: "none" }}>
+              <div className="mb-3">
+                <h1 className="m-0 text-[15px] sm:text-[17px] font-bold leading-snug text-gray-900">
+                  {loading ? "Searching..." : resultsHeading}
+                </h1>
+                {universal?.raw && universal.raw.toLowerCase() !== resultsTitle.toLowerCase() && (
+                  <p className="m-0 mt-0.5 text-[11px] text-gray-500">You searched for "{universal.raw}"</p>
+                )}
+                {localityMissed && !loading && (
+                  <p className="m-0 mt-1 text-[11px] text-amber-700">
+                    No listing on this page mentions "{universal.locality}". Showing all {resultsTitle} instead.
+                  </p>
+                )}
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-2">
+                {visibleProperties.length > 0 ? (
+                  visibleProperties
+                    .filter((p) => p.latitude !== null && p.longitude !== null && !isNaN(p.latitude) && !isNaN(p.longitude))
+                    .map((property) => {
+                      const total = 1 + (property?.property_images?.length || 0);
+                      const active = (activeIndexes[property._id] || 0) % total;
+                      const category = property.property_category_type || "";
+                      const isHovered = hoveredPropertyId === property._id;
+                      const isRentLike = category === "Rent" || category === "PG/Co-living";
+                      const isPG = category.includes("PG");
+                      const isCommercial = property.building_type === "Commercial";
+                      const subtitle = getPropertySubtitle(property);
+                      const distance =
+                        userLocation && property.latitude && property.longitude
+                          ? calculateDistance(
+                            userLocation.latitude,
+                            userLocation.longitude,
+                            parseFloat(property.latitude),
+                            parseFloat(property.longitude),
+                          ).toFixed(1)
+                          : null;
+
+                      return (
+                        <div
+                          key={property._id}
+                          className={`zb-card group flex flex-col h-full bg-white shadow-lg rounded-2xl overflow-hidden transition-all duration-300 ${isHovered ? "ring-2 ring-[#7a1235] -translate-y-0.5" : "hover:-translate-y-0.5"}`}
+                          onMouseEnter={() => handleCardEnter(property)}
+                          onMouseLeave={handleCardLeave}
+                        >
+                          {/* ── Image ── */}
+                          <div className="relative w-full">
+                            <Link to={`/propertydetails/${property._id}`} className="block">
+                              {total > 1 ? (
+                                <Slider
+                                  dots={false}
+                                  arrows={false}
+                                  infinite
+                                  speed={600}
+                                  slidesToShow={1}
+                                  slidesToScroll={1}
+                                  autoplay
+                                  autoplaySpeed={2800}
+                                  beforeChange={(c, n) => setActiveIndexes((prev) => ({ ...prev, [property._id]: n }))}
+                                  initialSlide={activeIndexes[property._id] || 0}
+                                >
+                                  <div>
+                                    <img src={property.cover_image} alt="Cover" className="object-cover w-full h-[110px] rounded-t-2xl" />
+                                  </div>
+                                  {(property?.property_images || []).map((img) => (
+                                    <div key={img._id}>
+                                      <img src={img.image} alt="Property" className="object-cover w-full h-[110px] rounded-t-2xl" />
+                                    </div>
+                                  ))}
+                                </Slider>
+                              ) : (
+                                <img
+                                  src={property.cover_image || "/image/app.png"}
+                                  alt="Property"
+                                  className="object-cover w-full h-[110px] rounded-t-2xl"
+                                />
+                              )}
+                            </Link>
+
+                            {/* Verified badge */}
+                            {property.admin_approval === "Approved" && (
+                              <div className="absolute top-2 left-2 z-20 pointer-events-none">
+                                <div className="flex items-center gap-1 bg-[#8B1E3F] text-white rounded-sm shadow-md px-2 py-1">
+                                  <span className="text-[10px] font-bold">✓</span>
+                                  <span className="text-[9.5px] font-semibold leading-none">Verified</span>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Virtual tour + favourite */}
+                            <div className="absolute z-20 flex items-center space-x-2 top-2 right-2">
+                              {property.virtual_tour_availability === "Yes" && (
+                                <span className="flex items-center gap-1 px-2 py-1 text-[9px] font-normal text-white rounded-full pointer-events-none bg-gray-800/60 backdrop-blur-sm sm:text-[10px]">
+                                  <PiCubeFocus className="text-[12px] text-white" />
+                                  Virtual Tour
+                                </span>
+                              )}
+                              <button
+                                type="button"
+                                className="p-2 rounded-full shadow bg-gray-800/60 backdrop-blur-sm"
+                                onClick={(e) => {
+                                  if (!accessToken) {
+                                    setIsLoginModalOpen(true);
+                                    return;
+                                  }
+                                  e.preventDefault();
+                                  if (property.is_favorite) removeFromFavorites(property.favorite_id);
+                                  else addToFavorites(property._id);
+                                }}
+                              >
+                                <Heart
+                                  size={20}
+                                  stroke={property.is_favorite ? "none" : "white"}
+                                  color={property.is_favorite ? "red" : "rgba(75, 85, 99, 0.4)"}
+                                  fill={property.is_favorite ? "red" : "rgba(75, 85, 99, 0.4)"}
+                                  strokeWidth={2}
+                                />
+                              </button>
+                            </div>
+
+                            {/* Category tag (bottom-left) */}
+                            <div className="absolute bottom-0 left-0 z-20 max-w-[70%] pointer-events-none">
+                              <span className="block px-2 sm:px-3 py-1 text-[9px] sm:text-[10px] font-semibold text-white truncate bg-[#8B1E3F] rounded-se-lg">
+                                {getCategoryText(category)}
+                              </span>
+                            </div>
+
+                            {/* Featured tag (bottom-right) */}
+                            {property.mark_as_featured === "Yes" && (
+                              <div className="absolute bottom-0 right-0 z-20 pointer-events-none">
+                                <span className="px-2 py-1 text-[9px] sm:text-[10px] sm:px-3 text-white bg-yellow-500 rounded-ss-lg">
+                                  FEATURED
+                                </span>
+                              </div>
+                            )}
+
+                            {/* Slide dots */}
+                            {total > 1 && (
+                              <div className="absolute z-10 flex gap-1 pointer-events-none bottom-2 left-1/2 -translate-x-1/2">
+                                {Array.from({ length: total }).map((_, i) => (
+                                  <span
+                                    key={i}
+                                    className="h-1 rounded-full transition-all duration-300"
+                                    style={{
+                                      width: i === active ? "12px" : "5px",
+                                      background: i === active ? "#e3b23c" : "rgba(255,255,255,0.6)",
+                                    }}
+                                  />
+                                ))}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* ── Details ── */}
+                          <div className="flex flex-col justify-between flex-1 px-3 py-2.5 text-black bg-white sm:px-3.5">
+                            <div>
+                              {/* Name + furnishing */}
+                              <div className="flex items-start justify-between gap-2 mb-0 sm:gap-3">
+                                <Link
+                                  to={`/propertydetails/${property._id}`}
+                                  className="flex-1 min-w-0 no-underline hover:no-underline"
+                                >
+                                  <h3
+                                    className="m-0 text-[12px] font-semibold leading-5 text-gray-900 truncate sm:text-[13.5px] hover:text-[#7a1235] transition-colors"
+                                    title={property.property_name}
+                                  >
+                                    {property.property_name || "N/A"}
+                                  </h3>
+                                </Link>
+                                <span
+                                  className="flex-shrink-0 m-0 text-[9.5px] font-medium leading-5 text-black sm:text-[10px] whitespace-nowrap"
+                                  title={property.furnished_type}
+                                >
+                                  {property.furnished_type}
+                                </span>
+                              </div>
+
+                              {/* Subtitle */}
+                              <p className="mt-0 mb-0.5 text-[10px] leading-4 text-gray-600 line-clamp-2 sm:truncate" title={subtitle}>
+                                {subtitle}
+                              </p>
+
+                              {/* Price row */}
+                              <div className="flex flex-wrap items-center justify-between gap-1 mb-1">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="text-[15.5px] font-bold sm:text-[17px] text-[#7a1235]">
+                                    {formatPrice(isRentLike ? property.rent : property.property_price)}
+                                  </span>
+                                  {isRentLike && (
+                                    <span className="text-[12px] text-gray-500">/{property.rent_duration || "Per Month"}</span>
+                                  )}
+                                  {category.includes("Buy") && property.possession_status === "Ready To Move" && (
+                                    <div className="flex items-center gap-2 px-2 py-1 text-white border rounded-full bg-[#8B1E3F] border-[#8B1E3F] sm:px-3">
+                                      <MdApartment className="text-[13.5px] text-white" />
+                                      <span className="text-[10px] font-semibold text-white whitespace-nowrap">Ready to Move</span>
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div className="text-[12px] font-medium whitespace-nowrap">
+                                  {isRentLike && (
+                                    <>
+                                      <span className="text-gray-500">Deposit:</span>
+                                      <span className="ml-1 font-semibold">
+                                        ₹ {property.custom_deposit_amount?.toLocaleString("en-IN")}
+                                      </span>
+                                    </>
+                                  )}
+                                  {category.includes("Buy") &&
+                                    property.possession_status !== "Ready To Move" &&
+                                    property.possession_date && (
+                                      <>
+                                        <span className="text-gray-500">Possession:</span>
+                                        <span className="ml-1 font-semibold">
+                                          {new Date(property.possession_date).toLocaleDateString("en-IN")}
+                                        </span>
+                                      </>
+                                    )}
+                                </div>
+                              </div>
+
+                              {/* Features row */}
+                              <div className="grid grid-cols-3 py-2 border-t border-b border-gray-100">
+                                <div className="flex items-center gap-2 px-1 min-w-0 sm:px-3">
+                                  <MdApartment className="text-[13px] sm:text-[15.5px] text-gray-700 flex-shrink-0" />
+                                  <div className="flex flex-col justify-center min-w-0">
+                                    <p className="m-0 text-[9.5px] font-semibold leading-4 truncate sm:text-[10px]">
+                                      {isCommercial
+                                        ? property.property_type === "Office"
+                                          ? "Office Space"
+                                          : property.property_type === "Retail"
+                                            ? "Retail Space"
+                                            : property.property_type
+                                        : isPG
+                                          ? `${property.bathroom || 0} Bathrooms`
+                                          : property.bhk_type}
+                                    </p>
+                                    <p className="m-0 text-[9px] sm:text-[10px] leading-4 text-gray-500 truncate">
+                                      {isCommercial ? "Property Type" : isPG ? "Bathrooms" : property.property_type}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-2 px-1 border-l border-gray-200 min-w-0 sm:px-3">
+                                  {isPG ? (
+                                    <FaUser className="text-[12px] sm:text-[13.5px] text-gray-700 flex-shrink-0" />
+                                  ) : (
+                                    <FaBath className="text-[12px] sm:text-[13.5px] text-gray-700 flex-shrink-0" />
+                                  )}
+                                  <div className="flex flex-col justify-center min-w-0">
+                                    <p className="m-0 text-[9.5px] font-semibold leading-4 truncate sm:text-[10px]">
+                                      {isPG ? property.available_for : `${property.bathroom || 0} Baths`}
+                                    </p>
+                                    <p className="m-0 text-[9px] sm:text-[10px] leading-4 text-gray-500 truncate">
+                                      {isPG ? "Available For" : "Bathrooms"}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-2 px-1 border-l border-gray-200 min-w-0 sm:px-3">
+                                  <RiRuler2Line className="text-[13px] sm:text-[15.5px] text-gray-700 flex-shrink-0" />
+                                  <div className="flex flex-col justify-center min-w-0">
+                                    <p className="m-0 text-[9.5px] font-semibold leading-4 truncate sm:text-[10px]">
+                                      {property.area} {property.area_in}
+                                    </p>
+                                    <p className="m-0 text-[9px] sm:text-[10px] leading-4 text-gray-500 truncate">Built Up Area</p>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <hr className="my-1 border-gray-100" />
+
+                              {/* Posted by · days · distance · share */}
+                              <div className="flex items-center justify-between gap-2 pt-1 pb-1 text-[9.5px] sm:text-[10px] text-gray-600">
+                                <div className="flex items-center flex-wrap min-w-0 gap-x-1">
+                                  <div className="flex items-center min-w-0">
+                                    <AiOutlineClockCircle className="mr-1 text-[13px] text-gray-700 flex-shrink-0" />
+                                    <span className="truncate">Posted by {property.user_type || "Owner"}</span>
+                                  </div>
+                                  <span className="mx-1 text-gray-400 sm:mx-2">•</span>
+                                  <span className="whitespace-nowrap">
+                                    {property.days_since_created ? `${property.days_since_created} days ago` : "Recently"}
+                                  </span>
+                                  {distance && (
+                                    <>
+                                      <span className="mx-1 text-gray-400 sm:mx-2">•</span>
+                                      <div className="flex items-center whitespace-nowrap">
+                                        <FaMapMarkerAlt className="mr-1 text-red-500" />
+                                        {distance} km from you
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                                <button
+                                  type="button"
+                                  aria-label="Share property"
+                                  className="ml-2 p-1 text-gray-500 hover:text-[#7a1235] transition-colors flex-shrink-0"
+                                  onClick={() =>
+                                    openShareModal1(`${window.location.origin}/propertydetails/${property._id}`, property._id)
+                                  }
+                                >
+                                  <FontAwesomeIcon icon={faShareNodes} className="text-[14.5px]" />
+                                </button>
+                              </div>
+
+                              {/* Owner */}
+                              <div className="flex items-center pt-2">
+                                <div className="flex items-center justify-center flex-shrink-0 w-8 h-8 overflow-hidden rounded-full bg-blue-100 sm:w-9 sm:h-9">
+                                  {property.property_owner_image &&
+                                    !property.property_owner_image.includes("default_profile") ? (
+                                    <img
+                                      src={`${process.env.REACT_APP_API_URL}/media/${property.property_owner_image}`}
+                                      alt={property.connect_to_name || "Owner"}
+                                      className="object-cover w-full h-full rounded-full"
+                                      onError={(e) => {
+                                        e.target.style.display = "none";
+                                      }}
+                                    />
+                                  ) : (
+                                    <AiOutlineUser className="text-[20.5px] text-blue-600" />
+                                  )}
+                                </div>
+                                <div className="flex items-center min-w-0 ml-3 sm:ml-4">
+                                  <span
+                                    className="text-[12px] font-semibold text-gray-900 truncate whitespace-nowrap"
+                                    title={property.connect_to_name}
+                                  >
+                                    {property.connect_to_name || "Owner"}
+                                  </span>
+                                  <div className="w-px h-4 mx-3 bg-gray-300 sm:mx-4"></div>
+                                  <span className="text-[12px] text-gray-500 whitespace-nowrap">
+                                    {property.user_type || "Owner"}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Contact actions */}
+                            <div className="grid grid-cols-3 gap-1.5 pt-2 mt-2">
+                              <button
+                                type="button"
+                                className="flex items-center justify-center h-8 text-[9.5px] font-semibold text-white rounded-lg bg-[#7a1235] hover:bg-[#5e0d28] active:scale-95 transition-all"
+                                onClick={() => handleContactClick(property)}
+                              >
+                                Contact
+                              </button>
+                              <a
+                                href={`https://wa.me/91${property.connect_to_no}?text=Hello, I am interested in your property`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="flex items-center justify-center gap-1 h-8 text-[9.5px] font-semibold text-white rounded-lg bg-[#25D366] hover:brightness-110 active:scale-95 transition-all"
+                              >
+                                <FaWhatsapp className="text-[12px]" />
+                                WhatsApp
+                              </a>
+                              <a
+                                href={`tel:${property.connect_to_no}`}
+                                onClick={(e) => e.stopPropagation()}
+                                className="flex items-center justify-center gap-1 h-8 text-[9.5px] font-semibold text-[#7a1235] rounded-lg border border-[#7a1235] bg-white hover:bg-[#7a1235] hover:text-[#7a1235]  active:scale-95 transition-all"
+                              >
+                                <IoCall className="text-[10px]" />
+                                Call
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                ) : (
+                  <div className="py-10 text-center text-gray-700 col-span-full">
+                    <p className="m-0">No properties available at the moment.</p>
+                  </div>
+                )}
+              </div>
+
               {isContactModalOpen && selectedProperty && (
                 <ContactDetails
                   fullName={
@@ -5775,194 +2266,83 @@ useEffect(() => {
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 mt-4">
+                <div className="flex items-center justify-center gap-2 mt-8">
                   <button
-                    onClick={() =>
-                      setCurrentPage((prev) => Math.max(prev - 1, 1))
-                    }
+                    onClick={() => handlePageChange(currentPage - 1)}
                     disabled={currentPage === 1}
-                    className={`w-8 h-8 flex items-center justify-center rounded-full border-2 border-gray-300 
-                 ${currentPage === 1 ? "opacity-50 cursor-not-allowed" : ""}`}
+                    className={`w-9 h-9 flex items-center justify-center rounded-lg border border-[#eadfd6] bg-white text-[#7a1235] transition-colors hover:bg-[#fbf3ec] ${currentPage === 1 ? "opacity-40 cursor-not-allowed" : ""}`}
                   >
-                    <MdOutlineNavigateBefore className="text-xl text-gray-700" />
+                    <MdOutlineNavigateBefore className="text-xl" />
                   </button>
-
-                  {Array.from({ length: totalPages }, (_, i) => (
+                  {getPaginationRange().map((page, index) => (
                     <button
-                      key={i}
-                      onClick={() => setCurrentPage(i + 1)}
-                      className={`px-3 py-1 text-sm transition-colors 
-                   ${currentPage === i + 1 ? "rounded-full my-border w-8 h-8 flex items-center justify-center font-normal" : "text-gray-700"}
-                 `}
+                      key={index}
+                      onClick={() => (page !== "..." ? handlePageChange(page) : null)}
+                      className={`min-w-[36px] h-9 px-2 text-sm rounded-lg flex items-center justify-center transition-colors ${currentPage === page ? "bg-[#7a1235] text-white font-semibold" : "text-gray-700 hover:bg-[#fbf3ec]"}`}
                     >
-                      {i + 1}
+                      {page}
                     </button>
                   ))}
-
                   <button
-                    onClick={() =>
-                      setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                    }
+                    onClick={() => handlePageChange(currentPage + 1)}
                     disabled={currentPage === totalPages}
-                    className={`w-8 h-8 flex items-center justify-center rounded-full border-2 border-gray-300 
-                 ${currentPage === totalPages ? "opacity-50 cursor-not-allowed" : ""}`}
+                    className={`w-9 h-9 flex items-center justify-center rounded-lg border border-[#eadfd6] bg-white text-[#7a1235] transition-colors hover:bg-[#fbf3ec] ${currentPage === totalPages ? "opacity-40 cursor-not-allowed" : ""}`}
                   >
-                    <MdOutlineNavigateNext className="text-xl text-gray-700" />
+                    <MdOutlineNavigateNext className="text-xl" />
                   </button>
                 </div>
               )}
             </div>
 
-            {/* Left: Map */}
-            <div className="flex sticky top-0 w-full sm:w-1/2 h-screen overflow-hidden bg-white rounded-lg">
-              {loading ? (
-                <p>Loading properties...</p>
-              ) : (
-                <MapContainer
-                  center={
-                    properties.length > 0 &&
-                      properties[0].latitude != null &&
-                      properties[0].longitude != null &&
-                      !isNaN(properties[0].latitude) &&
-                      !isNaN(properties[0].longitude)
-                      ? [properties[0].latitude, properties[0].longitude]
-                      : [18.5204, 73.8567] // Fallback: Pune
-                  }
-                  zoom={12}
-                  scrollWheelZoom={false}
-                  style={{ width: "100%", height: "100%" }}
-                >
-                  <ScrollWheelZoomOnHover />
-                  <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}" />
+            {/* Map */}
+            <div className="sticky top-0 w-full p-3 sm:w-3/4 md:w-1/2 lg:w-[500px] h-[300px] sm:h-screen sm:self-start">
+              <div className="relative w-full h-full overflow-hidden bg-[#fbf3ec] border border-[#eadfd6] rounded-xl zb-map">
+                {loading ? (
+                  <div className="flex items-center justify-center w-full h-full gap-3 text-[#7a1235]">
+                    <span className="w-5 h-5 border-2 rounded-full border-[#7a1235] border-t-transparent animate-spin" />
+                    <p className="m-0 text-sm font-medium">Loading properties...</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="absolute z-[1000] px-3 py-1.5 text-xs font-semibold text-white rounded-lg shadow-md pointer-events-none bottom-3 left-3 bg-[#7a1235]">
+                      {visibleProperties.length} properties on map
+                    </div>
+                    <MapContainer
+                      center={
+                        visibleProperties.length > 0 && visibleProperties[0].latitude && visibleProperties[0].longitude
+                          ? [visibleProperties[0].latitude, visibleProperties[0].longitude]
+                          : [18.5204, 73.8567]
+                      }
+                      zoom={12}
+                      scrollWheelZoom={false}
+                      style={{ width: "100%", height: "100%" }}
+                    >
+                      <ZbMapLayers />
+                      <MapPanner target={panTarget} />
 
-                  {properties
-                    .filter(
-                      (property) =>
-                        property.latitude != null &&
-                        property.longitude != null &&
-                        !isNaN(property.latitude) &&
-                        !isNaN(property.longitude),
-                    )
-                    .map((property, index) => (
-                      <Marker
-                        key={property._id}
-                        position={[property.latitude, property.longitude]}
-                        icon={createCustomIcon(
-                          property,
-                          property._id === activePropertyId ||
-                          property._id === hoveredPropertyId,
-                        )}
-                        eventHandlers={{
-                          mouseover: () => setHoveredPropertyId(property._id),
-                          mouseout: () => setHoveredPropertyId(null),
-                        }}
-                      >
-                        <Popup>
-  <Link
-    to={`/propertydetails/${property._id}`}
-    className="block w-full sm:w-[300px] relative no-underline text-black hover:no-underline"
-  >
-    <div className="w-full relative">
-
-      {/* Heart Button */}
-      <button
-        className="absolute z-10 top-2 right-2"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-
-          if (!accessToken) {
-            setIsLoginModalOpen(true);
-            return;
-          }
-
-          if (property.is_favorite) {
-            removeFromFavorites(property.favorite_id);
-          } else {
-            addToFavorites(property._id);
-          }
-        }}
-      >
-        <Heart
-          size={18}
-          color={property.is_favorite ? "red" : "white"}
-          fill={property.is_favorite ? "red" : "white"}
-        />
-      </button>
-
-      {/* Image Slider */}
-      <div className="relative">
-        <img
-          src={
-            propertyImages[currentIndex]?.image
-              ? `${API_URL}${propertyImages[currentIndex]?.image}`
-              : property.cover_image
-          }
-          alt={`Property Image ${currentIndex + 1}`}
-          className="w-full h-[200px] object-cover"
-        />
-
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            handlePrev();
-          }}
-          className="absolute p-1 transform -translate-y-1/2 bg-white rounded top-1/2 left-1 pe-2"
-        >
-          <b>&#x3008;</b>
-        </button>
-
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            handleNext();
-          }}
-          className="absolute p-1 transform -translate-y-1/2 bg-white rounded top-1/2 right-1 ps-2"
-        >
-          <b>&#x232A;</b>
-        </button>
-      </div>
-
-      {/* Property Info */}
-      <div className="px-2">
-        <div className="flex items-center justify-between text-lg font-semibold text-black">
-
-          <div className="flex items-center">
-            <BiRupee className="mr-1 text-black bg-white" />
-
-            <span>
-              {property.property_category_type?.toLowerCase().includes("pg") ||
-              property.property_category_type?.toLowerCase().includes("co-living") ||
-              property.property_category_type?.toLowerCase().includes("coliving")
-                ? formatPrice(property.rent).replace("₹ ", "")
-                : formatPrice(property.property_price).replace("₹ ", "")}
-            </span>
-          </div>
-
-        </div>
-
-        <div className="text-sm text-gray-600">
-          <p className="m-0">
-            <strong>{property.bhk_type}</strong> |{" "}
-            {property.city_name} | {property.area_sq} sq ft
-          </p>
-
-          <p className="m-0">{property.address}</p>
-        </div>
-      </div>
-
-    </div>
-  </Link>
-</Popup>
-                      </Marker>
-                    ))}
-                </MapContainer>
-              )}
+                      {visibleProperties
+                        .filter((p) => p.latitude !== null && p.longitude !== null && !isNaN(p.latitude) && !isNaN(p.longitude))
+                        .map((property) => (
+                          <PropertyMarker
+                            key={property._id}
+                            property={property}
+                            icon={createCustomIcon(getListedPrice(property), isMarkerActive(property._id))}
+                            zIndexOffset={isMarkerActive(property._id) ? 1000 : 0}
+                            onHover={(id) => setHoveredPropertyId(id)}
+                            onLeave={handleCardLeave}
+                            onFavorite={(prop) =>
+                              prop.is_favorite
+                                ? removeFromFavorites(prop.favorite_id)
+                                : addToFavorites(prop._id)
+                            }
+                          />
+                        ))}
+                    </MapContainer>
+                  </>
+                )}
+              </div>
             </div>
 
-            {/* Share Modal */}
             {isShareModalOpen && (
               <div className="absolute right-0 z-50">
                 <ShareModal
@@ -5970,37 +2350,26 @@ useEffect(() => {
                   closeShareModal={handleCloseShareModal}
                   copyLink={() => {
                     const url = currentShareUrl;
-
                     if (navigator.clipboard && window.isSecureContext) {
-                      navigator.clipboard
-                        .writeText(url)
-                        .then(() => alert("Link copied!"))
-                        .catch((err) => {
-                          console.error(err);
-                          fallbackCopyTextToClipboard(url);
-                        });
+                      navigator.clipboard.writeText(url).then(() => alert("Link copied!")).catch(() => fallbackCopy(url));
                     } else {
-                      fallbackCopyTextToClipboard(url);
+                      fallbackCopy(url);
                     }
-
-                    function fallbackCopyTextToClipboard(text) {
-                      const textArea = document.createElement("textarea");
-                      textArea.value = text;
-                      textArea.style.position = "fixed";
-                      textArea.style.left = "-9999px";
-                      document.body.appendChild(textArea);
-                      textArea.focus();
-                      textArea.select();
-
+                    function fallbackCopy(text) {
+                      const ta = document.createElement("textarea");
+                      ta.value = text;
+                      ta.style.position = "fixed";
+                      ta.style.left = "-9999px";
+                      document.body.appendChild(ta);
+                      ta.focus();
+                      ta.select();
                       try {
-                        const successful = document.execCommand("copy");
-                        alert(successful ? "Link copied!" : "Copy failed");
-                      } catch (err) {
-                        console.error("Fallback: Could not copy text: ", err);
+                        document.execCommand("copy");
+                        alert("Link copied!");
+                      } catch {
                         alert("Copy failed");
                       }
-
-                      document.body.removeChild(textArea);
+                      document.body.removeChild(ta);
                     }
                   }}
                 />
@@ -6012,18 +2381,12 @@ useEffect(() => {
         <Login1
           isOpen={isLoginModalOpen}
           onClose={() => setIsLoginModalOpen(false)}
-          onSwitchToSignUp={() => {
-            setIsLoginModalOpen(false);
-            setIsSignUpModalOpen(true);
-          }}
+          onSwitchToSignUp={() => { setIsLoginModalOpen(false); setIsSignUpModalOpen(true); }}
         />
         <SignUp1
           isOpen={isSignUpModalOpen}
           onClose={() => setIsSignUpModalOpen(false)}
-          onSwitchToLogin={() => {
-            setIsSignUpModalOpen(false);
-            setIsLoginModalOpen(true);
-          }}
+          onSwitchToLogin={() => { setIsSignUpModalOpen(false); setIsLoginModalOpen(true); }}
         />
       </div>
     </>

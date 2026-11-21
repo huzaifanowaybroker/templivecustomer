@@ -1,6 +1,13 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { IoIosInformationCircle } from "react-icons/io";
 
 const BasicInfo = () => {
+  // Option lists are supplied by the page that uses this component.
+  const buildingTypes = [];
+  const propertyTypes = [];
+  const [buildingType, setBuildingType] = useState("");
+  const [propertyType, setPropertyType] = useState("");
+
   useEffect(() => {
     const loadGoogleMapsScript = () => {
       if (!window.google) {

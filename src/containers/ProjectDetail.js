@@ -1513,7 +1513,7 @@ const ProjectDetail = () => {
                     />
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                       <span className="text-2xl font-bold text-white rotate-[-30deg] opacity-60">
-                        NoWayBroker
+                        Zerobriks
                       </span>
                     </div>
                   </div>
@@ -1548,7 +1548,7 @@ const ProjectDetail = () => {
                         />
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                           <span className="text-2xl font-bold text-white rotate-[-30deg] opacity-60">
-                            NoWayBroker
+                            Zerobriks
                           </span>
                         </div>
                       </div>
@@ -1609,7 +1609,7 @@ const ProjectDetail = () => {
                             />
                             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                               <span className="text-2xl font-bold text-white rotate-[-30deg] opacity-60">
-                                NoWayBroker
+                                Zerobriks
                               </span>
                             </div>
                           </div>
@@ -1732,7 +1732,7 @@ const ProjectDetail = () => {
                       />
                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                         <span className="text-2xl font-bold text-white rotate-[-30deg] opacity-60">
-                          NoWayBroker
+                          Zerobriks
                         </span>
                       </div>
                     </div>

@@ -1,3199 +1,518 @@
-// import { React, useState, useRef, useEffect } from "react";
-// import { FaBed, FaBath, FaRupeeSign } from "react-icons/fa";
-// import { ToWords } from "to-words";
-// import { MdLocationOn } from "react-icons/md";
-// import { FiShare2, FiHeart } from "react-icons/fi";
-// import { FaHome } from "react-icons/fa";
-// import { IoMdBed } from "react-icons/io";
-// import { BiArea } from "react-icons/bi";
-// import { MdOutlineLocationOn } from "react-icons/md";
-// import { GoArrowLeft, GoArrowRight } from "react-icons/go";
-// import { FaHeart } from "react-icons/fa";
-// import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-// import { FaUser } from "react-icons/fa";
-// import { faVideo } from "@fortawesome/free-solid-svg-icons";
-// import { AiOutlineGlobal } from "react-icons/ai";
-// import { FaRulerCombined } from "react-icons/fa";
-// import { faChair } from "@fortawesome/free-solid-svg-icons";
-// import { MdOutlineBedroomParent } from "react-icons/md";
-// import { AiOutlineUser, AiOutlineClockCircle } from "react-icons/ai";
-// import { BiShapeSquare } from "react-icons/bi";
-// import { PiShareNetworkLight } from "react-icons/pi";
-// import { FaPhoneAlt } from "react-icons/fa";
-// import axios from "axios";
-// import {
-//   HiOutlineBadgeCheck,
-//   HiOutlineCalendar,
-//   HiOutlineHome,
-//   HiOutlineClock,
-// } from "react-icons/hi";
-// import { FaMoneyBillWave } from "react-icons/fa";
-// import { Link } from "react-router-dom";
-// import Slider from "react-slick";
-// import "slick-carousel/slick/slick.css";
-// import "slick-carousel/slick/slick-theme.css";
-// import "../styles/RecommendedProperties.css";
-// import "../styles/DetailResponsive.css";
-// import { BsHouseDoorFill, BsArrowsFullscreen } from "react-icons/bs";
-// import { faShareNodes } from "@fortawesome/free-solid-svg-icons";
-// import { useHistory } from "react-router-dom"; // import for routing
-// import { PiCubeFocus, PiCricketThin } from "react-icons/pi";
-// import { useParams, useLocation } from "react-router-dom";
-// import { useCity } from "./SearchContext";
-// import { toast } from "react-toastify";
-// import { FiUser } from "react-icons/fi";
-// import Login1 from "../auth/Login1";
-// import SignUp1 from "../auth/SignUp1";
-// import GetScheduleVTourproperty from "../containers/GetScheduleVTourproperty";
-// import { HiOutlineArrowRight } from "react-icons/hi"; // thinner arrow
-// import ShareModal from "../containers/ShareModal";
-// import ContactDetails from "../containers/ContactDetails";
-// import { Heart, Building2 } from "lucide-react";
-// import { RiRuler2Line } from "react-icons/ri";
-// import { MdApartment } from "react-icons/md";
-// import { FaWhatsapp, FaPhone } from "react-icons/fa";
-// import { FaMapMarkerAlt } from "react-icons/fa";
-
-// const defaultImage = "/image/appstore.png";
-// const userLocation = JSON.parse(sessionStorage.getItem("userLocation"));
-// const formatDateToDDMMYYYY = (dateVal, fallbackDate = null) => {
-//   if (!dateVal || dateVal.toString().trim() === "" || dateVal.toString().toLowerCase() === "null") {
-//     return dateVal;
-//   }
-
-//   let dateObj;
-//   if (dateVal.toString().trim().toLowerCase() === "immediately") {
-//     dateObj = fallbackDate ? new Date(fallbackDate) : new Date();
-//   } else {
-//     dateObj = new Date(dateVal);
-//   }
-
-//   if (isNaN(dateObj.getTime())) {
-//     return dateVal;
-//   }
-
-//   const day = String(dateObj.getDate()).padStart(2, "0");
-//   const month = String(dateObj.getMonth() + 1).padStart(2, "0");
-//   const year = dateObj.getFullYear();
-//   return `${day}/${month}/${year}`;
-// };
-
-// function calculateDistance(lat1, lon1, lat2, lon2) {
-//   const R = 6371;
-//   const dLat = (lat2 - lat1) * (Math.PI / 180);
-//   const dLon = (lon2 - lon1) * (Math.PI / 180);
-//   const a =
-//     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-//     Math.cos(lat1 * (Math.PI / 180)) *
-//     Math.cos(lat2 * (Math.PI / 180)) *
-//     Math.sin(dLon / 2) *
-//     Math.sin(dLon / 2);
-//   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-//   return R * c;
-// }
-// const Detail = ({ propertyData }) => {
-//   const toWords = new ToWords({
-//     localeCode: "en-IN",
-//     converterOptions: {
-//       currency: false,
-//       ignoreDecimal: true,
-//       ignoreZeroCurrency: true,
-//     },
-//   });
-//   // const [showAllImages, setShowAllImages] = useState(false);
-//   const [savedProperties, setSavedProperties] = useState([]);
-//   const [properties, setProperties] = useState([]);
-//   // const [isLoggedIn, setIsLoggedIn] = useState(false);
-//   const sliderRef = useRef(null);
-//   const overviewRef = useRef(null);
-//   const moreDetailsRef = useRef(null);
-//   const amenitiesRef = useRef(null);
-//   const aboutRef = useRef(null);
-//   const locationRef = useRef(null);
-//   const statusTimelineRef = useRef(null);
-//   const [activeSection, setActiveSection] = useState("overview");
-//   const [currentShareUrl1, setcurrentShareUrl1] = useState("");
-//   const [propertyDetails, setPropertyDetails] = useState({});
-//   const userId = sessionStorage.getItem("accessToken");
-//   const history = useHistory();
-//   const { searchCity } = useCity();
-//   const [currentShareUrl, setCurrentShareUrl] = useState("");
-//   const [activeShareId, setActiveShareId] = useState(null);
-//   const [tourSchedule, setTourSchedule] = useState([]);
-
-//   const [freeViewCount, setFreeViewCount] = useState(0);
-//   const [paidViewCount, setPaidViewCount] = useState(0);
-
-//   const formatArea = (area, unit) => {
-//     if (!area) return null;
-
-//     const formattedUnit = unit ? unit.trim().toLowerCase() : "";
-
-//     return `${area} ${formattedUnit}`;
-//   };
-//   const scrollToSection = (ref, key) => {
-//     setActiveSection(key);
-//     ref.current?.scrollIntoView({
-//       behavior: "smooth",
-//       block: "start",
-//     });
-//   };
-//   const checkPostLimits = async () => {
-//     try {
-//       const profileForm = new FormData();
-//       profileForm.append("user_id", userId);
-
-//       const profileResponse = await axios.post(
-//         `${process.env.REACT_APP_API_URL}/cust_api/get_profile`,
-//         profileForm,
-//         {
-//           headers: {
-//             "Content-Type": "multipart/form-data",
-//           },
-//         },
-//       );
-
-//       const countData = profileResponse?.data?.count_data;
-
-//       if (countData) {
-//         setFreeViewCount(countData.free_view_count || 0);
-//         setPaidViewCount(countData.paid_view_count || 0);
-//       }
-//     } catch (error) {
-//       console.error("Error checking post limits:", error);
-//     }
-//   };
-
-//   useEffect(() => {
-//     if (userId) {
-//       checkPostLimits();
-//     }
-//   }, [userId]);
-
-//   const handleAddCount = async (updatedCount) => {
-//     try {
-//       const addCountFormData = new FormData();
-//       if (freeViewCount > 0) {
-//         addCountFormData.append("free_view_count", updatedCount);
-//       } else {
-//         addCountFormData.append("paid_view_count", updatedCount);
-//       }
-//       addCountFormData.append("user_id", userId);
-
-//       const response = await fetch(
-//         `${process.env.REACT_APP_API_URL}/cust_api/add_count`,
-//         {
-//           method: "POST",
-//           body: addCountFormData,
-//         },
-//       );
-
-//       const data = await response.json();
-
-//       if (response.ok) {
-//         checkPostLimits();
-//       } else {
-//         console.error("Failed to update count:", data.message);
-//       }
-//     } catch (error) {
-//       console.error("API error:", error);
-//     }
-//   };
-
-//   useEffect(() => {
-//     // const userId = sessionStorage.getItem("AccessToken");
-//     if (userId) {
-//       setIsLoggedIn(true);
-//       fetchSavedProperties(userId);
-//     } else {
-//       setIsLoggedIn(false);
-//     }
-//   }, []);
-
-//   const fetchSavedProperties = async () => {
-//     // const userId = sessionStorage.getItem("AccessToken");
-//     try {
-//       const response = await axios.post(
-//         `${process.env.REACT_APP_API_URL}/cust_api/get_favorite_properties`,
-//         { user_id: userId },
-//       );
-//       if (response.data.status === 1 && Array.isArray(response.data.data)) {
-//         const savedIds = response.data.data.map((prop) => prop._id);
-//         setSavedProperties(savedIds);
-//       } else {
-//         setSavedProperties([]);
-//         console.error("No saved properties found.");
-//       }
-//     } catch (error) {
-//       console.error("Error fetching saved properties:", error);
-//     }
-//   };
-
-//   const fetchRecommendedProperties = async () => {
-//     try {
-//       const cityName =
-//   searchCity && searchCity.trim() !== ""
-//     ? searchCity.trim()
-//     : sessionStorage.getItem("cityName") || "";
-//       const response = await axios.post(
-//         `${process.env.REACT_APP_API_URL}/cust_api/get_featured_property`,
-//         {
-//     user_id: userId,
-//     city_name: cityName,
-//   },
-//       );
-//       if (response.data.status === 1 && Array.isArray(response.data.data)) {
-//         setProperties(response.data.data);
-//       } else {
-//         setProperties([]);
-//       }
-//     } catch (error) {
-//       console.error("Error fetching recommended properties:", error);
-//     }
-//   };
-
-//   useEffect(() => {
-//     fetchRecommendedProperties();
-//   }, []);
-
-//   //add to favorite started
-//   const [isFavorite, setIsFavorite] = useState(false);
-//   const [favoriteId, setFavoriteId] = useState(null); // Store the favorite_id for removal
-
-//   // Check if the property is a favorite on page load or when propertyDetails changes
-//   const checkIfFavorite = async (propertyId) => {
-//     // const userId = sessionStorage.getItem("accessToken");
-//     if (!userId || !propertyId) return;
-
-//     try {
-//       const response = await axios.post(
-//         `${process.env.REACT_APP_API_URL}/cust_api/get_favorite_properties`,
-//         { user_id: userId },
-//       );
-
-//       const favoriteList = response.data.data || [];
-//       const matchedFavorite = favoriteList.find(
-//         (fav) => String(fav._id) === String(propertyId),
-//       );
-
-//       if (matchedFavorite) {
-//         setIsFavorite(true);
-//         setFavoriteId(matchedFavorite.favorite_id); // Save favorite_id for removal
-//       } else {
-//         setIsFavorite(false);
-//         setFavoriteId(null);
-//       }
-//     } catch (error) {
-//       console.error("Error checking favorite status:", error);
-//     }
-//   };
-
-//   useEffect(() => {
-//     checkIfFavorite(propertyDetails?._id);
-//   }, [propertyDetails?._id]);
-
-//   //  Add to favorites
-//   const addToFavorites = async () => {
-//     if (!userId) {
-//       setIsLoginModalOpen(true);
-//       return;
-//     }
-
-//     try {
-//       const response = await axios.post(
-//         `${process.env.REACT_APP_API_URL}/cust_api/add_to_favorite`,
-//         {
-//           user_id: userId,
-//           property_id: propertyDetails._id,
-//         },
-//       );
-//       setIsFavorite(true); // Immediately set isFavorite to true
-//       checkIfFavorite(_id); // Save the favorite_id from the response
-//       toast.success("Property has been saved to your favorites!");
-//       fetchPropertyDetails(_id);
-//       fetchRecommendedProperties();
-//     } catch (error) {
-//       console.error("Error adding property to favorites:", error);
-//       toast.error("Failed to save the property. Please try again.");
-//     }
-//   };
-
-//   // Remove from favorites
-//   const removeFromFavorites = async () => {
-//     if (!favoriteId) return;
-
-//     try {
-//       await axios.delete(
-//         `${process.env.REACT_APP_API_URL}/cust_api/remove_from_favorite`,
-//         { data: { favorite_id: favoriteId } }, // DELETE request with body
-//       );
-
-//       toast.success("Property removed from your favorites.");
-//       checkIfFavorite(_id);
-//       fetchPropertyDetails(_id);
-//       fetchRecommendedProperties();
-//     } catch (error) {
-//       console.error("Error removing property from favorites:", error);
-//       toast.error("Failed to remove the property. Please try again.");
-//     }
-//   };
-
-//   //  Add to favorites
-//   const addToFavoritesRecommendedProperty = async (PropertyId) => {
-//     if (!userId) {
-//       setIsLoginModalOpen(true);
-//       return;
-//     }
-
-//     try {
-//       const response = await axios.post(
-//         `${process.env.REACT_APP_API_URL}/cust_api/add_to_favorite`,
-//         {
-//           user_id: userId,
-//           property_id: PropertyId,
-//         },
-//       );
-//       checkIfFavorite(_id);
-//       fetchPropertyDetails(_id);
-//       fetchRecommendedProperties();
-//     } catch (error) {
-//       console.log("Failed to save the property. Please try again.");
-//     }
-//   };
-
-//   // Remove from favorites
-//   const removeFromFavoritesRecommendedProperty = async (FavoriteId) => {
-//     try {
-//       await axios.delete(
-//         `${process.env.REACT_APP_API_URL}/cust_api/remove_from_favorite`,
-//         { data: { favorite_id: FavoriteId } },
-//       );
-
-//       checkIfFavorite(_id);
-//       fetchPropertyDetails(_id);
-//       fetchRecommendedProperties();
-//     } catch (error) {
-//       console.log("Failed to remove the property. Please try again.");
-//     }
-//   };
-
-//   // Slider settings
-//   const [activeIndexes, setActiveIndexes] = useState({});
-//   const BASE_URL = process.env.REACT_APP_API_URL;
-//   const settings = {
-//     infinite: true,
-//     slidesToShow: 4,
-//     lazyLoad: "ondemand",
-//     slidesToScroll: 1,
-//     autoplay: true,
-//     autoplaySpeed: 3000,
-//     arrows: false,
-//     cssEase: "linear",
-//     centerMode: false,
-//     centerPadding: "0px",
-//     responsive: [
-//       {
-//         breakpoint: 1399,
-//         settings: {
-//           slidesToShow: 3,
-//           slidesToScroll: 1,
-//         },
-//       },
-//       {
-//         breakpoint: 1023,
-//         settings: {
-//           slidesToShow: 2,
-//           slidesToScroll: 1,
-//         },
-//       },
-//       {
-//         breakpoint: 767,
-//         settings: {
-//           slidesToShow: 1,
-//           slidesToScroll: 1,
-//         },
-//       },
-//     ],
-//   };
-//   const openShareModal1 = (url) => {
-//     setcurrentShareUrl1(url);
-//     const modal = document.getElementById("shareModal1");
-//     if (modal) {
-//       modal.style.display = "block";
-//     }
-//   };
-
-//   const openShareModal = (url, propertyId) => {
-//     setCurrentShareUrl(url);
-//     setActiveShareId(propertyId);
-//     setIsShareModalOpen(true);
-//   };
-
-//   const formatPrice = (price) => {
-//     if (price === null || price === undefined || price === "") return "";
-
-//     price = Number(price);
-
-//     if (price >= 10000000) {
-//       return (price / 10000000).toFixed(2).replace(/\.?0+$/, "") + " Cr";
-//     } else if (price >= 100000) {
-//       return (price / 100000).toFixed(2).replace(/\.?0+$/, "") + " L";
-//     } else if (price >= 1000) {
-//       return (price / 1000).toFixed(2).replace(/\.?0+$/, "") + " K";
-//     } else {
-//       return price.toString();
-//     }
-//   };
-
-//   // for the image section with 'get_property_detail' api
-
-//   const { _id } = useParams();
-//   const location = useLocation();
-//   const property_owner_id = location.state?.property_owner_id;
-//   const [aboutPropertyText, setAboutPropertyText] = useState("");
-
-//   const [showAll, setShowAll] = useState(false);
-//   const [allAmenities, setAllAmenities] = useState([]);
-//   const visibleAmenities = showAll ? allAmenities : allAmenities.slice(0, 8);
-
-//   const [propertyImages, setPropertyImages] = useState([]);
-//   const [showAllImages, setShowAllImages] = useState(false);
-//   const [longitude, setLongitude] = useState(0);
-//   const [latitude, setLatitude] = useState(0);
-//   const [userDetails, setuserDetails] = useState({
-//     full_name: "",
-//     mobile_number: "",
-//     email: "",
-//   });
-
-//   const user_id = sessionStorage.getItem("accessToken");
-//   useEffect(() => {
-//     const customer_id = user_id;
-
-//     if (propertyDetails?._id && propertyDetails?.user_id && customer_id) {
-//       const formData = new FormData();
-//       formData.append("property_id", propertyDetails?._id);
-//       formData.append("user_id", propertyDetails?.user_id);
-//       formData.append("customer_id", customer_id);
-
-//       axios
-//         .post(
-//           `${process.env.REACT_APP_API_URL}/cust_api/add_view_property`,
-//           formData,
-//         )
-//         .then((res) => {
-//           if (res.data?.status === 1) {
-//             console.log("View property recorded");
-//           }
-//         })
-//         .catch((err) => {
-//           console.error("Failed to record property view:", err);
-//         });
-//     }
-//   }, [propertyDetails?._id, user_id]);
-
-//   useEffect(() => {
-//     window.scrollTo(0, 0);
-//   }, []);
-
-//   const fetchPropertyDetails = async (id) => {
-//     try {
-//       const res = await axios.post(
-//         `${process.env.REACT_APP_API_URL}/cust_api/get_property_details`,
-//         { property_id: id, user_id: userId },
-//       );
-
-//       const data = res.data?.data;
-//       console.log("API Response:", data);
-//       console.log("Price Onwards:", data.price_onwards);
-
-//       if (data?.property_images?.length > 0) {
-//         setPropertyImages(data.property_images);
-//       } else {
-//         setPropertyImages([]);
-//       }
-
-//       if (data?.amenities?.length > 0) {
-//         setAllAmenities(data.amenities);
-//       } else {
-//         setAllAmenities([]);
-//       }
-
-//       if (
-//         data?.tour_schedule?.length > 0 &&
-//         data.tour_schedule[0].status !== "Rejected" &&
-//         data.tour_schedule[0].status !== "Expired"
-//       ) {
-//         setTourSchedule(data.tour_schedule);
-//         const dateParts = data.tour_schedule[0].schedule_date.split("-");
-//         const year = dateParts[0].slice(-2); // "25"
-//         const month = parseInt(dateParts[1], 10) - 1; // month index
-//         const day = parseInt(dateParts[2], 10); // 24
-
-//         const monthName = new Date(0, month).toLocaleString("default", {
-//           month: "short",
-//         });
-
-//         const scheduledLabel = `Scheduled ${day} ${monthName} ${year}`;
-//         setScheduledDateLabel(scheduledLabel);
-//       } else {
-//         setTourSchedule([]);
-//         setScheduledDateLabel("Virtual Tour");
-//       }
-
-//       if (data?.property_details?.property_description) {
-//         setAboutPropertyText(data.property_details.property_description);
-//       } else {
-//         setAboutPropertyText("");
-//       }
-
-//       if (data?.property_details) {
-//         setPropertyDetails(data.property_details);
-//       } else {
-//         setPropertyDetails({});
-//       }
-
-//       if (
-//         data?.user_details &&
-//         Array.isArray(data.user_details) &&
-//         data.user_details.length > 0
-//       ) {
-//         setuserDetails(data.user_details[0]);
-//       } else {
-//         setuserDetails({
-//           full_name: "N/A",
-//           mobile_number: "N/A",
-//           email: "N/A",
-//         });
-//         console.warn("user_details is empty or invalid:", data?.user_details);
-//       }
-
-//       const pd = data.property_details;
-//       setLatitude(pd.latitude);
-//       setLongitude(pd.longitude);
-//     } catch (err) {
-//       console.error("Error fetching property details", err);
-//       setPropertyImages([]);
-//       setAllAmenities([]);
-//       setTourSchedule([]);
-//     }
-//   };
-
-//   useEffect(() => {
-//     fetchPropertyDetails(_id);
-//   }, [_id]);
-
-//   // for send Enquiry 'add_property_enquiry' api
-
-//   const [name, setName] = useState("");
-//   const [message, setMessage] = useState("");
-//   const [contactNumber, setContactNumber] = useState("");
-//   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-//   const [isSignUpModalOpen, setIsSignUpModalOpen] = useState(false);
-//   const [isLoggedIn, setIsLoggedIn] = useState(false);
-//   const [enquiryStatus, setEnquiryStatus] = useState(null); // success or error
-
-//   // Existing useEffect (on mount)
-//   useEffect(() => {
-//     const mobileNumber = sessionStorage.getItem("Mobile_Number");
-//     if (mobileNumber) {
-//       setContactNumber(mobileNumber);
-//     }
-//   }, []);
-
-//   //  New useEffect to check sessionStorage and update contact number after login
-//   useEffect(() => {
-//     let interval;
-
-//     if (isLoginModalOpen === false && !contactNumber) {
-//       interval = setInterval(() => {
-//         const mobileNumber = sessionStorage.getItem("Mobile_Number");
-//         if (mobileNumber) {
-//           setContactNumber(mobileNumber);
-//           clearInterval(interval); // Stop checking once we have it
-//         }
-//       }, 500); // Check every 500ms
-//     }
-
-//     return () => clearInterval(interval); // Cleanup
-//   }, [isLoginModalOpen, contactNumber]);
-
-//   const userType = sessionStorage.getItem("user_type");
-//   // Handle Enquiry Form submission
-//   const handleEnquirySubmit = async (e) => {
-//     e.preventDefault();
-
-//     const accessToken = sessionStorage.getItem("accessToken");
-
-//     if (!accessToken) {
-//       setIsLoginModalOpen(true);
-//       return;
-//     }
-
-//     const enquiryData = {
-//       property_id: propertyDetails?._id,
-//       user_id: propertyDetails?.user_id,
-//       customer_id: accessToken,
-//       name,
-//       user_type: userType,
-//       contact_number: contactNumber,
-//       message,
-//     };
-
-//     try {
-//       const response = await axios.post(
-//         `${process.env.REACT_APP_API_URL}/cust_api/add_property_enquiry`,
-//         enquiryData,
-//       );
-
-//       if (response.data.status) {
-//         setEnquiryStatus({
-//           type: "success",
-//           message: "Enquiry sent successfully!",
-//         });
-//         setName("");
-//         setMessage("");
-//       } else {
-//         setEnquiryStatus({ type: "error", message: "Failed to send enquiry!" });
-//       }
-//     } catch (error) {
-//       setEnquiryStatus({ type: "error", message: "Something went wrong!" });
-//     }
-//   };
-
-//   // Trigger login modal on input if not logged in
-//   const handleFieldChange = () => {
-//     const accessToken = sessionStorage.getItem("accessToken");
-//     if (!accessToken) {
-//       setIsLoginModalOpen(true);
-//     }
-//   };
-
-//   const handleLoginSuccess = () => {
-//     const mobileNumber = sessionStorage.getItem("Mobile_Number");
-//     if (mobileNumber) {
-//       setIsLoggedIn(true);
-//       setContactNumber(mobileNumber);
-//       setIsLoginModalOpen(false);
-//     }
-//   };
-
-//   // for the schedule virtula tour
-//   const [isModalOpen, setIsModalOpen] = useState(false);
-//   const [scheduledDateLabel, setScheduledDateLabel] = useState("Virtual Tour");
-//   const [openVirtualTourAfterLogin, setOpenVirtualTourAfterLogin] =
-//     useState(false);
-//   useEffect(() => {
-//     const token = sessionStorage.getItem("accessToken");
-//     if (token && openVirtualTourAfterLogin) {
-//       setIsModalOpen(true); // Open Virtual Tour
-//       setOpenVirtualTourAfterLogin(false); // Reset flag
-//     }
-//   }, [isLoggedIn]);
-
-//   // for share model
-//   const [openShareModalAfterLogin, setOpenShareModalAfterLogin] =
-//     useState(false);
-//   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-//   useEffect(() => {
-//     const token = sessionStorage.getItem("accessToken");
-//     if (token && openShareModalAfterLogin) {
-//       setIsShareModalOpen(true); // Open Share modal
-//       setOpenShareModalAfterLogin(false); // Reset flag
-//     }
-//   }, [isLoggedIn]);
-
-//   const handleCloseShareModal = () => {
-//     setIsShareModalOpen(false);
-//   };
-
-//   //for the contact details
-//   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
-//   const [openContactModalAfterLogin, setOpenContactModalAfterLogin] =
-//     useState(false);
-
-//   const userName = sessionStorage.getItem("user_name");
-//   const userMobile = sessionStorage.getItem("Mobile_Number");
-
-//   useState(false);
-//   useEffect(() => {
-//     if (sessionStorage.getItem("accessToken") && openContactModalAfterLogin) {
-//       setIsContactModalOpen(true);
-//       setOpenContactModalAfterLogin(false);
-//     }
-//   }, [openContactModalAfterLogin]);
-
-//   // Add this line below all useState declarations or just before return:
-//   const overviewFields = [
-//     //["Status", propertyDetails?.available_status || null],
-//     ["Property Added Date", propertyDetails?.property_added_date || null],
-//     ["Property Name", propertyDetails?.property_name || null],
-//     // [
-//     //   "Address",
-//     //   propertyDetails?.address &&
-//     //   propertyDetails?.city_name &&
-//     //   propertyDetails?.state &&
-//     //   propertyDetails?.zip_code
-//     //     ? `${propertyDetails.address}, ${propertyDetails.city_name}, ${propertyDetails.state}, ${propertyDetails.zip_code}`
-//     //     : null,
-//     // ],
-//     [
-//       "Address",
-//       propertyDetails?.address || null,
-//     ],
-//     [
-//       "Area",
-//       propertyDetails?.area
-//         ? formatArea(propertyDetails.area, propertyDetails.area_in)
-//         : null,
-//     ],
-//     ["Area Type", propertyDetails?.area_type || null],
-//     [
-//       "Price",
-//       propertyDetails?.property_category_type === "Rent"
-//         ? propertyDetails?.rent
-//           ? `₹${formatPrice(propertyDetails.rent)}`
-//           : null
-//         : propertyDetails?.property_price
-//           ? `₹${formatPrice(propertyDetails.property_price)}`
-//           : null,
-//     ],
-//     [
-//       "Deposite",
-//       propertyDetails?.custom_deposit_amount
-//         ? `₹${formatPrice(propertyDetails.custom_deposit_amount)}`
-//         : null,
-//     ],
-//     ["Listing Type", propertyDetails?.property_category_type || null],
-//     // ["Developer", propertyDetails?.developer || null],
-//     ["Building Type", propertyDetails?.building_type || null],
-//     ["Property Type", propertyDetails?.property_type || null],
-//     ...(propertyDetails?.property_type === "Plot/Land"
-//   ? [["Land Type", propertyDetails?.land_type || null]]
-//   : []),
-//     ...(propertyDetails?.property_type === "Office"
-//   ? [["Office Type", propertyDetails?.office_type || null]]
-//   : []),
-//     [
-//       "Bhk Type",
-//       propertyDetails?.bhk_type === "Studio"
-//         ? "Studio/Single Room"
-//         : propertyDetails?.bhk_type || null,
-//     ],
-//     ["Furnishing", propertyDetails?.furnished_type || null],
-//     // ["Plot No.", propertyDetails?.plot_no || null],
-//     ["Operating Since", propertyDetails?.operating_since || null],
-//     [
-//       "Available for Company Lease",
-//       propertyDetails?.available_for_company_lease || null,
-//     ],
-//     ["Available For", propertyDetails?.available_for || null],
-//     ["Suited For", propertyDetails?.suited_for || null],
-//     ["Room Type", propertyDetails?.room_type || null],
-//     ["Food Charges Included", propertyDetails?.food_charges_included || null],
-//   ].filter(([_, value]) => value);
-
-//   //more details
-
-//   const moreDetailsFields = [
-//     ["Food Available", propertyDetails?.food_available || null],
-//     ["Notice Period", propertyDetails?.notice_period || null],
-//     [
-//       "Notice Period Other Days",
-//       propertyDetails?.notice_period_other_days || null,
-//     ],
-//     [
-//       "Electricity Charges Included",
-//       propertyDetails?.electricity_charges_included || null,
-//     ],
-//     ["Total Beds", propertyDetails?.total_beds || null],
-//     ["Additional Rooms", propertyDetails?.additional_rooms || null],
-//     ["PG Rules", propertyDetails?.pg_rules || null],
-//     ["Gate Closing Time", propertyDetails?.gate_closing_time || null],
-//     ["Gate Closing Hour", propertyDetails?.gate_closing_hour || null],
-//     ["PG Services", propertyDetails?.pg_services || null],
-//     ["Age of Property", propertyDetails?.age_of_property || null],
-//     ["Office Space Type", propertyDetails?.office_space_type || null],
-//     //["Pantry", propertyDetails?.pantry || null],
-//     ["Personal Washroom", propertyDetails?.personal_washroom || null],
-//     ["Bathroom", propertyDetails?.bathroom || null],
-//     ["Lift Availability", propertyDetails?.lift_availability || null],
-//     ["Parking Availability", propertyDetails?.parking_availability || null],
-//     ["Covered Parking", propertyDetails?.covered_parking || null],
-//     ["Uncovered Parking", propertyDetails?.uncovered_parking || null],
-//     ["Balcony", propertyDetails?.balcony || null],
-//     ["Power Backup", propertyDetails?.power_backup || null],
-    
-//     ["Water Source", propertyDetails?.water_source || null],
-//     ["View", propertyDetails?.view || null],
-//     ["Flooring", propertyDetails?.flooring || null],
-//     ["Total Floor", propertyDetails?.total_floor || null],
-//     ["Property Floor", propertyDetails?.property_floor || null],
-//     ["Facing", propertyDetails?.facing || null],
-//     ["Ceiling Height", propertyDetails?.ceiling_height || null],
-    
-//     ["Min Lockin Period", propertyDetails?.min_lockin_period || null],
-//     ["Seat Type", propertyDetails?.seat_type || null],
-//     [
-//       "Number of Seats Available",
-//       propertyDetails?.number_of_seats_available || null,
-//     ],
-//     ["Plot No.", propertyDetails?.plot_no || null],
-//     // ["Loan Availability", propertyDetails?.loan_availability || null],
-//     //some other fileds
-//     ["RERA ID", propertyDetails?.property_no || null],
-//     ["Landmarks", propertyDetails?.landmarks || null],
-//     ["Furnishing", propertyDetails?.furnished_type || null],
-//     ["Near Landmark", propertyDetails?.near_landmark || null],
-//     ["Flat Name", propertyDetails?.flat_name || null],
-//     ["Maintenance Frequency", propertyDetails?.maintenance_frequency || null],
-//     [
-//       "Maintenance Included",
-//       propertyDetails?.maintenance_included ? "Yes" : "No",
-//     ],
-//     ["Security Deposit Type", propertyDetails?.security_deposit_type || null],
-//     [
-//       "Available for Company Lease",
-//       propertyDetails?.available_for_company_lease || null,
-//     ],
-//     ["Available For", propertyDetails?.available_for || null],
-//     ["Suited For", propertyDetails?.suited_for || null],
-//     ["Room Type", propertyDetails?.room_type || null],
-//     ["Food Charges Included", propertyDetails?.food_charges_included || null],
-//     // [
-//     //   "Virtual Tour Availability",
-//     //   propertyDetails?.virtual_tour_availability || null,
-//     // ],
-//     ["Property Category Type", propertyDetails?.property_category_type || null],
-//     ["Rent", propertyDetails?.rent || null],
-//     ["Rent Duration", propertyDetails?.rent_duration || null],
-//     ["Property Added Date", propertyDetails?.property_added_date ? formatDateToDDMMYYYY(propertyDetails.property_added_date) : null],
-//     ...(
-//   propertyDetails?.property_category_type === "Buy" ||
-//   propertyDetails?.property_category_type === "Commercial Buy"
-//     ? [
-//         [
-//           "Possession Status",
-//           propertyDetails?.possession_status || null,
-//         ],
-//       ]
-//     : []
-// ),
-//     ...(
-//   propertyDetails?.possession_status === "Later"
-//     ? [
-//         [
-//           "Available Date",
-//           propertyDetails?.possession_date
-//             ? formatDateToDDMMYYYY(propertyDetails.possession_date)
-//             : null,
-//         ],
-//       ]
-//     : []
-// ),
-//   ...(
-//   !(
-//     propertyDetails?.property_category_type === "Rent" &&
-//     propertyDetails?.building_type === "Commercial" &&
-//     propertyDetails?.property_type === "Plot/Land"
-//   )
-//     ? propertyDetails?.property_category_type === "Rent"
-//       ? [
-//           [
-//             "Available Status",
-//             propertyDetails?.available_from ||
-//               propertyDetails?.available_status ||
-//               null,
-//           ],
-//         ]
-//       : []
-//     : []
-// ),
-// ...(
-//   !(
-//     propertyDetails?.property_category_type === "Rent" &&
-//     propertyDetails?.building_type === "Commercial" &&
-//     propertyDetails?.property_type === "Plot/Land"
-//   )
-//     ? propertyDetails?.property_category_type === "Rent" &&
-//       propertyDetails?.available_from !== "Immediately"
-//       ? [
-//           [
-//             "Available From",
-//             propertyDetails?.possession_date ||
-//             propertyDetails?.available_from
-//               ? formatDateToDDMMYYYY(
-//                   propertyDetails?.possession_date ||
-//                     propertyDetails?.available_from,
-//                   propertyDetails?.property_added_date
-//                 )
-//               : null,
-//           ],
-//         ]
-//       : []
-//     : []
-// ),
-//    ...(
-//   (
-//     propertyDetails?.property_category_type === "Buy" ||
-//     propertyDetails?.property_category_type === "Commercial Buy"
-//   ) &&
-//   propertyDetails?.possession_status === "Under Construction"
-//     ? [
-//         [
-//           "Possession Date",
-//           propertyDetails?.possession_date
-//             ? formatDateToDDMMYYYY(propertyDetails.possession_date)
-//             : null,
-//         ],
-//       ]
-//     : []
-// ),
-
-
-//     ["Area Type", propertyDetails?.area_type || null],
-//     ["Built up Area", propertyDetails?.area || null],
-//     [
-//       "Built-up Area Unit",
-//       propertyDetails?.area_in ? propertyDetails.area_in.toLowerCase() : null,
-//     ],
-//     ["Carpet Area", propertyDetails?.carpet_area || null],
-//     [
-//       "Carpet Area Unit",
-//       propertyDetails?.carpet_area_unit
-//         ? propertyDetails.carpet_area_unit.toLowerCase()
-//         : null,
-//     ],
-//     ["Property Usage", propertyDetails?.investment_options || null],
-//     ["Purchase Type", propertyDetails?.purchase_type || null],
-//     ["All Inclusive Price", propertyDetails?.all_inclusive_price || null],
-//     ["Price Onwards", propertyDetails?.price_onwards || null],
-//     ["Price Negotiable", propertyDetails?.price_negotiable || null],
-//     [
-//       "Tax And Goverment Charges",
-//       propertyDetails?.tax_and_goverment_charges || null,
-//     ],
-//     [
-//       "Electricity And Water Charges",
-//       propertyDetails?.electricity_and_water_charges || null,
-//     ],
-//     ["No Of Open Sides", propertyDetails?.no_of_open_sides || null],
-//     ["No Of Peoples", propertyDetails?.no_of_peoples || null],
-//     ["Type Of Construction", propertyDetails?.type_of_construction || null],
-//     ["Quality Rating", propertyDetails?.quality_rating || null],
-//     ["Central AC", propertyDetails?.central_AC || null],
-//     ["Total Number Parking", propertyDetails?.total_number_parking || null],
-//     ["Block", propertyDetails?.block || null],
-//     ["Developer", propertyDetails?.developer || null],
-//     ["Project Type", propertyDetails?.project_type || null],
-//     ["Transaction Type", propertyDetails?.transaction_type || null],
-//     ["Builder Floor Type", propertyDetails?.builder_floor_type || null],
-//     // ["Attached Bathroom", propertyDetails?.attached_bathroom || null],
-//     // ["Attached Balcony", propertyDetails?.attached_balcony || null],
-//     // ["Pantry Option", propertyDetails?.pantry_option || null],
-//     // ["Parking Types", propertyDetails?.parking_types || null],
-//     ["Possession By", propertyDetails?.possession_by || null],
-//     [
-//       "Property Dimensions Length",
-//       propertyDetails?.property_dimensions_length || null,
-//     ],
-//     [
-//       "Property Dimensions Breadth",
-//       propertyDetails?.property_dimensions_breadth || null,
-//     ],
-//     ["Length Of Land", propertyDetails?.length_of_land || null],
-//     ["Breadth Of Land", propertyDetails?.breadthOfLand || null],
-//     ["Open Sides Of Land", propertyDetails?.openSidesOfLand || null],
-//     ["Construction On Land", propertyDetails?.constructionOnLand || null],
-//     [
-//       "Selected Construction On Land",
-//       propertyDetails?.selectedConstructionOnLand || null,
-//     ],
-//     ["Commercial Washroom", propertyDetails?.commercial_washroom || null],
-//     [
-//       "Number Of Minimum Bathrooms",
-//       propertyDetails?.number_of_minimum_bathrooms || null,
-//     ],
-//     ["Maintenance Cost", propertyDetails?.maintenance_cost || null],
-//     ["Available Beds", propertyDetails?.available_beds || null],
-    
-//     ["Available On", propertyDetails?.available_on ? formatDateToDDMMYYYY(propertyDetails.available_on) : null],
-
-//     ["No Of Cabines", propertyDetails?.no_of_cabines || null],
-//     ["No Of Meeting Rooms", propertyDetails?.no_of_meeting_Rooms || null],
-//     ["No Of Conference Room", propertyDetails?.no_of_conference_room || null],
-//     // ["Posted By Admin", propertyDetails?.posted_by_admin || null],
-//     // ["UPS", propertyDetails?.ups || null],
-//     // ["Oxygen Duct", propertyDetails?.oxygenDuct || null],
-//     // ["Central AC", propertyDetails?.central_AC || null],
-//     // ["Conference Room", propertyDetails?.conferenceRoom || null],
-//     // ["Washroom", propertyDetails?.washroom || null],
-//     // ["Washroom Check", propertyDetails?.washroom_Check || null],
-//     ["Pantry", propertyDetails?.pantry_option || null],
-//     ["Reception Area", propertyDetails?.reception_area || null],
-//     // ["Created At",
-//     //   propertyDetails?.created_at
-//     //     ? new Date(propertyDetails.created_at).toLocaleDateString("en-GB")
-//     //     : null,
-//     // ],
-
-//     // ["Updated At",
-//     //   propertyDetails?.updated_at
-//     //     ? new Date(propertyDetails.updated_at).toLocaleDateString("en-GB")
-//     //     : null,
-//     // ],
-//   ].filter(([_, value]) => value);
-//   const statusTimelineItems = [];
-
-//   const addStatusItem = ({
-//     icon,
-//     title,
-//     value,
-//     bgColor,
-//     iconColor,
-//   }) => {
-//     if (
-//       !value ||
-//       value.toString().trim() === "" ||
-//       value.toString().toLowerCase() === "n/a" ||
-//       value.toString().toLowerCase() === "null"
-//     ) {
-//       return;
-//     }
-
-//     statusTimelineItems.push({
-//       icon,
-//       title,
-//       value,
-//       bgColor,
-//       iconColor,
-//     });
-    
-//   };
-//   // addStatusItem({
-//   //   icon: <HiOutlineBadgeCheck />,
-//   //   title: "Availability",
-//   //   value: propertyDetails?.available_status,
-//   //   bgColor: "bg-green-50",
-//   //   iconColor: "text-green-600",
-//   // });
-//   if (
-//      !(
-//     propertyDetails?.property_category_type === "Rent" &&
-//     propertyDetails?.building_type === "Commercial" &&
-//     propertyDetails?.property_type === "Plot/Land"
-//   ) &&
-//   (
-//   propertyDetails?.property_category_type === "Rent" ||
-//   (
-//     propertyDetails?.property_category_type === "Buy" &&
-//     propertyDetails?.possession_status === "Ready To Move"
-//   )
-// )
-// ) {
-//   addStatusItem({
-//     icon: <HiOutlineBadgeCheck />,
-//     title: "Availability",
-//     value:
-//       propertyDetails?.available_from ||
-//       propertyDetails?.available_status,
-//     bgColor: "bg-green-50",
-//     iconColor: "text-green-600",
-//   });
-// }
-//  if (
-//   propertyDetails?.property_category_type === "Buy" ||
-//   propertyDetails?.property_category_type === "Commercial Buy"
-// ) {
-//   addStatusItem({
-//     icon: <HiOutlineHome />,
-//     title: "Possession",
-//     value: propertyDetails?.possession_status,
-//     bgColor: "bg-orange-50",
-//     iconColor: "text-orange-600",
-//   });
-// }
-// // Existing timeline logic
-// if (
-//   !(
-//     propertyDetails?.property_category_type === "Rent" &&
-//     propertyDetails?.building_type === "Commercial" &&
-//     propertyDetails?.property_type === "Plot/Land"
-//   ) &&
-//   (
-//     propertyDetails?.property_category_type === "Rent" &&
-//     propertyDetails?.available_from !== "Immediately"
-//     ||
-//     (
-//       (
-//   propertyDetails?.property_category_type === "Buy" ||
-//   propertyDetails?.property_category_type === "Commercial Buy"
-// ) &&
-// propertyDetails?.possession_status === "Under Construction"
-//     )
-//   )
-// ) {
-//   addStatusItem({
-//     icon: <HiOutlineCalendar />,
-//     title: "Available From",
-//     value: formatDateToDDMMYYYY(
-//       propertyDetails?.possession_date ||
-//         propertyDetails?.available_from,
-//       propertyDetails?.property_added_date
-//     ),
-//     bgColor: "bg-blue-50",
-//     iconColor: "text-blue-600",
-//   });
-// }
-
-
-// // ADD THIS SEPARATELY
-// if (propertyDetails?.possession_status === "Later") {
-//   addStatusItem({
-//     icon: <HiOutlineCalendar />,
-//     title: "Available Date",
-//     value: propertyDetails?.possession_date
-//       ? formatDateToDDMMYYYY(propertyDetails.possession_date)
-//       : null,
-//     bgColor: "bg-blue-50",
-//     iconColor: "text-blue-600",
-//   });
-// }
-//   // addStatusItem({
-//   //   icon: <HiOutlineCalendar />,
-//   //   title: "Available From",
-//   //   value: formatDateToDDMMYYYY(
-//   //     propertyDetails?.possession_date || propertyDetails?.available_from,
-//   //     propertyDetails?.property_added_date
-//   //   ),
-//   //   bgColor: "bg-blue-50",
-//   //   iconColor: "text-blue-600",
-//   // });
-
-//   addStatusItem({
-//     icon: <HiOutlineClock />,
-//     title: "Last Updated",
-//     value: propertyDetails?.updated_at
-//       ? formatDateToDDMMYYYY(propertyDetails.updated_at)
-//       : formatDateToDDMMYYYY(propertyDetails?.property_added_date),
-//     bgColor: "bg-purple-50",
-//     iconColor: "text-purple-600",
-//   });
-
-//   addStatusItem({
-//     icon: <HiOutlineClock />,
-//     title: "Property Age",
-//     value: propertyDetails?.age_of_property,
-//     bgColor: "bg-amber-50",
-//     iconColor: "text-amber-700",
-//   });
-
-//   const handleClick = () => {
-//     history.push("/featuredDashboard");
-//   };
-
-//   useEffect(() => {
-//     window.scrollTo(0, 0);
-//   }, []);
-
-//   // Prevent background scrolling when modal is open
-//   useEffect(() => {
-//     if (
-//       isShareModalOpen ||
-//       isContactModalOpen ||
-//       showAllImages ||
-//       isModalOpen
-//     ) {
-//       document.body.style.overflow = "hidden";
-//     } else {
-//       document.body.style.overflow = "auto";
-//     }
-
-//     // Cleanup when component unmounts
-//     return () => {
-//       document.body.style.overflow = "auto";
-//     };
-//   }, [isShareModalOpen, isContactModalOpen, showAllImages, isModalOpen]);
-
-//   const getTimeAgo = (dateString) => {
-//     if (!dateString) return "";
-
-//     const now = new Date();
-//     const created = new Date(dateString);
-
-//     const diffMs = now - created;
-
-//     const minutes = Math.floor(diffMs / (1000 * 60));
-//     const hours = Math.floor(diffMs / (1000 * 60 * 60));
-//     const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-//     if (minutes < 60) {
-//       return `${minutes} min ago`;
-//     }
-
-//     if (hours < 24) {
-//       return `${hours} hr${hours > 1 ? "s" : ""} ago`;
-//     }
-
-//     if (days < 30) {
-//       return `${days} day${days > 1 ? "s" : ""} ago`;
-//     }
-
-//     const months = Math.floor(days / 30);
-
-//     if (months < 12) {
-//       return `${months} month${months > 1 ? "s" : ""} ago`;
-//     }
-
-//     const years = Math.floor(months / 12);
-
-//     return `${years} year${years > 1 ? "s" : ""} ago`;
-//   };
-
-//   return (
-//     <>
-//       <div className="max-w-full px-4 mx-auto sm:px-16 detail-page-container">
-//         {/* Property Details Section */}
-//         <div className="relative w-full h-auto p-2 mb-4 rounded-lg shadow-sm bg-rose-50 detail-header-card">
-//           {(propertyDetails?.property_price || propertyDetails?.rent) && (
-//             <div className="absolute top-4 right-4 flex flex-col items-end detail-price-block">
-//               <p className="flex items-center mt-5 text-3xl font-bold my-text">
-//                 <FaRupeeSign className="mr-2" />
-//                 {propertyDetails?.property_category_type === "Rent" ||
-//                   propertyDetails?.property_category_type === "PG/Co-living" ? (
-//                   <>
-//                     {formatPrice(propertyDetails?.rent)}{" "}
-//                     <span className="ml-1 text-xl text-gray-700">
-//                       / {propertyDetails?.rent_duration || "Per Month"}
-//                     </span>
-//                   </>
-//                 ) : (
-//                   formatPrice(propertyDetails?.property_price)
-//                 )}
-//               </p>
-//               <p className="mt-1 text-sm font-medium text-gray-500">
-//                 {propertyDetails?.property_category_type === "Rent" ||
-//                   propertyDetails?.property_category_type === "PG/Co-living"
-//                   ? `${toWords.convert(Number(propertyDetails?.rent))} Only`
-//                   : `${toWords.convert(Number(propertyDetails?.property_price))} Only`}
-//               </p>
-//             </div>
-//           )}
-
-//           {/* <h2 className="mt-2 ml-6 text-3xl font-normal">
-//             {propertyDetails?.bhk_type ? `${propertyDetails.bhk_type} ` : ""}
-//             {propertyDetails?.area ? `${propertyDetails.area} Sq-ft ` : ""}
-//             {propertyDetails?.property_type
-//               ? `${propertyDetails.property_type} `
-//               : ""}
-//             for {propertyDetails?.property_category_type
-//               ? `${propertyDetails.property_category_type}`
-//               : ""}
-//           </h2> */}
-
-//           <h2 className="mt-2 ml-6 text-3xl font-normal detail-title">
-//             {propertyDetails?.property_name
-//               ? `${propertyDetails.property_name} `
-//               : ""}
-//           </h2>
-
-//           <p className="ml-6 text-xl font-bold text-gray-700 break-words whitespace-normal max-w-[80ch] detail-address">
-//             <img
-//               src="/image/address_icon.png"
-//               alt="Address Icon"
-//               className="inline-block w-5 h-5 mr-2"
-//             />
-//             {propertyDetails?.address || "Address N/A"}
-//           </p>
-//           <div className="flex items-center mt-6 ml-5 space-x-8 detail-info-row">
-//             {propertyDetails?.bhk_type && (
-//               <div className="flex items-center space-x-2">
-//                 <FaBed className="text-2xl my-text" />
-//                 <span className="text-lg font-bold">
-//                   {propertyDetails.bhk_type}
-//                 </span>
-//               </div>
-//             )}
-
-//             {propertyDetails?.area && (
-//               <div className="flex items-center space-x-2">
-//                 <FaRulerCombined className="text-2xl my-text" />
-//                 <span className="text-lg font-bold">
-//                   {formatArea(propertyDetails.area, propertyDetails.area_in)}
-//                 </span>
-//               </div>
-//             )}
-
-//             {propertyDetails?.bathroom && (
-//               <div className="flex items-center space-x-2">
-//                 <FaBath className="text-2xl my-text" />
-//                 <span className="text-lg font-bold">
-//                   {propertyDetails.bathroom} Bathroom
-//                 </span>
-//               </div>
-//             )}
-//           </div>
-
-//           <div className="flex justify-end mt-6 space-x-4 detail-actions-row">
-//             {propertyDetails.virtual_tour_availability === "Yes" && (
-//               <button
-//                 className={`px-6 py-2 text-lg flex items-center gap-2 w-full sm:w-auto justify-center detail-action-btn
-//       ${tourSchedule?.[0]?.status === "Accepted"
-//                     ? "bg-green-500 text-white rounded-full"
-//                     : scheduledDateLabel === "Virtual Tour"
-//                       ? "bg-white border my-text rounded-lg"
-//                       : "bg-[#FFD700] text-black rounded-full"
-//                   }`}
-//                 onClick={() => {
-//                   const token = sessionStorage.getItem("accessToken");
-
-//                   if (scheduledDateLabel !== "Virtual Tour") {
-//                     history.push({
-//                       pathname: "/dashboard",
-//                       state: { page: "myVirtualtour" },
-//                     });
-//                   } else {
-//                     if (token) {
-//                       setIsModalOpen(true);
-//                     } else {
-//                       setOpenVirtualTourAfterLogin(true);
-//                       setIsLoginModalOpen(true);
-//                     }
-//                   }
-//                 }}
-//               >
-//                 <PiCubeFocus size={20} />
-//                 {scheduledDateLabel}
-//                 {scheduledDateLabel !== "Virtual Tour" && (
-//                   <HiOutlineArrowRight size={16} />
-//                 )}
-//               </button>
-//             )}
-
-//             {isModalOpen && (
-//               <GetScheduleVTourproperty
-//                 onClose={() => setIsModalOpen(false)}
-//                 propertyDetails={propertyDetails}
-//                 setScheduledDateLabel={setScheduledDateLabel}
-//                 setIsModalOpen={setIsModalOpen}
-//               />
-//             )}
-//             <div
-//               className="w-full px-3 py-1 text-sm text-white my-bg rounded-lg cursor-pointer sm:px-4 sm:py-2 sm:text-lg sm:w-auto detail-action-btn detail-contact-btn"
-//               onClick={() => {
-//                 const token = sessionStorage.getItem("accessToken");
-//                 if (token) {
-//                   if (!userDetails) {
-//                     // Avoid opening the modal if user data is missing
-//                     toast.error("User data not found");
-//                     return;
-//                   }
-
-//                   if (freeViewCount > 0) {
-//                     const updatedCount = -1;
-//                     setFreeViewCount(updatedCount);
-//                     handleAddCount(updatedCount);
-//                   } else if (paidViewCount > 0) {
-//                     const updatedCount = -1;
-//                     setPaidViewCount(updatedCount);
-//                     handleAddCount(updatedCount);
-//                   }
-
-//                   setIsContactModalOpen(true);
-//                 } else {
-//                   setOpenContactModalAfterLogin(true);
-//                   setIsLoginModalOpen(true);
-//                 }
-//               }}
-//             >
-//               Contact Details
-//             </div>
-//             {isContactModalOpen &&
-//               userDetails &&
-//               !Array.isArray(userDetails) &&
-//               userDetails.full_name && (
-//                 <ContactDetails
-//                   onClose={() => setIsContactModalOpen(false)}
-//                   fullName={
-//                     freeViewCount <= 0 && paidViewCount <= 0
-//                       ? `****${userDetails.full_name.slice(-1) || "N/A"}`
-//                       : userDetails.full_name || "N/A"
-//                   }
-//                   mobile={
-//                     freeViewCount <= 0 && paidViewCount <= 0
-//                       ? `********${userDetails.mobile_number?.slice(-3) || "000"}`
-//                       : userDetails.mobile_number || "N/A"
-//                   }
-//                   userEmail={
-//                     freeViewCount <= 0 && paidViewCount <= 0
-//                       ? userDetails.email
-//                         ? `*******${userDetails.email.slice(-3)}`
-//                         : "N/A"
-//                       : userDetails.email || "N/A"
-//                   }
-//                   showUpgradePrompt={freeViewCount <= 0 && paidViewCount <= 0}
-//                 />
-//               )}
-//             <div
-//               className="flex items-center justify-center w-10 h-10 bg-white rounded-md cursor-pointer detail-icon-btn"
-//               onClick={() => {
-//                 if (propertyDetails.is_favorite) {
-//                   removeFromFavoritesRecommendedProperty(
-//                     propertyDetails.favorite_id,
-//                   );
-//                 } else {
-//                   addToFavoritesRecommendedProperty(propertyDetails._id);
-//                 }
-//               }}
-//             >
-//               <FiHeart
-//                 className={`text-2xl ${propertyDetails.is_favorite
-//                   ? "text-red-600 fill-red-600"
-//                   : "text-gray-600"
-//                   }`}
-//               />
-//             </div>
-
-//             <div
-//               className="flex items-center justify-center w-8 h-8 bg-white rounded-md cursor-pointer sm:w-10 sm:h-10 detail-icon-btn"
-//               onClick={() => {
-//                 setIsShareModalOpen(true);
-//               }}
-//             >
-//               <FiShare2 className="text-xl text-gray-600 sm:text-2xl" />
-//             </div>
-//           </div>
-//         </div>
-
-//         {/* Image Section & Contact Form */}
-//         <div className="grid grid-cols-1 md:grid-cols-3 gap-2 h-auto md:h-[550px] detail-main-grid">
-//           {/* Left Side Image Section */}
-//           <div className="grid grid-cols-1 col-span-2 gap-1 md:grid-cols-1 detail-left-col">
-//             {/* Image Section */}
-//             <div className="flex flex-col gap-2 mt-6 md:flex-row detail-image-row">
-//               {propertyImages.length === 0 ? (
-//                 <div className="w-full relative">
-//                   <img
-//                     src={propertyDetails?.cover_image}
-//                     alt="Main"
-//                     className="rounded-2xl w-full h-64 md:h-[400px] object-cover detail-cover-image"
-//                   />
-//                   {/* Watermark */}
-//                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-//                     <span className="text-4xl md:text-3xl font-extrabold text-white rotate-[-30deg] opacity-40 select-none">
-//                       NowayBroker
-//                     </span>
-//                   </div>
-//                 </div>
-//               ) : (
-//                 <>
-//                   {/* Left Side - Main Image */}
-//                   <div className="md:basis-[60%]">
-//                     <div className="relative">
-//                       <img
-//                         src={propertyDetails.cover_image}
-//                         alt="Main"
-//                         className="rounded-2xl w-full h-64 md:h-[400px] object-cover detail-cover-image"
-//                       />
-//                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-//                         <span className="text-4xl md:text-3xl font-extrabold text-white rotate-[-30deg] opacity-40 select-none">
-//                           NowayBroker
-//                         </span>
-//                       </div>
-//                     </div>
-//                   </div>
-
-//                   {/* Right Side - Video on Top + One Image Below */}
-//                   <div className="md:basis-[40%] flex flex-col justify-start gap-2 px-2">
-//                     {/* Property Main Image Section */}
-//                     <div
-//                       className="relative cursor-pointer"
-//                       onClick={() => setShowAllImages(true)}
-//                     >
-//                       {propertyImages.length > 0 && (
-//                         <div className="relative">
-//                           <img
-//                             src={propertyImages[0].image}
-//                             alt="Preview"
-//                             className="rounded-2xl w-full h-48 md:h-[195px] object-cover detail-gallery-image"
-//                           />
-//                           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-//                             <span className="text-4xl md:text-3xl font-extrabold text-white rotate-[-30deg] opacity-40 select-none">
-//                               NowayBroker
-//                             </span>
-//                           </div>
-//                         </div>
-//                       )}
-//                     </div>
-
-//                     {/* Property Additional Images Section */}
-//                     {propertyImages.length > 1 && (
-//                       <div className="grid grid-cols-1 gap-2 mt-2">
-//                         {(() => {
-//                           const filteredImages = propertyImages.filter(
-//                             (img) => img.image !== propertyDetails.cover_image,
-//                           );
-
-//                           // Case 1: No images after filtering → Don’t render
-//                           if (filteredImages.length === 0) {
-//                             return null;
-//                           }
-
-//                           // Case 2: Only one image → Don’t render second section
-//                           if (filteredImages.length === 1) {
-//                             return null;
-//                           }
-
-//                           // Case 3: More than one image → Render the 2nd preview + overlay
-//                           return (
-//                             <div
-//                               className="relative cursor-pointer"
-//                               onClick={() => setShowAllImages(true)}
-//                             >
-//                               <div className="relative">
-//                                 <img
-//                                   src={filteredImages[1]?.image}
-//                                   alt="Preview"
-//                                   className="rounded-2xl w-full h-48 md:h-[190px] object-cover detail-gallery-image"
-//                                 />
-//                                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-//                                   <span className="text-4xl md:text-3xl font-extrabold text-white rotate-[-30deg] opacity-40 select-none">
-//                                     NowayBroker
-//                                   </span>
-//                                 </div>
-//                               </div>
-//                               {filteredImages.length > 1 && (
-//                                 <div className="absolute inset-0 flex items-center justify-center text-xl font-semibold text-white bg-black bg-opacity-50 rounded-2xl">
-//                                   {(() => {
-//                                     const count =
-//                                       filteredImages.length -
-//                                       1 +
-//                                       (propertyDetails?.property_video ? 1 : 0);
-
-//                                     return count > 0 ? (
-//                                       <div className="absolute inset-0 flex items-center justify-center text-xl font-semibold text-white bg-black bg-opacity-50 rounded-2xl">
-//                                         +{count} View All
-//                                       </div>
-//                                     ) : null;
-//                                   })()}
-//                                 </div>
-//                               )}
-//                             </div>
-//                           );
-//                         })()}
-//                       </div>
-//                     )}
-//                   </div>
-//                 </>
-//               )}
-//             </div>
-//             {/* Navigation Tabs */}
-//             <div className="sticky top-0 z-20 flex items-center gap-8 px-6 py-4 mb-4 bg-white rounded-lg shadow-sm detail-tabs">
-//               <button
-//                 onClick={() => scrollToSection(overviewRef, "overview")}
-//                 className={`relative font-medium pb-1 detail-tab-btn ${activeSection === "overview"
-//                   ? "text-red-600"
-//                   : "hover:text-[#8A2432]"
-//                   }`}
-//               >
-//                 Overview
-//                 {activeSection === "overview" && (
-//                   <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-2/3 h-[2px] bg-red-500 rounded-full"></span>
-//                 )}
-//               </button>
-
-//               <button
-//                 onClick={() =>
-//                   scrollToSection(statusTimelineRef, "statusTimeline")
-//                 }
-//                 className={`relative font-medium pb-1 detail-tab-btn ${activeSection === "statusTimeline"
-//                   ? "text-red-600"
-//                   : "hover:text-[#8A2432]"
-//                   }`}
-//               >
-//                 Status & Timeline
-//                 {activeSection === "statusTimeline" && (
-//                   <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-2/3 h-[2px] bg-red-500 rounded-full"></span>
-//                 )}
-//               </button>
-//               <button
-//                 onClick={() => scrollToSection(moreDetailsRef, "moreDetails")}
-//                 className={`relative font-medium pb-1 detail-tab-btn ${activeSection === "moreDetails"
-//                   ? "text-red-600"
-//                   : "hover:text-[#8A2432]"
-//                   }`}
-//               >
-//                 More Details
-//                 {activeSection === "moreDetails" && (
-//                   <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-2/3 h-[2px] bg-red-500 rounded-full"></span>
-//                 )}
-//               </button>
-
-//               <button
-//                 onClick={() => scrollToSection(amenitiesRef, "amenities")}
-//                 className={`relative font-medium pb-1 detail-tab-btn ${activeSection === "amenities"
-//                   ? "text-red-600"
-//                   : "hover:text-[#8A2432]"
-//                   }`}
-//               >
-//                 Amenities
-//                 {activeSection === "amenities" && (
-//                   <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-2/3 h-[2px] bg-red-500 rounded-full"></span>
-//                 )}
-//               </button>
-
-//               <button
-//                 onClick={() => scrollToSection(aboutRef, "about")}
-//                 className={`relative font-medium pb-1 detail-tab-btn ${activeSection === "about"
-//                   ? "text-red-600"
-//                   : "hover:text-[#8A2432]"
-//                   }`}
-//               >
-//                 About Property
-//                 {activeSection === "about" && (
-//                   <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-2/3 h-[2px] bg-red-500 rounded-full"></span>
-//                 )}
-//               </button>
-
-//               <button
-//                 onClick={() => scrollToSection(locationRef, "location")}
-//                 className={`relative font-medium pb-1 detail-tab-btn ${activeSection === "location"
-//                   ? "text-red-600"
-//                   : "hover:text-[#8A2432]"
-//                   }`}
-//               >
-//                 Location
-//                 {activeSection === "location" && (
-//                   <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-2/3 h-[2px] bg-red-500 rounded-full"></span>
-//                 )}
-//               </button>
-//             </div>
-//             {/* Add the Overview Component Below */}
-//             {overviewFields.length > 0 && (
-//               <div
-//                 ref={overviewRef}
-//                 className="w-full p-4 bg-white rounded-lg shadow-sm scroll-mt-20"
-//               >
-//                 <h3 className="mb-4 text-3xl font-semibold">Overview</h3>
-//                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 text-[18px]">
-//                   {overviewFields.map(([key, value], index) => (
-//                     <div
-//                       key={index}
-//                       className="flex justify-start p-2 border-gray-200"
-//                     >
-//                       <span className="w-1/2 text-gray-500">{key}</span>
-//                       <span className="text-black">{value}</span>
-//                     </div>
-//                   ))}
-//                 </div>
-//               </div>
-//             )}
-//             {statusTimelineItems.length > 0 && (
-//               <div
-//                 ref={statusTimelineRef}
-//                 className="w-full p-5 mt-4 bg-white rounded-lg shadow-sm scroll-mt-20"
-//               >
-//                 <h3 className="mb-5 text-2xl font-semibold text-gray-800">
-//                   Status & Timeline
-//                 </h3>
-
-//                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-//                   {statusTimelineItems.map((item, index) => (
-//                     <div
-//                       key={index}
-//                       className={`flex items-start p-4 rounded-xl border border-gray-200 ${item.bgColor}`}
-//                     >
-//                       {/* Icon */}
-//                       <div
-//                         className={`w-10 h-10 rounded-full flex items-center justify-center ${item.bgColor}`}
-//                       >
-//                         <span className={`text-xl ${item.iconColor}`}>
-//                           {item.icon}
-//                         </span>
-//                       </div>
-
-//                       {/* Content */}
-//                       <div className="ml-4 flex-1">
-//                         <p className="text-sm text-gray-500">
-//                           {item.title}
-//                         </p>
-
-//                         <p className="mt-1 text-base font-semibold text-gray-800 break-words">
-//                           {item.value}
-//                         </p>
-//                       </div>
-//                     </div>
-//                   ))}
-//                 </div>
-//               </div>
-//             )}
-
-//             {/* More Details Section */}
-//             {/* {moreDetailsFields.length > 0 && (
-//               <div className="w-full p-4 mt-4 bg-white rounded-lg shadow-sm">
-//                 <h3 className="mb-4 ml-2 text-3xl font-semibold">
-//                   More Details
-//                 </h3>
-//                 <table className="min-w-full table-auto text-left text-[16px] text-black ml-2">
-//                   <tbody>
-//                     {moreDetailsFields.map(([label, value], index) => (
-//                       <tr key={index} className="align-top">
-//                         <td className="py-1 pr-2 text-gray-500 sm:pr-6 md:pr-12 lg:pr-20 whitespace-nowrap">
-//                           {label}:
-//                         </td>
-//                         <td className="py-1 pl-1 break-words">{value}</td>
-//                       </tr>
-//                     ))}
-//                   </tbody>
-//                 </table>
-//               </div>
-//             )} */}
-
-//             {moreDetailsFields.length > 0 && (
-//               <div
-//                 ref={moreDetailsRef}
-//                 className="w-full p-4 mt-4 bg-white rounded-lg shadow-sm scroll-mt-20"
-//               >
-//                 <h3 className="mb-4 text-xl font-semibold text-gray-800">
-//                   More Details
-//                 </h3>
-//                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
-//                   {moreDetailsFields.map(([label, value], index) => (
-//                     <div key={index} className="flex flex-col">
-//                       <span className="text-xs text-gray-500 uppercase tracking-wide">
-//                         {label}
-//                       </span>
-//                       <span className="text-sm font-semibold text-gray-800 mt-0.5">
-//                         {value}
-//                       </span>
-//                     </div>
-//                   ))}
-//                 </div>
-//               </div>
-//             )}
-
-//             {/* Amenities Section */}
-//             <div
-//               ref={amenitiesRef}
-//               className="w-full p-3 mt-4 bg-white rounded-lg shadow-sm scroll-mt-20"
-//             >
-//               <h3 className="ml-4 font-semibold text-lm">Amenities</h3>
-//               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1 mt-4 ml-4 text-[18px]">
-//                 {visibleAmenities.map((amenity, index) => (
-//                   <p key={index} className="flex items-center text-lg">
-//                     {amenity.icon ? (
-//                       <img
-//                         src={`${process.env.REACT_APP_API_URL}/media/${amenity.icon}`}
-//                         alt={amenity.name}
-//                         className="w-10 h-10 mr-2"
-//                       />
-//                     ) : (
-//                       <PiCricketThin className="mr-2 text-lg text-black" />
-//                     )}
-//                     {amenity.name}
-//                   </p>
-//                 ))}
-//               </div>
-//               {!showAll && allAmenities.length > 8 && (
-//                 <p
-//                   className="mt-2 ml-4 font-bold my-text cursor-pointer "
-//                   onClick={() => setShowAll(true)}
-//                 >
-//                   +{allAmenities.length - 8} More
-//                 </p>
-//               )}
-//             </div>
-
-//             {/* About Property Section */}
-//             <div
-//               ref={aboutRef}
-//               className="bg-white shadow-sm mt-4 rounded-2xl p-3 h-auto md:h-[250px] w-full scroll-mt-20"
-//             >
-//               <h2 className="justify-center ml-4 font-bold text-gray-700 text-ml">
-//                 About property
-//               </h2>
-//               <p className="mt-3 text-gray-700 justify-center ml-4 text-[18px]">
-//                 {aboutPropertyText}
-//               </p>
-//             </div>
-
-//             {/* Location Section with Map */}
-//             <div
-//               ref={locationRef}
-//               className="bg-white shadow-sm mt-4 rounded-2xl p-3 h-auto md:h-[600px] w-full scroll-mt-20"
-//             >
-//               <h2 className="ml-4 text-3xl font-bold text-gray-900">
-//                 Location
-//               </h2>
-//               <div className="mt-4 overflow-hidden rounded-lg">
-//                 <iframe
-//                   className="w-full h-48 md:h-[450px] rounded-2xl"
-//                   src={`https://maps.google.com/maps?q=${latitude},${longitude}&z=15&output=embed`}
-//                   allowFullScreen
-//                   loading="lazy"
-//                 ></iframe>
-//               </div>
-//             </div>
-//           </div>
-//           {/* Right Side Contact Form with Increased Height */}
-//           <div className="sticky top-0 flex flex-col max-h-screen pt-4 overflow-auto detail-enquiry-col">
-//             <div className="bg-white shadow-lg rounded-2xl p-4 min-h-[650px] flex flex-col justify-between detail-enquiry-card">
-//               <div>
-//                 <h3 className="mb-5 text-xl font-semibold">Make an Enquiry</h3>
-//                 <div className="flex items-center pb-3 mb-6 space-x-6 border-b-2 border-black detail-agent-row">
-//                   <Link
-//                     to={`/agentdetail/${userDetails?._id}`}
-//                     onClick={() =>
-//                       window.scrollTo({ top: 0, behavior: "smooth" })
-//                     }
-//                     className="block overflow-hidden no-underline shadow-md rounded-2xl hover:no-underline"
-//                   >
-//                     <img
-//                       src={
-//                         userDetails?.profile_image
-//                           ? userDetails?.profile_image
-//                           : "/image/app.png"
-//                       }
-//                       alt="Agent"
-//                       className="object-contain w-16 h-16 rounded-full"
-//                     />
-//                   </Link>
-//                   <div className="flex flex-col items-center">
-//                     <span className="text-lg font-semibold">
-//                       {userDetails.full_name || "N/A"}
-//                     </span>
-//                     <span className="text-sm font-semibold">
-//                       {userDetails.user_type || "N/A"}
-//                     </span>
-//                   </div>
-//                 </div>
-
-//                 <form onSubmit={handleEnquirySubmit} className="flex flex-col">
-//                   <input
-//                     type="text"
-//                     placeholder="Name"
-//                     value={name}
-//                     onChange={(e) => {
-//                       setName(e.target.value);
-//                       handleFieldChange();
-//                     }}
-//                     className="w-full p-3 mb-4 text-lg border rounded-md outline-none focus:ring-2 focus:ring-rose-500"
-//                     required
-//                   />
-//                   <input
-//                     type="text"
-//                     placeholder="Phone Number"
-//                     value={contactNumber}
-//                     readOnly
-//                     className="w-full p-3 mb-4 text-lg border rounded-md outline-none focus:ring-2 focus:ring-rose-500"
-//                   />
-
-//                   {/* IMPORTANT: TextArea wrapper Div with 'relative' */}
-//                   <div className="relative w-full mb-4">
-//                     <textarea
-//                       placeholder="Message"
-//                       value={message}
-//                       maxLength={255}
-//                       onChange={(e) => {
-//                         setMessage(e.target.value);
-//                         handleFieldChange();
-//                       }}
-//                       className="w-full h-28 p-3 pb-7 pr-16 text-base border border-gray-300 rounded-md outline-none focus:ring-2 focus:ring-rose-500 resize-none block"
-//                       required
-//                     ></textarea>
-//                     {/* Counter inside the textarea box */}
-//                     <span className="absolute bottom-2 right-3 text-xs text-gray-400 pointer-events-none select-none z-10">
-//                       {message.length}/255
-//                     </span>
-//                   </div>
-
-//                   <button
-//                     type="submit"
-//                     className="w-full mt-2 py-4 text-lg text-white my-bg rounded-lg"
-//                   >
-//                     Send an Enquiry
-//                   </button>
-//                 </form>
-//               </div>
-
-//               {enquiryStatus && (
-//                 <div
-//                   className={`text-center mt-4 text-lg ${enquiryStatus.type === "success"
-//                     ? "text-green-600"
-//                     : "text-red-600"
-//                     }`}
-//                 >
-//                   {enquiryStatus.message}
-//                 </div>
-//               )}
-//             </div>
-//           </div>
-//         </div>
-
-//         {/* Modal for Viewing All Images */}
-//         {showAllImages && (
-//           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75">
-//             <div className="bg-white p-6 rounded-lg w-[80%] h-[80%] overflow-auto">
-//               <button
-//                 className="absolute text-3xl text-white top-4 right-4"
-//                 onClick={() => setShowAllImages(false)}
-//               >
-//                 ×
-//               </button>
-//               <h2 className="mb-4 text-2xl font-semibold">Gallery</h2>
-//               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3">
-//                 {propertyImages.map((img, index) => (
-//                   <div className="relative">
-//                     <img
-//                       key={index}
-//                       src={img.image}
-//                       alt={`Room ${index + 1}`}
-//                       className="object-cover w-full h-48 rounded-lg"
-//                     />
-//                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-//                       <span className="text-4xl md:text-3xl font-extrabold text-white rotate-[-30deg] opacity-40 select-none">
-//                         NowayBroker
-//                       </span>
-//                     </div>
-//                   </div>
-//                 ))}
-
-//                 {/* Property  Video at the end */}
-//                 {propertyDetails?.property_video && (
-//                   <video
-//                     controls
-//                     className="rounded-2xl w-full h-48 md:h-[195px] object-cover"
-//                   >
-//                     <source
-//                       src={propertyDetails.property_video}
-//                       type="video/mp4"
-//                     />
-//                     Your browser does not support the video tag.
-//                   </video>
-//                 )}
-//               </div>
-//             </div>
-//           </div>
-//         )}
-
-//         {/* Exclusive Recommended Section */}
-//         <div className="w-full px-2 sm:px-6 lg:px-4">
-//           <div className="flex flex-col items-start justify-between gap-3 px-2 sm:px-4 pt-3 mb-3 sm:flex-row sm:items-center">
-//             <div className="flex flex-col">
-//               <h2 className="mb-2 text-xl font-bold tracking-wide text-gray-800 sm:text-2xl lg:text-3xl">
-//                 Exclusive Recommended
-//               </h2>
-//               <p className="text-gray-500"></p>
-//             </div>
-
-//             <div className="flex items-center w-full sm:w-auto justify-between sm:justify-end mt-2 space-x-3 sm:space-x-5 sm:mt-0">
-//               <button
-//                 className="px-4 py-2 text-xs sm:text-sm text-rose-700 bg-white my-border rounded-lg sm:px-6"
-//                 onClick={handleClick}
-//               >
-//                 View All Properties
-//               </button>
-
-//               <div className="hidden sm:flex items-center space-x-3">
-//                 <button
-//                   className="p-2 text-lg font-semibold text-gray-700 bg-white rounded-full shadow-md sm:text-2xl hover:shadow-lg"
-//                   onClick={() => sliderRef.current.slickPrev()}
-//                 >
-//                   <GoArrowLeft className="text-2xl sm:text-3xl text-black" />
-//                 </button>
-
-//                 <button
-//                   className="p-2 text-lg font-semibold text-gray-700 bg-white rounded-full shadow-md sm:text-2xl hover:shadow-lg"
-//                   onClick={() => sliderRef.current.slickNext()}
-//                 >
-//                   <GoArrowRight className="text-2xl sm:text-3xl text-black" />
-//                 </button>
-//               </div>
-//             </div>
-//           </div>
-
-//           <Slider {...settings} className="slider-container" ref={sliderRef}>
-//             {properties.map((property) => {
-//               let distance = null;
-//               if (userLocation && property.latitude && property.longitude) {
-//                 distance = calculateDistance(
-//                   userLocation.latitude,
-//                   userLocation.longitude,
-//                   parseFloat(property.latitude),
-//                   parseFloat(property.longitude),
-//                 ).toFixed(1);
-//               }
-
-//               const subtitle = (() => {
-//                 const area = property.address_area || "";
-//                 const city = property.city_name || "";
-
-//                 const location =
-//                   area.toLowerCase().includes(city.toLowerCase())
-//                     ? area
-//                     : `${area}, ${city}`;
-
-//                 const type =
-//                   property.property_type === "Office"
-//                     ? "Office Space"
-//                     : property.property_type === "Retail"
-//                       ? "Retail Space"
-//                       : property.property_type || "";
-
-//                 const category = property.property_category_type || "";
-
-//                 if (
-//                   category === "Commercial Buy" ||
-//                   category === "Commercial Lease"
-//                 ) {
-//                   return `${type} for ${category === "Commercial Buy" ? "Sale" : "Lease"
-//                     } in ${location}`;
-//                 }
-
-//                 if (
-//                   category.includes("PG") ||
-//                   category.includes("Co-Living") ||
-//                   category.includes("Coliving")
-//                 ) {
-//                   return `${type} for Rent in ${location}`;
-//                 }
-
-//                 const action = category === "Buy" ? "Sale" : category;
-
-//                 return `${property.bhk_type} ${type} for ${action} in ${location}`;
-//               })();
-
-//               function getValidImageUrl(img) {
-//                 if (typeof img !== "string") return null;
-//                 if (img.trim() === "") return null;
-//                 return img.startsWith("http") ? img : BASE_URL + img;
-//               }
-
-//               const coverImage = getValidImageUrl(property.cover_image);
-//               const additionalImages = (property.property_images || [])
-//                 .map((imgObj) => getValidImageUrl(imgObj?.image))
-//                 .filter(Boolean);
-//               const allImages = [
-//                 ...(coverImage ? [coverImage] : []),
-//                 ...additionalImages,
-//               ];
-
-//               return (
-//                 <div key={property._id} className="box-border h-full px-1.5 sm:px-2 pb-2">
-//                   <div className="flex flex-col h-full overflow-hidden bg-white shadow-md rounded-2xl">
-//                     <div className="relative">
-//                       <Link
-//                         to={`/propertydetails/${property._id}?property_owner_id=${property.user_id}`}
-//                         onClick={() =>
-//                           window.scrollTo({ top: 0, behavior: "smooth" })
-//                         }
-//                         className="block overflow-hidden no-underline bg-white border-2 rounded-lg hover:no-underline"
-//                       >
-//                         {allImages.length > 1 ? (
-//                           <Slider
-//                             key={`${property._id}-${allImages.length}`}
-//                             dots
-//                             infinite
-//                             speed={500}
-//                             slidesToShow={1}
-//                             slidesToScroll={1}
-//                             arrows
-//                             autoplay
-//                             autoplaySpeed={2000}
-//                             beforeChange={(current, next) =>
-//                               setActiveIndexes((prev) => ({
-//                                 ...prev,
-//                                 [property._id]: next,
-//                               }))
-//                             }
-//                             initialSlide={activeIndexes[property._id] || 0}
-//                             customPaging={(i) => {
-//                               const activeSlide =
-//                                 activeIndexes[property._id] || 0;
-//                               const isActive =
-//                                 i === activeSlide % allImages.length;
-//                               return (
-//                                 <div
-//                                   style={{
-//                                     width: "10px",
-//                                     height: "10px",
-//                                     borderRadius: "50%",
-//                                     background: isActive ? "#fff" : "#888",
-//                                     margin: "0 5px",
-//                                     cursor: "pointer",
-//                                   }}
-//                                 />
-//                               );
-//                             }}
-//                             appendDots={(dots) => (
-//                               <div
-//                                 style={{
-//                                   position: "absolute",
-//                                   bottom: "10px",
-//                                   left: "50%",
-//                                   transform: "translateX(-50%)",
-//                                   display: "flex",
-//                                   justifyContent: "center",
-//                                   width: "100%",
-//                                 }}
-//                               >
-//                                 {dots}
-//                               </div>
-//                             )}
-//                             className="rounded-t-2xl"
-//                           >
-//                             {allImages.map((imgUrl, idx) => (
-//                               <div key={`${property._id}-${idx}`}>
-//                                 <img
-//                                   src={imgUrl}
-//                                   alt="Property"
-//                                   className="object-cover w-full h-40 sm:h-44 md:h-48 rounded-t-2xl"
-//                                 />
-//                               </div>
-//                             ))}
-//                           </Slider>
-//                         ) : (
-//                           <img
-//                             src={allImages[0] || defaultImage}
-//                             alt="Property"
-//                             className="object-cover w-full h-40 sm:h-44 md:h-48 rounded-t-2xl"
-//                           />
-//                         )}
-//                       </Link>
-
-//                       {/* Virtual Tour & Favorite Button */}
-//                       <div className="absolute flex items-center space-x-2 top-2 right-2">
-//                         {property.virtual_tour_availability === "Yes" && (
-//                           <span className="flex items-center gap-1 px-2 py-1 text-xs font-normal text-white rounded-full bg-gray-800/60 backdrop-blur-sm">
-//                             <PiCubeFocus className="text-sm text-white" />
-//                             <span className="hidden sm:inline">Virtual Tour</span>
-//                           </span>
-//                         )}
-//                         <button
-//                           className="bg-gray-800/60 backdrop-blur-sm p-1.5 rounded-full shadow"
-//                           onClick={() => {
-//                             if (property.is_favorite) {
-//                               removeFromFavoritesRecommendedProperty(
-//                                 property.favorite_id,
-//                               );
-//                             } else {
-//                               addToFavoritesRecommendedProperty(property._id);
-//                             }
-//                           }}
-//                         >
-//                           <Heart
-//                             size={20}
-//                             stroke={property.is_favorite ? "none" : "white"}
-//                             color={
-//                               property.is_favorite
-//                                 ? "red"
-//                                 : "rgba(75, 85, 99, 0.4) "
-//                             }
-//                             fill={
-//                               property.is_favorite
-//                                 ? "red"
-//                                 : "rgba(75, 85, 99, 0.4) "
-//                             }
-//                             strokeWidth={2}
-//                           />
-//                         </button>
-//                       </div>
-
-//                       {/* FOR BUY / RENT / UNKNOWN Tag (Bottom Left) */}
-//                       <div className="absolute bottom-0 left-0">
-//                         {(() => {
-//                           const rawCategory =
-//                             property.property_category_type || "";
-
-//                           const normalizedCategory = rawCategory
-//                             .replace(/\s+/g, " ")
-//                             .replace(/-/g, " ")
-//                             .replace(/\//g, " ")
-//                             .trim()
-//                             .toLowerCase();
-
-//                           let badgeText = "UNKNOWN";
-//                           let badgeColor = "bg-[#8B1E3F]";
-
-//                           if (normalizedCategory === "buy") {
-//                             badgeText = "FOR BUY";
-//                             badgeColor = "bg-[#8B1E3F]";
-//                           } else if (normalizedCategory === "rent") {
-//                             badgeText = "FOR RENT";
-//                             badgeColor = "bg-[#8B1E3F]";
-//                           } else if (
-//                             normalizedCategory.includes("commercial buy")
-//                           ) {
-//                             badgeText = "COMMERCIAL BUY";
-//                             badgeColor = "bg-[#8B1E3F]";
-//                           } else if (
-//                             normalizedCategory.includes("commercial lease")
-//                           ) {
-//                             badgeText = "COMMERCIAL LEASE";
-//                             badgeColor = "bg-[#8B1E3F]";
-//                           } else if (
-//                             normalizedCategory.includes("pg") ||
-//                             normalizedCategory.includes("co living") ||
-//                             normalizedCategory.includes("coliving")
-//                           ) {
-//                             badgeText = "PG / CO-LIVING";
-//                             badgeColor = "bg-[#8B1E3F]";
-//                           } else if (
-//                             normalizedCategory.includes("residential")
-//                           ) {
-//                             badgeText = "RESIDENTIAL";
-//                             badgeColor = "bg-[#8B1E3F]";
-//                           }
-
-//                           return (
-//                             <span
-//                               className={`text-white text-[10px] sm:text-xs px-2 sm:px-3 py-1 rounded-se-lg ${badgeColor}`}
-//                             >
-//                               {badgeText}
-//                             </span>
-//                           );
-//                         })()}
-//                       </div>
-
-//                       {/* FEATURED Tag (Bottom Right) */}
-//                       <div className="absolute bottom-0 right-0">
-//                         {property.mark_as_featured === "Yes" && (
-//                           <span className="px-2 sm:px-3 py-1 text-[10px] sm:text-xs text-white bg-yellow-500 rounded-ss-lg">
-//                             FEATURED
-//                           </span>
-//                         )}
-//                       </div>
-//                     </div>
-
-//                     {/* Property Details — same design as AdvisorDashboard */}
-//                     <div className="flex flex-col flex-1 p-3 text-black bg-white">
-//                       <div className="flex items-start justify-between gap-2 sm:gap-3 mb-0">
-//                         <h3
-//                           className="flex-1 min-w-0 m-0 text-base sm:text-lg font-semibold leading-6 text-gray-900 truncate"
-//                           title={property.property_name}
-//                         >
-//                           {property.property_name || "N/A"}
-//                         </h3>
-//                         <span
-//                           className="flex-shrink-0 m-0 text-xs font-medium leading-6 text-black sm:text-sm whitespace-nowrap"
-//                           title={property.furnished_type}
-//                         >
-//                           {property.furnished_type}
-//                         </span>
-//                       </div>
-
-//                       <p
-//                         className="mt-0 mb-1 text-xs sm:text-sm leading-5 text-gray-600 truncate"
-//                         title={subtitle}
-//                       >
-//                         {subtitle}
-//                       </p>
-
-//                       <div className="flex flex-wrap items-center justify-between gap-y-1 mb-1">
-//                         <div className="flex flex-wrap items-center gap-2">
-//                           <span className="text-xl sm:text-2xl font-bold">
-//                             ₹{" "}
-//                             {property.property_category_type === "Rent"
-//                               ? formatPrice(property.rent)
-//                               : formatPrice(property.property_price)}
-//                           </span>
-//                           {property.property_category_type === "Rent" && (
-//                             <span className="text-xs sm:text-sm text-gray-500">
-//                               / {property.rent_duration}
-//                             </span>
-//                           )}
-//                           {property.property_category_type?.includes("Buy") &&
-//                             property.possession_status === "Ready To Move" && (
-//                               <div className="flex items-center gap-2 px-2 py-1 text-white border rounded-full bg-[#8B1E3F] border-[#8B1E3F] sm:px-3">
-//                                 <MdApartment className="text-base text-white" />
-//                                 <span className="text-xs font-semibold text-white whitespace-nowrap">
-//                                   Ready to Move
-//                                 </span>
-//                               </div>
-//                             )}
-//                         </div>
-//                         <div className="text-xs sm:text-sm font-medium whitespace-nowrap">
-//                           {property.property_category_type?.includes("Buy") &&
-//                             property.possession_status !== "Ready To Move" &&
-//                             property.possession_date && (
-//                               <>
-//                                 <span className="text-gray-500">
-//                                   Possession:
-//                                 </span>
-//                                 <span className="ml-1 font-semibold">
-//                                   {new Date(
-//                                     property.possession_date,
-//                                   ).toLocaleDateString("en-IN")}
-//                                 </span>
-//                               </>
-//                             )}
-//                         </div>
-//                       </div>
-
-//                       <div className="grid grid-cols-3 py-3 border-t border-b border-gray-100">
-//                         <div className="flex items-center gap-1 sm:gap-2 px-1 sm:px-3 min-w-0">
-//                           <MdApartment className="text-lg sm:text-[22px] text-gray-700 flex-shrink-0" />
-//                           <div className="flex flex-col justify-center min-w-0">
-//                             <p className="m-0 text-xs sm:text-sm font-semibold leading-4 truncate">
-//                               {property.building_type === "Commercial"
-//                                 ? property.property_type === "Office"
-//                                   ? "Office Space"
-//                                   : property.property_type === "Retail"
-//                                     ? "Retail Space"
-//                                     : property.property_type
-//                                 : property.property_category_type?.includes(
-//                                   "PG",
-//                                 )
-//                                   ? `${property.bathroom || 0} Bathrooms`
-//                                   : property.bhk_type}
-//                             </p>
-//                             <p className="m-0 text-[10px] sm:text-xs leading-4 text-gray-500 truncate">
-//                               {property.building_type === "Commercial"
-//                                 ? "Property Type"
-//                                 : property.property_category_type?.includes(
-//                                   "PG",
-//                                 )
-//                                   ? "Bathrooms"
-//                                   : property.property_type}
-//                             </p>
-//                           </div>
-//                         </div>
-
-//                         <div className="flex items-center gap-1 sm:gap-2 px-1 sm:px-3 border-l border-gray-200 min-w-0">
-//                           {property.property_category_type?.includes("PG") ? (
-//                             <FaUser className="text-base sm:text-[20px] text-gray-700 flex-shrink-0" />
-//                           ) : (
-//                             <FaBath className="text-base sm:text-[20px] text-gray-700 flex-shrink-0" />
-//                           )}
-//                           <div className="flex flex-col justify-center min-w-0">
-//                             <p className="m-0 text-xs sm:text-sm font-semibold leading-4 truncate">
-//                               {property.property_category_type?.includes("PG")
-//                                 ? property.available_for
-//                                 : `${property.bathroom || 0} Baths`}
-//                             </p>
-//                             <p className="m-0 text-[10px] sm:text-xs leading-4 text-gray-500 truncate">
-//                               {property.property_category_type?.includes("PG")
-//                                 ? "Available For"
-//                                 : "Bathrooms"}
-//                             </p>
-//                           </div>
-//                         </div>
-
-//                         <div className="flex items-center gap-1 sm:gap-2 px-1 sm:px-3 border-l border-gray-200 min-w-0">
-//                           <RiRuler2Line className="text-lg sm:text-[22px] text-gray-700 flex-shrink-0" />
-//                           <div className="flex flex-col justify-center min-w-0">
-//                             <p className="m-0 text-xs sm:text-sm font-semibold leading-4 truncate">
-//                               {property.area} {property.area_in}
-//                             </p>
-//                             <p className="m-0 text-[10px] sm:text-xs leading-4 text-gray-500 truncate">
-//                               Built Up Area
-//                             </p>
-//                           </div>
-//                         </div>
-//                       </div>
-
-//                       <hr className="my-1 border-gray-100" />
-
-//                       <div className="flex flex-wrap items-center justify-between gap-y-1 pt-1 pb-2 text-[12px] sm:text-[13px] text-gray-600">
-//                         <div className="flex items-center flex-wrap min-w-0">
-//                           <div className="flex items-center">
-//                             <AiOutlineClockCircle className="mr-1 text-[15px] text-gray-700" />
-//                             <span className="truncate">
-//                               Posted by {property.user_type || "Owner"}
-//                             </span>
-//                           </div>
-//                           <span className="mx-2 text-gray-400">•</span>
-//                           <span className="whitespace-nowrap">
-//                             {property.days_since_created
-//                               ? `${property.days_since_created} days ago`
-//                               : "Recently"}
-//                           </span>
-//                           {distance && (
-//                             <>
-//                               <span className="mx-2 text-gray-400">•</span>
-//                               <div className="flex items-center whitespace-nowrap">
-//                                 <FaMapMarkerAlt className="mr-1 text-red-500" />
-//                                 {distance} km from you
-//                               </div>
-//                             </>
-//                           )}
-//                         </div>
-//                         <PiShareNetworkLight
-//                           className="ml-2 text-[20px] text-gray-500 cursor-pointer hover:text-blue-500"
-//                           onClick={() =>
-//                             openShareModal(
-//                               `${window.location.origin}/propertydetails/${property._id}`,
-//                               property._id,
-//                             )
-
-//                           }
-//                         />
-//                       </div>
-
-//                       <div className="flex flex-wrap items-center justify-between mt-auto pt-3 gap-2">
-//                         <div className="flex items-center min-w-0">
-//                           <div className="flex items-center justify-center flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 overflow-hidden rounded-full bg-blue-100">
-//                             {property.property_owner_image ? (
-//                               <img
-//                                 src={`${process.env.REACT_APP_API_URL}/media/${property.property_owner_image}`}
-//                                 alt="Owner"
-//                                 className="object-cover w-full h-full rounded-full"
-//                               />
-//                             ) : (
-//                               <AiOutlineUser className="text-blue-600" size={24} />
-//                             )}
-//                           </div>
-//                           <div className="flex flex-col ml-2 sm:ml-3 min-w-0">
-//                             <span
-//                               className="text-xs sm:text-sm font-semibold text-gray-900 truncate"
-//                               title={property.connect_to_name}
-//                             >
-//                               {property.connect_to_name || "Owner"}
-//                             </span>
-//                             <span className="text-[10px] sm:text-xs text-gray-500 truncate">
-//                               {property.user_type || "Owner"}
-//                             </span>
-//                           </div>
-//                         </div>
-
-//                         {/* RIGHT SIDE - Buttons */}
-//                         <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
-//                           {/* Contact */}
-//                           <div
-//                             className="flex items-center justify-center px-3 sm:px-4 h-8 sm:h-9 text-xs sm:text-sm font-semibold text-white bg-red-800 rounded-md cursor-pointer hover:bg-red-900 whitespace-nowrap"
-//                             onClick={() => {
-//                               const token =
-//                                 sessionStorage.getItem("accessToken");
-//                               if (token) {
-//                                 if (freeViewCount > 0) {
-//                                   handleAddCount(-1);
-//                                 } else if (paidViewCount > 0) {
-//                                   handleAddCount(-1);
-//                                 }
-//                                 setIsContactModalOpen(true);
-//                               } else {
-//                                 setOpenContactModalAfterLogin(true);
-//                                 setIsLoginModalOpen(true);
-//                               }
-//                             }}
-//                           >
-//                             Contact
-//                           </div>
-
-//                           {/* WhatsApp */}
-//                           <a
-//                             href={`https://wa.me/91${property.connect_to_no}?text=Hello, I am interested in your property`}
-//                             target="_blank"
-//                             rel="noopener noreferrer"
-//                             onClick={(e) => e.stopPropagation()}
-//                             className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 text-white bg-green-500 rounded-md hover:bg-green-600"
-//                           >
-//                             <FaWhatsapp />
-//                           </a>
-
-//                           {/* Call */}
-//                           <a
-//                             href={`tel:${property.connect_to_no}`}
-//                             onClick={(e) => e.stopPropagation()}
-//                             className="flex items-center justify-center w-9 h-9 flex-shrink-0 rounded-lg bg-blue-500 text-white hover:bg-blue-600"
-//                           >
-//                             <FaPhoneAlt className="text-base" />
-//                           </a>
-//                         </div>
-//                       </div>
-//                     </div>
-//                   </div>
-//                 </div>
-//               );
-//             })}
-//           </Slider>
-//         </div>
-//         {isShareModalOpen && (
-//           <ShareModal
-//             currentShareUrl={window.location.href}
-//             closeShareModal={handleCloseShareModal}
-//             copyLink={() => {
-//               const url = window.location.href;
-
-//               if (navigator.clipboard && window.isSecureContext) {
-//                 navigator.clipboard
-//                   .writeText(url)
-//                   .then(() => alert("Link copied!"))
-//                   .catch((err) => {
-//                     console.error(err);
-//                     fallbackCopyTextToClipboard(url);
-//                   });
-//               } else {
-//                 fallbackCopyTextToClipboard(url);
-//               }
-
-//               function fallbackCopyTextToClipboard(text) {
-//                 const textArea = document.createElement("textarea");
-//                 textArea.value = text;
-//                 textArea.style.position = "fixed";
-//                 textArea.style.left = "-9999px";
-//                 document.body.appendChild(textArea);
-//                 textArea.focus();
-//                 textArea.select();
-
-//                 try {
-//                   const successful = document.execCommand("copy");
-//                   alert(successful ? "Link copied!" : "Copy failed");
-//                 } catch (err) {
-//                   console.error("Fallback: Could not copy text: ", err);
-//                   alert("Copy failed");
-//                 }
-
-//                 document.body.removeChild(textArea);
-//               }
-//             }}
-//           />
-//         )}
-
-//         {isShareModalOpen && (
-//           <div className="absolute right-0 z-50">
-//             <ShareModal
-//               currentShareUrl={currentShareUrl}
-//               closeShareModal={handleCloseShareModal}
-//               copyLink={() => {
-//                 navigator.clipboard.writeText(currentShareUrl);
-//                 alert("Link copied!");
-//               }}
-//             />
-//           </div>
-//         )}
-
-//         {/* Modals */}
-//         {isLoggedIn ? (
-//           <div>Welcome, {contactNumber}</div> // Display logged-in content
-//         ) : (
-//           <>
-//             <Login1
-//               isOpen={isLoginModalOpen}
-//               onClose={() => setIsLoginModalOpen(false)}
-//               onSwitchToSignUp={() => {
-//                 setIsLoginModalOpen(false);
-//                 setIsSignUpModalOpen(true); // Open sign-up modal
-//               }}
-//               onLoginSuccess={handleLoginSuccess} // Pass the callback to Login1 component
-//             />
-//             <SignUp1
-//               isOpen={isSignUpModalOpen}
-//               onClose={() => setIsSignUpModalOpen(false)}
-//               onSwitchToLogin={() => {
-//                 setIsSignUpModalOpen(false);
-//                 setIsLoginModalOpen(true); // Open login modal
-//               }}
-//             />
-//           </>
-//         )}
-//         {/* Share Modal */}
-//         {isShareModalOpen && (
-//           <ShareModal
-//             currentShareUrl={window.location.href}
-//             closeShareModal={handleCloseShareModal}
-//             copyLink={() => {
-//               navigator.clipboard.writeText(window.location.href);
-//               alert("Link copied!");
-//             }}
-//           />
-//         )}
-//       </div>
-//     </>
-//   );
-// };
-
-// export default Detail;
-import { React, useState, useRef, useEffect } from "react";
-import { FaBed, FaBath, FaRupeeSign } from "react-icons/fa";
-import { ToWords } from "to-words";
-import { MdLocationOn } from "react-icons/md";
-import { FiShare2, FiHeart } from "react-icons/fi";
-import { FaHome } from "react-icons/fa";
-import { IoMdBed } from "react-icons/io";
-import { BiArea } from "react-icons/bi";
-import { MdOutlineLocationOn } from "react-icons/md";
-import { GoArrowLeft, GoArrowRight } from "react-icons/go";
-import { FaHeart } from "react-icons/fa";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { FaUser } from "react-icons/fa";
-import { faVideo } from "@fortawesome/free-solid-svg-icons";
-import { AiOutlineGlobal } from "react-icons/ai";
-import { FaRulerCombined } from "react-icons/fa";
-import { faChair } from "@fortawesome/free-solid-svg-icons";
-import { MdOutlineBedroomParent } from "react-icons/md";
-import { AiOutlineUser, AiOutlineClockCircle } from "react-icons/ai";
-import { BiShapeSquare } from "react-icons/bi";
-import { PiShareNetworkLight } from "react-icons/pi";
-import { FaPhoneAlt } from "react-icons/fa";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
-import {
-  HiOutlineBadgeCheck,
-  HiOutlineCalendar,
-  HiOutlineHome,
-  HiOutlineClock,
-} from "react-icons/hi";
-import { FaMoneyBillWave } from "react-icons/fa";
-import { Link } from "react-router-dom";
+import { Link, useHistory, useParams } from "react-router-dom";
 import Slider from "react-slick";
+import { toast } from "react-toastify";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import "../styles/RecommendedProperties.css";
-import "../styles/DetailResponsive.css";
-import { BsHouseDoorFill, BsArrowsFullscreen } from "react-icons/bs";
-import { faShareNodes } from "@fortawesome/free-solid-svg-icons";
-import { useHistory } from "react-router-dom"; // import for routing
-import { PiCubeFocus, PiCricketThin } from "react-icons/pi";
-import { useParams, useLocation } from "react-router-dom";
-import { useCity } from "./SearchContext";
-import { toast } from "react-toastify";
-import { FiUser } from "react-icons/fi";
+import {
+  FiCheckCircle,
+  FiChevronLeft,
+  FiChevronRight,
+  FiExternalLink,
+  FiHeart,
+  FiMapPin,
+  FiMessageCircle,
+  FiPhone,
+  FiShare2,
+  FiX,
+} from "react-icons/fi";
+import {
+  FaArrowUp,
+  FaBath,
+  FaBed,
+  FaBuilding,
+  FaCalendarAlt,
+  FaCalendarCheck,
+  FaCalendarPlus,
+  FaCamera,
+  FaCar,
+  FaChevronDown,
+  FaClipboardList,
+  FaCompass,
+  FaCouch,
+  FaDoorOpen,
+  FaExpand,
+  FaHourglassHalf,
+  FaImages,
+  FaInfoCircle,
+  FaLayerGroup,
+  FaMapMarkerAlt,
+  FaMoneyBillWave,
+  FaPaperPlane,
+  FaPlug,
+  FaRulerCombined,
+  FaShower,
+  FaTint,
+  FaUserFriends,
+} from "react-icons/fa";
+import {
+  PiCubeFocus,
+} from "react-icons/pi";
 import Login1 from "../auth/Login1";
 import SignUp1 from "../auth/SignUp1";
 import GetScheduleVTourproperty from "../containers/GetScheduleVTourproperty";
-import { HiOutlineArrowRight } from "react-icons/hi"; // thinner arrow
 import ShareModal from "../containers/ShareModal";
 import ContactDetails from "../containers/ContactDetails";
-import { Heart, Building2 } from "lucide-react";
-import { RiRuler2Line } from "react-icons/ri";
-import { MdApartment } from "react-icons/md";
-import { FaWhatsapp, FaPhone } from "react-icons/fa";
-import { FaMapMarkerAlt } from "react-icons/fa";
 
-const defaultImage = "/image/appstore.png";
-const userLocation = JSON.parse(sessionStorage.getItem("userLocation"));
-const formatDateToDDMMYYYY = (dateVal, fallbackDate = null) => {
-  if (!dateVal || dateVal.toString().trim() === "" || dateVal.toString().toLowerCase() === "null") {
-    return dateVal;
-  }
+/* ------------------------------------------------------------------ */
+/* Constants & helpers (outside component so they never re-create)    */
+/* ------------------------------------------------------------------ */
 
-  let dateObj;
-  if (dateVal.toString().trim().toLowerCase() === "immediately") {
-    dateObj = fallbackDate ? new Date(fallbackDate) : new Date();
-  } else {
-    dateObj = new Date(dateVal);
-  }
+const API_BASE = process.env.REACT_APP_API_URL;
+const DEFAULT_IMAGE = "/image/appstore.png";
+const api = (path) => `${API_BASE}/cust_api/${path}`;
 
-  if (isNaN(dateObj.getTime())) {
-    return dateVal;
-  }
-
-  const day = String(dateObj.getDate()).padStart(2, "0");
-  const month = String(dateObj.getMonth() + 1).padStart(2, "0");
-  const year = dateObj.getFullYear();
-  return `${day}/${month}/${year}`;
+const UNIT_TO_SQFT = {
+  "sq ft": 1,
+  sqft: 1,
+  "square feet": 1,
+  "sq yd": 9,
+  sqyd: 9,
+  "square yards": 9,
+  "sq mt": 10.7639,
+  sqmt: 10.7639,
+  "square meters": 10.7639,
+  acre: 43560,
+  acres: 43560,
 };
 
-function calculateDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371;
-  const dLat = (lat2 - lat1) * (Math.PI / 180);
-  const dLon = (lon2 - lon1) * (Math.PI / 180);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * (Math.PI / 180)) *
-    Math.cos(lat2 * (Math.PI / 180)) *
-    Math.sin(dLon / 2) *
-    Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-}
-const Detail = ({ propertyData }) => {
-  const toWords = new ToWords({
-    localeCode: "en-IN",
-    converterOptions: {
-      currency: false,
-      ignoreDecimal: true,
-      ignoreZeroCurrency: true,
-    },
-  });
-  // const [showAllImages, setShowAllImages] = useState(false);
-  const [savedProperties, setSavedProperties] = useState([]);
-  const [properties, setProperties] = useState([]);
-  // const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const sliderRef = useRef(null);
-  const overviewRef = useRef(null);
-  const moreDetailsRef = useRef(null);
-  const amenitiesRef = useRef(null);
-  const aboutRef = useRef(null);
-  const locationRef = useRef(null);
-  const statusTimelineRef = useRef(null);
+const formatArea = (area, unit) => {
+  if (!area || !unit) return null;
+  const num = parseFloat(area);
+  if (isNaN(num)) return null;
+  const sqft = num * (UNIT_TO_SQFT[unit.toLowerCase()] ?? 1);
+  return `${Math.round(sqft).toLocaleString("en-IN")} Sq.Ft.`;
+};
 
-  // Mobile-only progressive detail flow
-  const [detailStep, setDetailStep] = useState(1);
-  const [isMobile, setIsMobile] = useState(
-    typeof window !== "undefined" && window.innerWidth < 768
+const formatINR = (value) =>
+  value ? `₹ ${Number(value).toLocaleString("en-IN")}` : null;
+
+const toSqft = (area, unit) => {
+  if (!area || !unit) return null;
+  const num = parseFloat(area);
+  if (isNaN(num)) return null;
+  return num * (UNIT_TO_SQFT[unit.toLowerCase()] ?? 1);
+};
+
+const trimZeros = (x) => parseFloat(x.toFixed(2)).toString();
+
+const formatPriceLabel = (value) => {
+  if (!value) return null;
+  const n = Number(value);
+  if (n >= 10000000) return `₹ ${trimZeros(n / 10000000)} Cr`;
+  if (n >= 100000) return `₹ ${trimZeros(n / 100000)} L`;
+  return formatINR(n);
+};
+
+const formatPriceShort = (price) => {
+  if (!price) return "";
+  if (price >= 10000000) return `${parseFloat((price / 10000000).toFixed(1))} Cr`;
+  if (price >= 100000) return `${parseFloat((price / 100000).toFixed(1))} L`;
+  if (price >= 1000) return `${parseFloat((price / 1000).toFixed(1))} K`;
+  return price;
+};
+
+const resolveImage = (src) => {
+  if (typeof src !== "string" || !src.trim()) return null;
+  return src.startsWith("http") ? src : `${API_BASE}${src}`;
+};
+
+// Public profile of another user, matched by id in the router: /agentdetail/:id
+const OWNER_PROFILE_PATH = "/agentdetail";
+
+// Owner profile card: photo if available, otherwise initials.
+// The avatar links to the owner's profile when ownerId is known.
+const OwnerProfileCard = ({ owner, ownerId }) => {
+  const name = (owner?.full_name || "").trim();
+  const initials =
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((w) => w[0])
+      .join("")
+      .toUpperCase() || "O";
+  const imageUrl = resolveImage(
+    owner?.profile_image || owner?.image || owner?.user_image || owner?.profile_pic,
   );
-  const [showAboutPropertyMobile, setShowAboutPropertyMobile] = useState(false);
 
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
+  const avatar = (
+    <div className="relative flex items-center justify-center flex-shrink-0 overflow-hidden text-sm font-bold text-white bg-[#800020] rounded-full w-14 h-14">
+      <span>{initials}</span>
+      {imageUrl && (
+        <img
+          src={imageUrl}
+          alt={name || "Owner"}
+          className="absolute inset-0 object-cover w-full h-full rounded-full"
+          onError={(e) => {
+            e.currentTarget.style.display = "none";
+          }}
+        />
+      )}
+    </div>
+  );
 
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+  return (
+    <section className="p-4 bg-white border shadow-sm rounded-xl border-slate-200">
+      <div className="pb-1.5 mb-3 border-b border-slate-100">
+        <h2 className="inline-block pb-1 text-sm font-bold text-slate-900 border-b-2 border-[#800020]">
+          Property Owner
+        </h2>
+      </div>
+      <div className="flex items-center gap-3">
+        {ownerId ? (
+          <Link
+            to={`${OWNER_PROFILE_PATH}/${ownerId}`}
+            onClick={() => window.scrollTo(0, 0)}
+            aria-label={`View ${name || "owner"}'s profile`}
+            title="View owner profile"
+            className="flex-shrink-0 rounded-full transition-shadow hover:ring-2 hover:ring-[#800020]/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#800020]"
+          >
+            {avatar}
+          </Link>
+        ) : (
+          avatar
+        )}
+        <div className="min-w-0">
+          <p className="text-sm font-bold truncate text-slate-900">{name || "Owner"}</p>
+          <p className="text-[11px] text-slate-500">Property owner</p>
+        </div>
+      </div>
+    </section>
+  );
+};
 
-  const [activeSection, setActiveSection] = useState("overview");
-  const [currentShareUrl1, setcurrentShareUrl1] = useState("");
-  const [propertyDetails, setPropertyDetails] = useState({});
-  const userId = sessionStorage.getItem("accessToken");
-  const history = useHistory();
-  const { searchCity } = useCity();
-  const [currentShareUrl, setCurrentShareUrl] = useState("");
-  const [activeShareId, setActiveShareId] = useState(null);
-  const [tourSchedule, setTourSchedule] = useState([]);
+const categoryBadge = (type) =>
+  type === "Rent"
+    ? { label: "FOR RENT", cls: "bg-blue-500" }
+    : type === "Buy"
+      ? { label: "FOR BUY", cls: "bg-green-600" }
+      : { label: "UNKNOWN", cls: "bg-gray-500" };
 
-  const [freeViewCount, setFreeViewCount] = useState(0);
-  const [paidViewCount, setPaidViewCount] = useState(0);
+const fallbackCopy = (text) => {
+  const area = document.createElement("textarea");
+  area.value = text;
+  area.style.position = "fixed";
+  area.style.left = "-9999px";
+  document.body.appendChild(area);
+  area.select();
+  try {
+    document.execCommand("copy") ? toast.success("Link copied!") : toast.error("Copy failed");
+  } catch {
+    toast.error("Copy failed");
+  }
+  document.body.removeChild(area);
+};
 
-  const formatArea = (area, unit) => {
-    if (!area) return null;
-
-    const formattedUnit = unit ? unit.trim().toLowerCase() : "";
-
-    return `${area} ${formattedUnit}`;
-  };
-  const scrollToSection = (ref, key) => {
-    setActiveSection(key);
-    ref.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
-  };
-  const checkPostLimits = async () => {
-    try {
-      const profileForm = new FormData();
-      profileForm.append("user_id", userId);
-
-      const profileResponse = await axios.post(
-        `${process.env.REACT_APP_API_URL}/cust_api/get_profile`,
-        profileForm,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        },
-      );
-
-      const countData = profileResponse?.data?.count_data;
-
-      if (countData) {
-        setFreeViewCount(countData.free_view_count || 0);
-        setPaidViewCount(countData.paid_view_count || 0);
-      }
-    } catch (error) {
-      console.error("Error checking post limits:", error);
-    }
-  };
-
-  useEffect(() => {
-    if (userId) {
-      checkPostLimits();
-    }
-  }, [userId]);
-
-  const handleAddCount = async (updatedCount) => {
-    try {
-      const addCountFormData = new FormData();
-      if (freeViewCount > 0) {
-        addCountFormData.append("free_view_count", updatedCount);
-      } else {
-        addCountFormData.append("paid_view_count", updatedCount);
-      }
-      addCountFormData.append("user_id", userId);
-
-      const response = await fetch(
-        `${process.env.REACT_APP_API_URL}/cust_api/add_count`,
-        {
-          method: "POST",
-          body: addCountFormData,
-        },
-      );
-
-      const data = await response.json();
-
-      if (response.ok) {
-        checkPostLimits();
-      } else {
-        console.error("Failed to update count:", data.message);
-      }
-    } catch (error) {
-      console.error("API error:", error);
-    }
-  };
-
-  useEffect(() => {
-    // const userId = sessionStorage.getItem("AccessToken");
-    if (userId) {
-      setIsLoggedIn(true);
-      fetchSavedProperties(userId);
-    } else {
-      setIsLoggedIn(false);
-    }
-  }, []);
-
-  const fetchSavedProperties = async () => {
-    // const userId = sessionStorage.getItem("AccessToken");
-    try {
-      const response = await axios.post(
-        `${process.env.REACT_APP_API_URL}/cust_api/get_favorite_properties`,
-        { user_id: userId },
-      );
-      if (response.data.status === 1 && Array.isArray(response.data.data)) {
-        const savedIds = response.data.data.map((prop) => prop._id);
-        setSavedProperties(savedIds);
-      } else {
-        setSavedProperties([]);
-        console.error("No saved properties found.");
-      }
-    } catch (error) {
-      console.error("Error fetching saved properties:", error);
-    }
-  };
-
-  const fetchRecommendedProperties = async () => {
-    try {
-      const cityName =
-  searchCity && searchCity.trim() !== ""
-    ? searchCity.trim()
-    : sessionStorage.getItem("cityName") || "";
-      const response = await axios.post(
-        `${process.env.REACT_APP_API_URL}/cust_api/get_featured_property`,
-        {
-    user_id: userId,
-    city_name: cityName,
-  },
-      );
-      if (response.data.status === 1 && Array.isArray(response.data.data)) {
-        setProperties(response.data.data);
-      } else {
-        setProperties([]);
-      }
-    } catch (error) {
-      console.error("Error fetching recommended properties:", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchRecommendedProperties();
-  }, []);
-
-  //add to favorite started
-  const [isFavorite, setIsFavorite] = useState(false);
-  const [favoriteId, setFavoriteId] = useState(null); // Store the favorite_id for removal
-
-  // Check if the property is a favorite on page load or when propertyDetails changes
-  const checkIfFavorite = async (propertyId) => {
-    // const userId = sessionStorage.getItem("accessToken");
-    if (!userId || !propertyId) return;
-
-    try {
-      const response = await axios.post(
-        `${process.env.REACT_APP_API_URL}/cust_api/get_favorite_properties`,
-        { user_id: userId },
-      );
-
-      const favoriteList = response.data.data || [];
-      const matchedFavorite = favoriteList.find(
-        (fav) => String(fav._id) === String(propertyId),
-      );
-
-      if (matchedFavorite) {
-        setIsFavorite(true);
-        setFavoriteId(matchedFavorite.favorite_id); // Save favorite_id for removal
-      } else {
-        setIsFavorite(false);
-        setFavoriteId(null);
-      }
-    } catch (error) {
-      console.error("Error checking favorite status:", error);
-    }
-  };
-
-  useEffect(() => {
-    checkIfFavorite(propertyDetails?._id);
-  }, [propertyDetails?._id]);
-
-  //  Add to favorites
-  const addToFavorites = async () => {
-    if (!userId) {
-      setIsLoginModalOpen(true);
-      return;
-    }
-
-    try {
-      const response = await axios.post(
-        `${process.env.REACT_APP_API_URL}/cust_api/add_to_favorite`,
-        {
-          user_id: userId,
-          property_id: propertyDetails._id,
-        },
-      );
-      setIsFavorite(true); // Immediately set isFavorite to true
-      checkIfFavorite(_id); // Save the favorite_id from the response
-      toast.success("Property has been saved to your favorites!");
-      fetchPropertyDetails(_id);
-      fetchRecommendedProperties();
-    } catch (error) {
-      console.error("Error adding property to favorites:", error);
-      toast.error("Failed to save the property. Please try again.");
-    }
-  };
-
-  // Remove from favorites
-  const removeFromFavorites = async () => {
-    if (!favoriteId) return;
-
-    try {
-      await axios.delete(
-        `${process.env.REACT_APP_API_URL}/cust_api/remove_from_favorite`,
-        { data: { favorite_id: favoriteId } }, // DELETE request with body
-      );
-
-      toast.success("Property removed from your favorites.");
-      checkIfFavorite(_id);
-      fetchPropertyDetails(_id);
-      fetchRecommendedProperties();
-    } catch (error) {
-      console.error("Error removing property from favorites:", error);
-      toast.error("Failed to remove the property. Please try again.");
-    }
-  };
-
-  //  Add to favorites
-  const addToFavoritesRecommendedProperty = async (PropertyId) => {
-    if (!userId) {
-      setIsLoginModalOpen(true);
-      return;
-    }
-
-    try {
-      const response = await axios.post(
-        `${process.env.REACT_APP_API_URL}/cust_api/add_to_favorite`,
-        {
-          user_id: userId,
-          property_id: PropertyId,
-        },
-      );
-      checkIfFavorite(_id);
-      fetchPropertyDetails(_id);
-      fetchRecommendedProperties();
-    } catch (error) {
-      console.log("Failed to save the property. Please try again.");
-    }
-  };
-
-  // Remove from favorites
-  const removeFromFavoritesRecommendedProperty = async (FavoriteId) => {
-    try {
-      await axios.delete(
-        `${process.env.REACT_APP_API_URL}/cust_api/remove_from_favorite`,
-        { data: { favorite_id: FavoriteId } },
-      );
-
-      checkIfFavorite(_id);
-      fetchPropertyDetails(_id);
-      fetchRecommendedProperties();
-    } catch (error) {
-      console.log("Failed to remove the property. Please try again.");
-    }
-  };
-
-  // Slider settings
-  const [activeIndexes, setActiveIndexes] = useState({});
-  const BASE_URL = process.env.REACT_APP_API_URL;
-  const settings = {
-    infinite: true,
-    slidesToShow: 4,
-    lazyLoad: "ondemand",
-    slidesToScroll: 1,
-    autoplay: true,
-    autoplaySpeed: 3000,
-    arrows: false,
-    cssEase: "linear",
-    centerMode: false,
-    centerPadding: "0px",
-    responsive: [
-      {
-        breakpoint: 1399,
-        settings: {
-          slidesToShow: 3,
-          slidesToScroll: 1,
-        },
-      },
-      {
-        breakpoint: 1023,
-        settings: {
-          slidesToShow: 2,
-          slidesToScroll: 1,
-        },
-      },
-      {
-        breakpoint: 767,
-        settings: {
-          slidesToShow: 1,
-          slidesToScroll: 1,
-        },
-      },
+/* ----- More-details fields grouped by category --------------------- */
+const DETAIL_CATEGORIES = [
+  {
+    id: "structure",
+    label: "Building & Structure",
+    icon: FaBuilding,
+    accent: "bg-indigo-50 text-indigo-600",
+    fields: [
+      ["Total Floor", "total_floor"],
+      ["Property Floor", "property_floor"],
+      ["Facing", "facing"],
+      ["Flooring", "flooring"],
+      ["Ceiling Height", "ceiling_height"],
+      ["Age of Property", "age_of_property"],
+      ["Type of Construction", "type_of_construction"],
+      ["Quality Rating", "quality_rating"],
+      ["Builder Floor Type", "builder_floor_type"],
+      ["Block", "block"],
+      ["Developer", "developer"],
+      ["Project Type", "project_type"],
+      ["Office Space Type", "office_space_type"],
     ],
-  };
-  const openShareModal1 = (url) => {
-    setcurrentShareUrl1(url);
-    const modal = document.getElementById("shareModal1");
-    if (modal) {
-      modal.style.display = "block";
-    }
-  };
+  },
+  {
+    id: "parking",
+    label: "Parking & Utilities",
+    icon: FaCar,
+    accent: "bg-amber-50 text-amber-600",
+    fields: [
+      ["Covered Parking", "covered_parking"],
+      ["Uncovered Parking", "uncovered_parking"],
+      ["Parking Availability", "parking_availability"],
+      ["Parking Types", "parking_types"],
+      ["Total Parking", "total_number_parking"],
+      ["Lift Availability", "lift_availability"],
+      ["Power Backup", "power_backup"],
+      ["Water Source", "water_source"],
+      ["Central AC", "central_AC"],
+    ],
+  },
+  {
+    id: "rooms",
+    label: "Rooms & Spaces",
+    icon: FaBath,
+    accent: "bg-rose-50 text-rose-600",
+    fields: [
+      ["Total Beds", "total_beds"],
+      ["Available Beds", "available_beds"],
+      ["Additional Rooms", "additional_rooms"],
+      ["Bathroom", "bathroom"],
+      ["Attached Bathroom", "attached_bathroom"],
+      ["Min. Bathrooms", "number_of_minimum_bathrooms"],
+      ["Attached Balcony", "attached_balcony"],
+      ["Balcony", "balcony"],
+      ["Pantry", "pantry"],
+      ["Pantry Option", "pantry_option"],
+      ["Personal Washroom", "personal_washroom"],
+      ["Commercial Washroom", "commercial_washroom"],
+      ["No. of Cabins", "no_of_cabines"],
+      ["Meeting Rooms", "no_of_meeting_Rooms"],
+      ["Conference Rooms", "no_of_conference_room"],
+      ["Reception Area", "reception_area"],
+      ["No. of Peoples", "no_of_peoples"],
+      ["Seat Type", "seat_type"],
+      ["Seats Available", "number_of_seats_available"],
+      ["View", "view"],
+    ],
+  },
+  {
+    id: "lease",
+    label: "Lease & Possession",
+    icon: FaCalendarCheck,
+    accent: "bg-emerald-50 text-emerald-600",
+    fields: [
+      ["Notice Period", "notice_period"],
+      ["Notice Period (Days)", "notice_period_other_days"],
+      ["Min. Lock-in Period", "min_lockin_period"],
+      ["Possession Status", "possession_status"],
+      ["Possession Date", "possession_date"],
+      ["Possession By", "possession_by"],
+      ["Security Deposit Type", "security_deposit_type"],
+      ["Maintenance Frequency", "maintenance_frequency"],
+      ["Maintenance Cost", "maintenance_cost"],
+      ["Maintenance Included", "maintenance_included"],
+      ["Transaction Type", "transaction_type"],
+      ["Rent Duration", "rent_duration"],
+      ["Available From", "available_from"],
+      ["Available On", "available_on"],
+    ],
+  },
+  {
+    id: "charges",
+    label: "Charges & Pricing",
+    icon: FaMoneyBillWave,
+    accent: "bg-cyan-50 text-cyan-600",
+    fields: [
+      ["Electricity Charges Included", "electricity_charges_included"],
+      ["Tax & Govt. Charges", "tax_and_goverment_charges"],
+      ["Electricity & Water Charges", "electricity_and_water_charges"],
+      ["All Inclusive Price", "all_inclusive_price"],
+      ["Price Negotiable", "price_negotiable"],
+      ["Investment Options", "investment_options"],
+      ["Food Available", "food_available"],
+      ["PG Rules", "pg_rules"],
+      ["PG Services", "pg_services"],
+      ["Gate Closing Time", "gate_closing_time"],
+      ["Gate Closing Hour", "gate_closing_hour"],
+    ],
+  },
+  {
+    id: "land",
+    label: "Land & Dimensions",
+    icon: FaRulerCombined,
+    accent: "bg-violet-50 text-violet-600",
+    fields: [
+      ["Plot No.", "plot_no"],
+      ["Dimensions (L)", "property_dimensions_length"],
+      ["Dimensions (B)", "property_dimensions_breadth"],
+      ["Length of Land", "length_of_land"],
+      ["Breadth of Land", "breadthOfLand"],
+      ["Open Sides", "openSidesOfLand"],
+      ["No. of Open Sides", "no_of_open_sides"],
+      ["Construction on Land", "constructionOnLand"],
+      ["Selected Construction", "selectedConstructionOnLand"],
+      ["Carpet Area", "carpet_area"],
+      ["Carpet Area Unit", "carpet_area_unit"],
+    ],
+  },
+  {
+    id: "other",
+    label: "Other Details",
+    icon: FaClipboardList,
+    accent: "bg-slate-100 text-slate-600",
+    fields: [
+      ["RERA ID", "property_no"],
+      ["Landmarks", "landmarks"],
+      ["Near Landmark", "near_landmark"],
+      ["Flat Name", "flat_name"],
+    ],
+  },
+];
 
-  const openShareModal = (url, propertyId) => {
-    setCurrentShareUrl(url);
-    setActiveShareId(propertyId);
-    setIsShareModalOpen(true);
-  };
+const SIMILAR_SLIDER_SETTINGS = {
+  infinite: true,
+  slidesToShow: 3,
+  slidesToScroll: 1,
+  autoplay: true,
+  autoplaySpeed: 3500,
+  arrows: false,
+  responsive: [
+    { breakpoint: 1024, settings: { slidesToShow: 2 } },
+    { breakpoint: 640, settings: { slidesToShow: 1 } },
+  ],
+};
 
-  const formatPrice = (price) => {
-    if (price === null || price === undefined || price === "") return "";
+/* ------------------------------------------------------------------ */
+/* Component                                                          */
+/* ------------------------------------------------------------------ */
 
-    price = Number(price);
-
-    if (price >= 10000000) {
-      return (price / 10000000).toFixed(2).replace(/\.?0+$/, "") + " Cr";
-    } else if (price >= 100000) {
-      return (price / 100000).toFixed(2).replace(/\.?0+$/, "") + " L";
-    } else if (price >= 1000) {
-      return (price / 1000).toFixed(2).replace(/\.?0+$/, "") + " K";
-    } else {
-      return price.toString();
-    }
-  };
-
-  // for the image section with 'get_property_detail' api
-
+const Detail = () => {
   const { _id } = useParams();
-  const location = useLocation();
-  const property_owner_id = location.state?.property_owner_id;
-  const [aboutPropertyText, setAboutPropertyText] = useState("");
+  const history = useHistory();
+  const sliderRef = useRef(null);
 
-  const [showAll, setShowAll] = useState(false);
-  const [allAmenities, setAllAmenities] = useState([]);
-  const visibleAmenities = showAll ? allAmenities : allAmenities.slice(0, 8);
+  const userId = sessionStorage.getItem("accessToken");
+  const userType = sessionStorage.getItem("user_type");
 
+  const [propertyDetails, setPropertyDetails] = useState({});
   const [propertyImages, setPropertyImages] = useState([]);
-  const [showAllImages, setShowAllImages] = useState(false);
-  const [longitude, setLongitude] = useState(0);
-  const [latitude, setLatitude] = useState(0);
-  const [userDetails, setuserDetails] = useState({
+  const [allAmenities, setAllAmenities] = useState([]);
+  const [aboutPropertyText, setAboutPropertyText] = useState("");
+  const [userDetails, setUserDetails] = useState({
     full_name: "",
     mobile_number: "",
     email: "",
   });
+  const [coords, setCoords] = useState({ lat: 0, lng: 0 });
+  const [tourSchedule, setTourSchedule] = useState([]);
+  const [scheduledDateLabel, setScheduledDateLabel] = useState("Virtual Tour");
+  const [similarProperties, setSimilarProperties] = useState([]);
 
-  const user_id = sessionStorage.getItem("accessToken");
-  useEffect(() => {
-    const customer_id = user_id;
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [favoriteId, setFavoriteId] = useState(null);
+  const [freeViewCount, setFreeViewCount] = useState(0);
+  const [paidViewCount, setPaidViewCount] = useState(0);
 
-    if (propertyDetails?._id && propertyDetails?.user_id && customer_id) {
-      const formData = new FormData();
-      formData.append("property_id", propertyDetails?._id);
-      formData.append("user_id", propertyDetails?.user_id);
-      formData.append("customer_id", customer_id);
+  const [activeImg, setActiveImg] = useState(0);
+  const [showAllImages, setShowAllImages] = useState(false);
+  const [showAllAmenities, setShowAllAmenities] = useState(false);
+  const [isTourOpen, setIsTourOpen] = useState(false);
+  const [isContactOpen, setIsContactOpen] = useState(false);
+  const [isShareOpen, setIsShareOpen] = useState(false);
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [isSignUpOpen, setIsSignUpOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(Boolean(userId));
+  const [pendingAction, setPendingAction] = useState(null);
 
-      axios
-        .post(
-          `${process.env.REACT_APP_API_URL}/cust_api/add_view_property`,
-          formData,
-        )
-        .then((res) => {
-          if (res.data?.status === 1) {
-            console.log("View property recorded");
-          }
-        })
-        .catch((err) => {
-          console.error("Failed to record property view:", err);
-        });
+  const [name, setName] = useState("");
+  const [message, setMessage] = useState("");
+  const [contactNumber, setContactNumber] = useState(
+    () => sessionStorage.getItem("Mobile_Number") || "",
+  );
+  const [enquiryStatus, setEnquiryStatus] = useState(null);
+  const [enqEmail, setEnqEmail] = useState("");
+  const [enqDate, setEnqDate] = useState("");
+  const [enqType, setEnqType] = useState("");
+  const [showFullDesc, setShowFullDesc] = useState(false);
+  const [agreedTerms, setAgreedTerms] = useState(false);
+
+  const checkPostLimits = async () => {
+    if (!userId) return;
+    try {
+      const form = new FormData();
+      form.append("user_id", userId);
+      const { data } = await axios.post(api("get_profile"), form);
+      const counts = data?.count_data;
+      if (counts) {
+        setFreeViewCount(counts.free_view_count || 0);
+        setPaidViewCount(counts.paid_view_count || 0);
+      }
+    } catch (err) {
+      console.error("Error checking post limits:", err);
     }
-  }, [propertyDetails?._id, user_id]);
+  };
 
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
+  const handleAddCount = async (updatedCount) => {
+    try {
+      const form = new FormData();
+      form.append(
+        freeViewCount > 0 ? "free_view_count" : "paid_view_count",
+        updatedCount,
+      );
+      form.append("user_id", userId);
+      const res = await fetch(api("add_count"), { method: "POST", body: form });
+      if (res.ok) checkPostLimits();
+    } catch (err) {
+      console.error("API error:", err);
+    }
+  };
+
+  const fetchSimilarProperties = async () => {
+    try {
+      const { data } = await axios.post(api("get_featured_property"), {
+        user_id: userId,
+      });
+      setSimilarProperties(
+        data?.status === 1 && Array.isArray(data.data) ? data.data : [],
+      );
+    } catch (err) {
+      console.error("Error fetching similar properties:", err);
+    }
+  };
+
+  const checkIfFavorite = async (propertyId) => {
+    if (!userId || !propertyId) return;
+    try {
+      const { data } = await axios.post(api("get_favorite_properties"), {
+        user_id: userId,
+      });
+      const match = (data?.data || []).find(
+        (fav) => String(fav._id) === String(propertyId),
+      );
+      setIsFavorite(Boolean(match));
+      setFavoriteId(match?.favorite_id ?? null);
+    } catch (err) {
+      console.error("Error checking favorite status:", err);
+    }
+  };
 
   const fetchPropertyDetails = async (id) => {
     try {
-      const res = await axios.post(
-        `${process.env.REACT_APP_API_URL}/cust_api/get_property_details`,
-        { property_id: id, user_id: userId },
+      const { data: res } = await axios.post(api("get_property_details"), {
+        property_id: id,
+        user_id: userId,
+      });
+      const data = res?.data || {};
+      const pd = data.property_details || {};
+
+      setPropertyImages(data.property_images || []);
+      setAllAmenities(data.amenities || []);
+      setAboutPropertyText(pd.property_description || "");
+      setPropertyDetails(pd);
+      setCoords({ lat: pd.latitude || 0, lng: pd.longitude || 0 });
+
+      const owner =
+        Array.isArray(data.user_details) && data.user_details.length
+          ? data.user_details[0]
+          : null;
+      setUserDetails(
+        owner || { full_name: "N/A", mobile_number: "N/A", email: "N/A" },
       );
 
-      const data = res.data?.data;
-      console.log("API Response:", data);
-      console.log("Price Onwards:", data.price_onwards);
-
-      if (data?.property_images?.length > 0) {
-        setPropertyImages(data.property_images);
-      } else {
-        setPropertyImages([]);
-      }
-
-      if (data?.amenities?.length > 0) {
-        setAllAmenities(data.amenities);
-      } else {
-        setAllAmenities([]);
-      }
-
-      if (
-        data?.tour_schedule?.length > 0 &&
-        data.tour_schedule[0].status !== "Rejected" &&
-        data.tour_schedule[0].status !== "Expired"
-      ) {
+      const schedule = data.tour_schedule?.[0];
+      if (schedule && !["Rejected", "Expired"].includes(schedule.status)) {
         setTourSchedule(data.tour_schedule);
-        const dateParts = data.tour_schedule[0].schedule_date.split("-");
-        const year = dateParts[0].slice(-2); // "25"
-        const month = parseInt(dateParts[1], 10) - 1; // month index
-        const day = parseInt(dateParts[2], 10); // 24
-
-        const monthName = new Date(0, month).toLocaleString("default", {
-          month: "short",
-        });
-
-        const scheduledLabel = `Scheduled ${day} ${monthName} ${year}`;
-        setScheduledDateLabel(scheduledLabel);
+        const [year, month, day] = schedule.schedule_date.split("-");
+        const monthName = new Date(0, parseInt(month, 10) - 1).toLocaleString(
+          "default",
+          { month: "short" },
+        );
+        setScheduledDateLabel(
+          `Scheduled ${parseInt(day, 10)} ${monthName} ${year.slice(-2)}`,
+        );
       } else {
         setTourSchedule([]);
         setScheduledDateLabel("Virtual Tour");
       }
-
-      if (data?.property_details?.property_description) {
-        setAboutPropertyText(data.property_details.property_description);
-      } else {
-        setAboutPropertyText("");
-      }
-
-      if (data?.property_details) {
-        setPropertyDetails(data.property_details);
-      } else {
-        setPropertyDetails({});
-      }
-
-      if (
-        data?.user_details &&
-        Array.isArray(data.user_details) &&
-        data.user_details.length > 0
-      ) {
-        setuserDetails(data.user_details[0]);
-      } else {
-        setuserDetails({
-          full_name: "N/A",
-          mobile_number: "N/A",
-          email: "N/A",
-        });
-        console.warn("user_details is empty or invalid:", data?.user_details);
-      }
-
-      const pd = data.property_details;
-      setLatitude(pd.latitude);
-      setLongitude(pd.longitude);
     } catch (err) {
       console.error("Error fetching property details", err);
       setPropertyImages([]);
@@ -3202,2183 +521,1169 @@ const Detail = ({ propertyData }) => {
     }
   };
 
-  useEffect(() => {
-    fetchPropertyDetails(_id);
-  }, [_id]);
-
-  // Reset the mobile-only UI flow whenever a different property is opened.
-  useEffect(() => {
-    setDetailStep(1);
-    setShowAboutPropertyMobile(false);
-  }, [_id]);
-
-  // for send Enquiry 'add_property_enquiry' api
-
-  const [name, setName] = useState("");
-  const [message, setMessage] = useState("");
-  const [contactNumber, setContactNumber] = useState("");
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [isSignUpModalOpen, setIsSignUpModalOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [enquiryStatus, setEnquiryStatus] = useState(null); // success or error
-
-  // Existing useEffect (on mount)
-  useEffect(() => {
-    const mobileNumber = sessionStorage.getItem("Mobile_Number");
-    if (mobileNumber) {
-      setContactNumber(mobileNumber);
-    }
-  }, []);
-
-  //  New useEffect to check sessionStorage and update contact number after login
-  useEffect(() => {
-    let interval;
-
-    if (isLoginModalOpen === false && !contactNumber) {
-      interval = setInterval(() => {
-        const mobileNumber = sessionStorage.getItem("Mobile_Number");
-        if (mobileNumber) {
-          setContactNumber(mobileNumber);
-          clearInterval(interval); // Stop checking once we have it
-        }
-      }, 500); // Check every 500ms
-    }
-
-    return () => clearInterval(interval); // Cleanup
-  }, [isLoginModalOpen, contactNumber]);
-
-  const userType = sessionStorage.getItem("user_type");
-  // Handle Enquiry Form submission
-  const handleEnquirySubmit = async (e) => {
-    e.preventDefault();
-
-    const accessToken = sessionStorage.getItem("accessToken");
-
-    if (!accessToken) {
-      setIsLoginModalOpen(true);
+  const toggleFavorite = async ({ propertyId, favId, saved }) => {
+    if (!userId) {
+      setIsLoginOpen(true);
       return;
     }
-
-    const enquiryData = {
-      property_id: propertyDetails?._id,
-      user_id: propertyDetails?.user_id,
-      customer_id: accessToken,
-      name,
-      user_type: userType,
-      contact_number: contactNumber,
-      message,
-    };
-
     try {
-      const response = await axios.post(
-        `${process.env.REACT_APP_API_URL}/cust_api/add_property_enquiry`,
-        enquiryData,
-      );
-
-      if (response.data.status) {
-        setEnquiryStatus({
-          type: "success",
-          message: "Enquiry sent successfully!",
+      if (saved) {
+        await axios.delete(api("remove_from_favorite"), {
+          data: { favorite_id: favId },
         });
+        toast.success("Property removed from your favorites.");
+      } else {
+        await axios.post(api("add_to_favorite"), {
+          user_id: userId,
+          property_id: propertyId,
+        });
+        toast.success("Property has been saved to your favorites!");
+      }
+      checkIfFavorite(propertyDetails?._id);
+      fetchSimilarProperties();
+    } catch (err) {
+      console.error("Favorite update failed:", err);
+      toast.error("Could not update favourites. Please try again.");
+    }
+  };
+
+  const handleEnquirySubmit = async (e) => {
+    e.preventDefault();
+    if (!userId) {
+      setIsLoginOpen(true);
+      return;
+    }
+    try {
+      const { data } = await axios.post(api("add_property_enquiry"), {
+        property_id: propertyDetails?._id,
+        user_id: propertyDetails?.user_id,
+        customer_id: userId,
+        name,
+        user_type: userType,
+        contact_number: contactNumber,
+        message: [
+          message,
+          enqType && `Enquiry type: ${enqType}`,
+          enqDate && `Move-in date: ${enqDate}`,
+          enqEmail && `Email: ${enqEmail}`,
+        ]
+          .filter(Boolean)
+          .join("\n"),
+      });
+      if (data?.status) {
+        setEnquiryStatus({ type: "success", message: "Enquiry sent successfully!" });
         setName("");
         setMessage("");
+        setAgreedTerms(false);
       } else {
         setEnquiryStatus({ type: "error", message: "Failed to send enquiry!" });
       }
-    } catch (error) {
+    } catch {
       setEnquiryStatus({ type: "error", message: "Something went wrong!" });
     }
   };
 
-  // Trigger login modal on input if not logged in
-  const handleFieldChange = () => {
-    const accessToken = sessionStorage.getItem("accessToken");
-    if (!accessToken) {
-      setIsLoginModalOpen(true);
-    }
-  };
-
-  const handleLoginSuccess = () => {
-    const mobileNumber = sessionStorage.getItem("Mobile_Number");
-    if (mobileNumber) {
-      setIsLoggedIn(true);
-      setContactNumber(mobileNumber);
-      setIsLoginModalOpen(false);
-    }
-  };
-
-  // for the schedule virtula tour
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [scheduledDateLabel, setScheduledDateLabel] = useState("Virtual Tour");
-  const [openVirtualTourAfterLogin, setOpenVirtualTourAfterLogin] =
-    useState(false);
   useEffect(() => {
-    const token = sessionStorage.getItem("accessToken");
-    if (token && openVirtualTourAfterLogin) {
-      setIsModalOpen(true); // Open Virtual Tour
-      setOpenVirtualTourAfterLogin(false); // Reset flag
-    }
-  }, [isLoggedIn]);
-
-  // for share model
-  const [openShareModalAfterLogin, setOpenShareModalAfterLogin] =
-    useState(false);
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  useEffect(() => {
-    const token = sessionStorage.getItem("accessToken");
-    if (token && openShareModalAfterLogin) {
-      setIsShareModalOpen(true); // Open Share modal
-      setOpenShareModalAfterLogin(false); // Reset flag
-    }
-  }, [isLoggedIn]);
-
-  const handleCloseShareModal = () => {
-    setIsShareModalOpen(false);
-  };
-
-  //for the contact details
-  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
-  const [openContactModalAfterLogin, setOpenContactModalAfterLogin] =
-    useState(false);
-
-  const userName = sessionStorage.getItem("user_name");
-  const userMobile = sessionStorage.getItem("Mobile_Number");
-
-  useState(false);
-  useEffect(() => {
-    if (sessionStorage.getItem("accessToken") && openContactModalAfterLogin) {
-      setIsContactModalOpen(true);
-      setOpenContactModalAfterLogin(false);
-    }
-  }, [openContactModalAfterLogin]);
-
-  // Add this line below all useState declarations or just before return:
-  const overviewFields = [
-    //["Status", propertyDetails?.available_status || null],
-    ["Property Added Date", propertyDetails?.property_added_date || null],
-    ["Property Name", propertyDetails?.property_name || null],
-    // [
-    //   "Address",
-    //   propertyDetails?.address &&
-    //   propertyDetails?.city_name &&
-    //   propertyDetails?.state &&
-    //   propertyDetails?.zip_code
-    //     ? `${propertyDetails.address}, ${propertyDetails.city_name}, ${propertyDetails.state}, ${propertyDetails.zip_code}`
-    //     : null,
-    // ],
-    [
-      "Address",
-      propertyDetails?.address || null,
-    ],
-    [
-      "Area",
-      propertyDetails?.area
-        ? formatArea(propertyDetails.area, propertyDetails.area_in)
-        : null,
-    ],
-    ["Area Type", propertyDetails?.area_type || null],
-    [
-      "Price",
-      propertyDetails?.property_category_type === "Rent"
-        ? propertyDetails?.rent
-          ? `₹${formatPrice(propertyDetails.rent)}`
-          : null
-        : propertyDetails?.property_price
-          ? `₹${formatPrice(propertyDetails.property_price)}`
-          : null,
-    ],
-    [
-      "Deposite",
-      propertyDetails?.custom_deposit_amount
-        ? `₹${formatPrice(propertyDetails.custom_deposit_amount)}`
-        : null,
-    ],
-    ["Listing Type", propertyDetails?.property_category_type || null],
-    // ["Developer", propertyDetails?.developer || null],
-    ["Building Type", propertyDetails?.building_type || null],
-    ["Property Type", propertyDetails?.property_type || null],
-    ...(propertyDetails?.property_type === "Plot/Land"
-  ? [["Land Type", propertyDetails?.land_type || null]]
-  : []),
-    ...(propertyDetails?.property_type === "Office"
-  ? [["Office Type", propertyDetails?.office_type || null]]
-  : []),
-    [
-      "Bhk Type",
-      propertyDetails?.bhk_type === "Studio"
-        ? "Studio/Single Room"
-        : propertyDetails?.bhk_type || null,
-    ],
-    ["Furnishing", propertyDetails?.furnished_type || null],
-    // ["Plot No.", propertyDetails?.plot_no || null],
-    ["Operating Since", propertyDetails?.operating_since || null],
-    [
-      "Available for Company Lease",
-      propertyDetails?.available_for_company_lease || null,
-    ],
-    ["Available For", propertyDetails?.available_for || null],
-    ["Suited For", propertyDetails?.suited_for || null],
-    ["Room Type", propertyDetails?.room_type || null],
-    ["Food Charges Included", propertyDetails?.food_charges_included || null],
-  ].filter(([_, value]) => value);
-
-  //more details
-
-  const moreDetailsFields = [
-    ["Food Available", propertyDetails?.food_available || null],
-    ["Notice Period", propertyDetails?.notice_period || null],
-    [
-      "Notice Period Other Days",
-      propertyDetails?.notice_period_other_days || null,
-    ],
-    [
-      "Electricity Charges Included",
-      propertyDetails?.electricity_charges_included || null,
-    ],
-    ["Total Beds", propertyDetails?.total_beds || null],
-    ["Additional Rooms", propertyDetails?.additional_rooms || null],
-    ["PG Rules", propertyDetails?.pg_rules || null],
-    ["Gate Closing Time", propertyDetails?.gate_closing_time || null],
-    ["Gate Closing Hour", propertyDetails?.gate_closing_hour || null],
-    ["PG Services", propertyDetails?.pg_services || null],
-    ["Age of Property", propertyDetails?.age_of_property || null],
-    ["Office Space Type", propertyDetails?.office_space_type || null],
-    //["Pantry", propertyDetails?.pantry || null],
-    ["Personal Washroom", propertyDetails?.personal_washroom || null],
-    ["Bathroom", propertyDetails?.bathroom || null],
-    ["Lift Availability", propertyDetails?.lift_availability || null],
-    ["Parking Availability", propertyDetails?.parking_availability || null],
-    ["Covered Parking", propertyDetails?.covered_parking || null],
-    ["Uncovered Parking", propertyDetails?.uncovered_parking || null],
-    ["Balcony", propertyDetails?.balcony || null],
-    ["Power Backup", propertyDetails?.power_backup || null],
-    
-    ["Water Source", propertyDetails?.water_source || null],
-    ["View", propertyDetails?.view || null],
-    ["Flooring", propertyDetails?.flooring || null],
-    ["Total Floor", propertyDetails?.total_floor || null],
-    ["Property Floor", propertyDetails?.property_floor || null],
-    ["Facing", propertyDetails?.facing || null],
-    ["Ceiling Height", propertyDetails?.ceiling_height || null],
-    
-    ["Min Lockin Period", propertyDetails?.min_lockin_period || null],
-    ["Seat Type", propertyDetails?.seat_type || null],
-    [
-      "Number of Seats Available",
-      propertyDetails?.number_of_seats_available || null,
-    ],
-    ["Plot No.", propertyDetails?.plot_no || null],
-    // ["Loan Availability", propertyDetails?.loan_availability || null],
-    //some other fileds
-    ["RERA ID", propertyDetails?.property_no || null],
-    ["Landmarks", propertyDetails?.landmarks || null],
-    ["Furnishing", propertyDetails?.furnished_type || null],
-    ["Near Landmark", propertyDetails?.near_landmark || null],
-    ["Flat Name", propertyDetails?.flat_name || null],
-    ["Maintenance Frequency", propertyDetails?.maintenance_frequency || null],
-    [
-      "Maintenance Included",
-      propertyDetails?.maintenance_included ? "Yes" : "No",
-    ],
-    ["Security Deposit Type", propertyDetails?.security_deposit_type || null],
-    [
-      "Available for Company Lease",
-      propertyDetails?.available_for_company_lease || null,
-    ],
-    ["Available For", propertyDetails?.available_for || null],
-    ["Suited For", propertyDetails?.suited_for || null],
-    ["Room Type", propertyDetails?.room_type || null],
-    ["Food Charges Included", propertyDetails?.food_charges_included || null],
-    // [
-    //   "Virtual Tour Availability",
-    //   propertyDetails?.virtual_tour_availability || null,
-    // ],
-    ["Property Category Type", propertyDetails?.property_category_type || null],
-    ["Rent", propertyDetails?.rent || null],
-    ["Rent Duration", propertyDetails?.rent_duration || null],
-    ["Property Added Date", propertyDetails?.property_added_date ? formatDateToDDMMYYYY(propertyDetails.property_added_date) : null],
-    ...(
-  propertyDetails?.property_category_type === "Buy" ||
-  propertyDetails?.property_category_type === "Commercial Buy"
-    ? [
-        [
-          "Possession Status",
-          propertyDetails?.possession_status || null,
-        ],
-      ]
-    : []
-),
-    ...(
-  propertyDetails?.possession_status === "Later"
-    ? [
-        [
-          "Available Date",
-          propertyDetails?.possession_date
-            ? formatDateToDDMMYYYY(propertyDetails.possession_date)
-            : null,
-        ],
-      ]
-    : []
-),
-  ...(
-  !(
-    propertyDetails?.property_category_type === "Rent" &&
-    propertyDetails?.building_type === "Commercial" &&
-    propertyDetails?.property_type === "Plot/Land"
-  )
-    ? propertyDetails?.property_category_type === "Rent"
-      ? [
-          [
-            "Available Status",
-            propertyDetails?.available_from ||
-              propertyDetails?.available_status ||
-              null,
-          ],
-        ]
-      : []
-    : []
-),
-...(
-  !(
-    propertyDetails?.property_category_type === "Rent" &&
-    propertyDetails?.building_type === "Commercial" &&
-    propertyDetails?.property_type === "Plot/Land"
-  )
-    ? propertyDetails?.property_category_type === "Rent" &&
-      propertyDetails?.available_from !== "Immediately"
-      ? [
-          [
-            "Available From",
-            propertyDetails?.possession_date ||
-            propertyDetails?.available_from
-              ? formatDateToDDMMYYYY(
-                  propertyDetails?.possession_date ||
-                    propertyDetails?.available_from,
-                  propertyDetails?.property_added_date
-                )
-              : null,
-          ],
-        ]
-      : []
-    : []
-),
-   ...(
-  (
-    propertyDetails?.property_category_type === "Buy" ||
-    propertyDetails?.property_category_type === "Commercial Buy"
-  ) &&
-  propertyDetails?.possession_status === "Under Construction"
-    ? [
-        [
-          "Possession Date",
-          propertyDetails?.possession_date
-            ? formatDateToDDMMYYYY(propertyDetails.possession_date)
-            : null,
-        ],
-      ]
-    : []
-),
-
-// Expected Possession - show possession date
-...(
-  (
-    propertyDetails?.property_category_type === "Buy" ||
-    propertyDetails?.property_category_type === "Commercial Buy"
-  ) &&
-  propertyDetails?.possession_status === "Expected Possession"
-    ? [
-        [
-          "Possession Date",
-          propertyDetails?.possession_date
-            ? formatDateToDDMMYYYY(propertyDetails.possession_date)
-            : null,
-        ],
-      ]
-    : []
-),
-    ["Area Type", propertyDetails?.area_type || null],
-    ["Built up Area", propertyDetails?.area || null],
-    [
-      "Built-up Area Unit",
-      propertyDetails?.area_in ? propertyDetails.area_in.toLowerCase() : null,
-    ],
-    ["Carpet Area", propertyDetails?.carpet_area || null],
-    [
-      "Carpet Area Unit",
-      propertyDetails?.carpet_area_unit
-        ? propertyDetails.carpet_area_unit.toLowerCase()
-        : null,
-    ],
-    ["Property Usage", propertyDetails?.investment_options || null],
-    ["Purchase Type", propertyDetails?.purchase_type || null],
-    ["All Inclusive Price", propertyDetails?.all_inclusive_price || null],
-    ["Price Onwards", propertyDetails?.price_onwards || null],
-    ["Price Negotiable", propertyDetails?.price_negotiable || null],
-    [
-      "Tax And Goverment Charges",
-      propertyDetails?.tax_and_goverment_charges || null,
-    ],
-    [
-      "Electricity And Water Charges",
-      propertyDetails?.electricity_and_water_charges || null,
-    ],
-    ["No Of Open Sides", propertyDetails?.no_of_open_sides || null],
-    ["No Of Peoples", propertyDetails?.no_of_peoples || null],
-    ["Type Of Construction", propertyDetails?.type_of_construction || null],
-    ["Quality Rating", propertyDetails?.quality_rating || null],
-    ["Central AC", propertyDetails?.central_AC || null],
-    ["Total Number Parking", propertyDetails?.total_number_parking || null],
-    ["Block", propertyDetails?.block || null],
-    ["Developer", propertyDetails?.developer || null],
-    ["Project Type", propertyDetails?.project_type || null],
-    ["Transaction Type", propertyDetails?.transaction_type || null],
-    ["Builder Floor Type", propertyDetails?.builder_floor_type || null],
-    // ["Attached Bathroom", propertyDetails?.attached_bathroom || null],
-    // ["Attached Balcony", propertyDetails?.attached_balcony || null],
-    // ["Pantry Option", propertyDetails?.pantry_option || null],
-    // ["Parking Types", propertyDetails?.parking_types || null],
-    ["Possession By", propertyDetails?.possession_by || null],
-    [
-      "Property Dimensions Length",
-      propertyDetails?.property_dimensions_length || null,
-    ],
-    [
-      "Property Dimensions Breadth",
-      propertyDetails?.property_dimensions_breadth || null,
-    ],
-    ["Length Of Land", propertyDetails?.length_of_land || null],
-    ["Breadth Of Land", propertyDetails?.breadthOfLand || null],
-    ["Open Sides Of Land", propertyDetails?.openSidesOfLand || null],
-    ["Construction On Land", propertyDetails?.constructionOnLand || null],
-    [
-      "Selected Construction On Land",
-      propertyDetails?.selectedConstructionOnLand || null,
-    ],
-    ["Commercial Washroom", propertyDetails?.commercial_washroom || null],
-    [
-      "Number Of Minimum Bathrooms",
-      propertyDetails?.number_of_minimum_bathrooms || null,
-    ],
-    ["Maintenance Cost", propertyDetails?.maintenance_cost || null],
-    ["Available Beds", propertyDetails?.available_beds || null],
-    
-    ["Available On", propertyDetails?.available_on ? formatDateToDDMMYYYY(propertyDetails.available_on) : null],
-
-    ["No Of Cabines", propertyDetails?.no_of_cabines || null],
-    ["No Of Meeting Rooms", propertyDetails?.no_of_meeting_Rooms || null],
-    ["No Of Conference Room", propertyDetails?.no_of_conference_room || null],
-    // ["Posted By Admin", propertyDetails?.posted_by_admin || null],
-    // ["UPS", propertyDetails?.ups || null],
-    // ["Oxygen Duct", propertyDetails?.oxygenDuct || null],
-    // ["Central AC", propertyDetails?.central_AC || null],
-    // ["Conference Room", propertyDetails?.conferenceRoom || null],
-    // ["Washroom", propertyDetails?.washroom || null],
-    // ["Washroom Check", propertyDetails?.washroom_Check || null],
-    ["Pantry", propertyDetails?.pantry_option || null],
-    ["Reception Area", propertyDetails?.reception_area || null],
-    // ["Created At",
-    //   propertyDetails?.created_at
-    //     ? new Date(propertyDetails.created_at).toLocaleDateString("en-GB")
-    //     : null,
-    // ],
-
-    // ["Updated At",
-    //   propertyDetails?.updated_at
-    //     ? new Date(propertyDetails.updated_at).toLocaleDateString("en-GB")
-    //     : null,
-    // ],
-  ].filter(([_, value]) => value);
-  const statusTimelineItems = [];
-
-  const addStatusItem = ({
-    icon,
-    title,
-    value,
-    bgColor,
-    iconColor,
-  }) => {
-    if (
-      !value ||
-      value.toString().trim() === "" ||
-      value.toString().toLowerCase() === "n/a" ||
-      value.toString().toLowerCase() === "null"
-    ) {
-      return;
-    }
-
-    statusTimelineItems.push({
-      icon,
-      title,
-      value,
-      bgColor,
-      iconColor,
-    });
-    
-  };
-  // addStatusItem({
-  //   icon: <HiOutlineBadgeCheck />,
-  //   title: "Availability",
-  //   value: propertyDetails?.available_status,
-  //   bgColor: "bg-green-50",
-  //   iconColor: "text-green-600",
-  // });
-  if (
-     !(
-    propertyDetails?.property_category_type === "Rent" &&
-    propertyDetails?.building_type === "Commercial" &&
-    propertyDetails?.property_type === "Plot/Land"
-  ) &&
-  (
-  propertyDetails?.property_category_type === "Rent" ||
-  (
-    propertyDetails?.property_category_type === "Buy" &&
-    propertyDetails?.possession_status === "Ready To Move"
-  )
-)
-) {
-  addStatusItem({
-    icon: <HiOutlineBadgeCheck />,
-    title: "Availability",
-    value:
-      propertyDetails?.available_from ||
-      propertyDetails?.available_status,
-    bgColor: "bg-green-50",
-    iconColor: "text-green-600",
-  });
-}
- if (
-  propertyDetails?.property_category_type === "Buy" ||
-  propertyDetails?.property_category_type === "Commercial Buy"
-) {
-  addStatusItem({
-    icon: <HiOutlineHome />,
-    title: "Possession",
-    value: propertyDetails?.possession_status,
-    bgColor: "bg-orange-50",
-    iconColor: "text-orange-600",
-  });
-}
-// Existing timeline logic
-if (
-  !(
-    propertyDetails?.property_category_type === "Rent" &&
-    propertyDetails?.building_type === "Commercial" &&
-    propertyDetails?.property_type === "Plot/Land"
-  ) &&
-  (
-    propertyDetails?.property_category_type === "Rent" &&
-    propertyDetails?.available_from !== "Immediately"
-    ||
-    (
-      (
-  propertyDetails?.property_category_type === "Buy" ||
-  propertyDetails?.property_category_type === "Commercial Buy"
-) &&
-propertyDetails?.possession_status === "Under Construction"
-    )
-  )
-) {
-  addStatusItem({
-    icon: <HiOutlineCalendar />,
-    title: "Available From",
-    value: formatDateToDDMMYYYY(
-      propertyDetails?.possession_date ||
-        propertyDetails?.available_from,
-      propertyDetails?.property_added_date
-    ),
-    bgColor: "bg-blue-50",
-    iconColor: "text-blue-600",
-  });
-  }
-// Expected Possession - show possession date
-if (
-  (propertyDetails?.property_category_type === "Buy" ||
-    propertyDetails?.property_category_type === "Commercial Buy") &&
-  propertyDetails?.possession_status === "Expected Possession"
-) {
-  addStatusItem({
-    icon: <HiOutlineCalendar />,
-    title: "Possession Date",
-    value: propertyDetails?.possession_date
-      ? formatDateToDDMMYYYY(propertyDetails.possession_date)
-      : null,
-    bgColor: "bg-blue-50",
-    iconColor: "text-blue-600",
-  });
-}
-
-
-// ADD THIS SEPARATELY
-if (propertyDetails?.possession_status === "Later") {
-  addStatusItem({
-    icon: <HiOutlineCalendar />,
-    title: "Available Date",
-    value: propertyDetails?.possession_date
-      ? formatDateToDDMMYYYY(propertyDetails.possession_date)
-      : null,
-    bgColor: "bg-blue-50",
-    iconColor: "text-blue-600",
-  });
-}
-  // addStatusItem({
-  //   icon: <HiOutlineCalendar />,
-  //   title: "Available From",
-  //   value: formatDateToDDMMYYYY(
-  //     propertyDetails?.possession_date || propertyDetails?.available_from,
-  //     propertyDetails?.property_added_date
-  //   ),
-  //   bgColor: "bg-blue-50",
-  //   iconColor: "text-blue-600",
-  // });
-
-  addStatusItem({
-    icon: <HiOutlineClock />,
-    title: "Last Updated",
-    value: propertyDetails?.updated_at
-      ? formatDateToDDMMYYYY(propertyDetails.updated_at)
-      : formatDateToDDMMYYYY(propertyDetails?.property_added_date),
-    bgColor: "bg-purple-50",
-    iconColor: "text-purple-600",
-  });
-
-  addStatusItem({
-    icon: <HiOutlineClock />,
-    title: "Property Age",
-    value: propertyDetails?.age_of_property,
-    bgColor: "bg-amber-50",
-    iconColor: "text-amber-700",
-  });
-
-  const handleClick = () => {
-    history.push("/featuredDashboard");
-  };
+    checkPostLimits();
+    fetchSimilarProperties();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, []);
+    setActiveImg(0);
+    fetchPropertyDetails(_id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [_id]);
 
-  // Prevent background scrolling when modal is open
   useEffect(() => {
-    if (
-      isShareModalOpen ||
-      isContactModalOpen ||
-      showAllImages ||
-      isModalOpen
-    ) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "auto";
-    }
+    checkIfFavorite(propertyDetails?._id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [propertyDetails?._id]);
 
-    // Cleanup when component unmounts
+  useEffect(() => {
+    const d = propertyDetails;
+    if (!d?._id || !d?.user_id || !userId) return;
+    const form = new FormData();
+    form.append("property_id", d._id);
+    form.append("user_id", d.user_id);
+    form.append("customer_id", userId);
+    axios
+      .post(api("add_view_property"), form)
+      .catch((err) => console.error("Failed to record property view:", err));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [propertyDetails?._id]);
+
+  useEffect(() => {
+    if (!isLoggedIn || !pendingAction) return;
+    if (pendingAction === "tour") setIsTourOpen(true);
+    if (pendingAction === "contact") {
+      checkPostLimits();
+      setIsContactOpen(true);
+    }
+    setPendingAction(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoggedIn, pendingAction]);
+
+  useEffect(() => {
+    const locked = isShareOpen || isContactOpen || showAllImages || isTourOpen;
+    document.body.style.overflow = locked ? "hidden" : "auto";
     return () => {
       document.body.style.overflow = "auto";
     };
-  }, [isShareModalOpen, isContactModalOpen, showAllImages, isModalOpen]);
+  }, [isShareOpen, isContactOpen, showAllImages, isTourOpen]);
 
-  const getTimeAgo = (dateString) => {
-    if (!dateString) return "";
-
-    const now = new Date();
-    const created = new Date(dateString);
-
-    const diffMs = now - created;
-
-    const minutes = Math.floor(diffMs / (1000 * 60));
-    const hours = Math.floor(diffMs / (1000 * 60 * 60));
-    const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-    if (minutes < 60) {
-      return `${minutes} min ago`;
-    }
-
-    if (hours < 24) {
-      return `${hours} hr${hours > 1 ? "s" : ""} ago`;
-    }
-
-    if (days < 30) {
-      return `${days} day${days > 1 ? "s" : ""} ago`;
-    }
-
-    const months = Math.floor(days / 30);
-
-    if (months < 12) {
-      return `${months} month${months > 1 ? "s" : ""} ago`;
-    }
-
-    const years = Math.floor(months / 12);
-
-    return `${years} year${years > 1 ? "s" : ""} ago`;
+  const requireLogin = (action) => {
+    if (userId) return true;
+    setPendingAction(action);
+    setIsLoginOpen(true);
+    return false;
   };
 
-  return (
-    <>
-      <div className="max-w-full px-4 mx-auto sm:px-16 detail-page-container">
-        {/* Property Details Section */}
-        <div className="relative w-full h-auto p-2 mb-4 rounded-lg shadow-sm bg-rose-50 detail-header-card">
-          {(propertyDetails?.property_price || propertyDetails?.rent) && (
-            <div className="absolute top-4 right-4 flex flex-col items-end detail-price-block">
-              <p className="flex items-center mt-5 text-3xl font-bold my-text">
-                <FaRupeeSign className="mr-2" />
-                {propertyDetails?.property_category_type === "Rent" ||
-                  propertyDetails?.property_category_type === "PG/Co-living" ? (
-                  <>
-                    {formatPrice(propertyDetails?.rent)}{" "}
-                    <span className="ml-1 text-xl text-gray-700">
-                      / {propertyDetails?.rent_duration || "Per Month"}
-                    </span>
-                  </>
-                ) : (
-                  formatPrice(propertyDetails?.property_price)
-                )}
-              </p>
-              <p className="mt-1 text-sm font-medium text-gray-500">
-                {propertyDetails?.property_category_type === "Rent" ||
-                  propertyDetails?.property_category_type === "PG/Co-living"
-                  ? `${toWords.convert(Number(propertyDetails?.rent))} Only`
-                  : `${toWords.convert(Number(propertyDetails?.property_price))} Only`}
-              </p>
+  const handleLoginSuccess = () => {
+    const mobile = sessionStorage.getItem("Mobile_Number");
+    if (!mobile) return;
+    setContactNumber(mobile);
+    setIsLoginOpen(false);
+    setIsLoggedIn(true);
+  };
+
+  const handleContactClick = () => {
+    if (!requireLogin("contact")) return;
+    if (!userDetails?.full_name) {
+      toast.error("User data not found");
+      return;
+    }
+    if (freeViewCount > 0) {
+      setFreeViewCount(-1);
+      handleAddCount(-1);
+    } else if (paidViewCount > 0) {
+      setPaidViewCount(-1);
+      handleAddCount(-1);
+    }
+    setIsContactOpen(true);
+  };
+
+  const handleTourClick = () => {
+    if (scheduledDateLabel !== "Virtual Tour") {
+      history.push({ pathname: "/dashboard", state: { page: "myVirtualtour" } });
+      return;
+    }
+    if (requireLogin("tour")) setIsTourOpen(true);
+  };
+
+  const copyLink = async () => {
+    const url = window.location.href;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Link copied!");
+    } catch {
+      fallbackCopy(url);
+    }
+  };
+
+  const scrollToEnquiry = () =>
+    document
+      .getElementById("enquiry")
+      ?.scrollIntoView({ behavior: "smooth", block: "center" });
+
+  const d = propertyDetails || {};
+  const isRent = d.property_category_type === "Rent";
+  const headlinePrice = isRent ? d.rent : d.property_price;
+  const locality = [d.address_area, d.city_name].filter(Boolean).join(", ");
+  const fullAddress = [d.address, d.city_name, d.state, d.zip_code]
+    .filter(Boolean)
+    .join(", ");
+  const mapsLink =
+    coords.lat && coords.lng
+      ? `https://www.google.com/maps?q=${coords.lat},${coords.lng}`
+      : null;
+  const mapEmbed = `https://maps.google.com/maps?q=${coords.lat},${coords.lng}&z=15&output=embed`;
+
+  const galleryImages = useMemo(
+    () =>
+      [
+        ...new Set(
+          [d.cover_image, ...propertyImages.map((i) => i.image)]
+            .map(resolveImage)
+            .filter(Boolean),
+        ),
+      ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [d.cover_image, propertyImages],
+  );
+
+  const hasVideo = Boolean(d.property_video);
+  const totalPhotos = galleryImages.length + (hasVideo ? 1 : 0);
+  const currentImage = galleryImages[activeImg] || galleryImages[0] || DEFAULT_IMAGE;
+  const extraCount = Math.max(galleryImages.length - 4, 0) + (hasVideo ? 1 : 0);
+
+  const stepImage = (dir) => {
+    if (!galleryImages.length) return;
+    setActiveImg((i) => (i + dir + galleryImages.length) % galleryImages.length);
+  };
+
+  const isLocked = freeViewCount <= 0 && paidViewCount <= 0;
+
+  const sqftTotal = toSqft(d.area, d.area_in);
+  const perSqft =
+    !isRent && headlinePrice && sqftTotal
+      ? Math.round(Number(headlinePrice) / sqftTotal)
+      : null;
+
+  const highlights = useMemo(() => {
+    if (Array.isArray(d.key_highlights) && d.key_highlights.length) return d.key_highlights;
+    return [
+      d.furnished_type && `${d.furnished_type} property`,
+      d.lift_availability && `Lift: ${d.lift_availability}`,
+      d.power_backup && `Power backup: ${d.power_backup}`,
+      d.facing && `${d.facing} facing`,
+      d.parking_availability && `Parking: ${d.parking_availability}`,
+      (d.near_landmark || d.landmarks) && `Near ${d.near_landmark || d.landmarks}`,
+      d.water_source && `Water: ${d.water_source}`,
+    ].filter(Boolean);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [propertyDetails]);
+
+  const detailGroups = useMemo(
+    () =>
+      DETAIL_CATEGORIES.map((cat) => ({
+        ...cat,
+        rows: cat.fields
+          .map(([label, key]) => [
+            label,
+            key === "maintenance_included"
+              ? d.maintenance_included
+                ? "Yes"
+                : null
+              : d[key],
+          ])
+          .filter(([, value]) => value),
+      })).filter((cat) => cat.rows.length > 0),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [propertyDetails],
+  );
+
+  const visibleAmenities = showAllAmenities ? allAmenities : allAmenities.slice(0, 9);
+
+  const tourButtonClass =
+    tourSchedule?.[0]?.status === "Accepted"
+      ? "bg-green-600 text-white"
+      : scheduledDateLabel === "Virtual Tour"
+        ? "bg-white border border-[#7a1630] text-[#7a1630]"
+        : "bg-[#c98a1b] text-white";
+
+  /* ----- HTML-layout helpers (rent and sale) ----- */
+  const n = galleryImages.length;
+  const imageAt = (i) => (n ? galleryImages[((i % n) + n) % n] : DEFAULT_IMAGE);
+  const openLightboxAt = (i) => {
+    setActiveImg(i);
+    setShowAllImages(true);
+  };
+
+  const isCommercial = String(d.building_type || "").toLowerCase() === "commercial";
+  const enquiryTypes = [
+    "Price Negotiation",
+    "Owner Contact Request",
+    "Property Availability",
+    "Legal & Documentation Help",
+    "Make an Offer",
+    "Other Enquiry",
+  ];
+  const enquiryTypeLabel = isCommercial
+    ? isRent
+      ? "Preferred Lease Duration"
+      : "Preferred Purchase Timeline"
+    : "Enquiry Type";
+  const reportOptions = ["Listed by Broker", isRent ? "Rented Out" : "Sold Out", "Wrong Info"];
+  const nearby = (d.landmarks || d.near_landmark || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const breadcrumb = ["Home", isRent ? "Rent" : "Sale", d.city_name, "Property Details"]
+    .filter(Boolean)
+    .join(" / ");
+  const sqftLabel = sqftTotal ? Math.round(sqftTotal).toLocaleString("en-IN") : null;
+  const perSqftText = perSqft ? `₹ ${perSqft.toLocaleString("en-IN")}` : null;
+  const floorText =
+    d.property_floor && d.total_floor
+      ? `${d.property_floor} of ${d.total_floor}`
+      : d.property_floor || null;
+  const yn = (v) => (v === true || v === "Yes" ? "Yes" : v === false || v === "No" ? "No" : v || null);
+
+  const specCells = [
+    { icon: FaBed, label: "No. of Bedroom", value: d.bhk_type },
+    { icon: FaBuilding, label: "Property Type", value: d.property_type },
+    {
+      icon: FaUserFriends,
+      label: isRent ? "Preferred Tenant" : "Suited For",
+      value: d.suited_for || d.available_for,
+    },
+    {
+      icon: FaCalendarCheck,
+      label: isRent ? "Available From" : "Possession",
+      value: isRent ? d.available_from : d.possession_date || d.possession_status,
+    },
+    { icon: FaCar, label: "Parking", value: d.parking_availability },
+    { icon: FaHourglassHalf, label: "Age of Building", value: d.age_of_property },
+    { icon: FaDoorOpen, label: "Balcony", value: d.balcony },
+    {
+      icon: FaCalendarAlt,
+      label: "Posted On",
+      value: d.days_since_created != null ? `${d.days_since_created} days ago` : null,
+    },
+  ].filter((c) => c.value);
+
+  const overviewCells = [
+    { icon: FaCouch, label: "Furnishing Status", value: d.furnished_type },
+    { icon: FaCompass, label: "Facing", value: d.facing },
+    { icon: FaTint, label: "Water Supply", value: d.water_source },
+    { icon: FaLayerGroup, label: "Floor", value: floorText },
+    { icon: FaShower, label: "Bathroom", value: d.bathroom },
+    { icon: FaArrowUp, label: "Lift", value: d.lift_availability },
+    { icon: FaPlug, label: "Power Backup", value: d.power_backup },
+    { icon: FaCar, label: "Parking", value: d.parking_availability },
+  ].filter((c) => c.value);
+
+  const moreCols = [
+    {
+      title: isRent ? "Rent & Deposit" : "Price Details",
+      rows: isRent
+        ? [
+            [
+              "Monthly rent",
+              formatINR(d.rent) &&
+                `${formatINR(d.rent)}${d.maintenance_included ? " (maintenance included)" : ""}`,
+            ],
+            ["Security deposit", formatINR(d.custom_deposit_amount)],
+            ["Rent negotiable", yn(d.price_negotiable)],
+            ["Available from", d.available_from],
+          ]
+        : [
+            ["Price", formatINR(d.property_price)],
+            ["Price per sq ft", perSqftText],
+            ["Price negotiable", yn(d.price_negotiable)],
+            ["All-inclusive price", formatINR(d.all_inclusive_price)],
+            ["Possession", d.possession_date || d.possession_status],
+          ],
+    },
+    {
+      title: "Property",
+      rows: [
+        ["Type", [d.bhk_type, d.property_type].filter(Boolean).join(" ")],
+        ["Area", formatArea(d.area, d.area_in)],
+        ["Floor", floorText],
+        ["Bathrooms ", [d.bathroom].filter(Boolean).join(" / ")],
+        ["Building age", d.age_of_property],
+        ["Facing", d.facing],
+      ],
+    },
+    {
+      title: "Location",
+      rows: [
+        ["Society", d.flat_name],
+        ["Locality", locality],
+        ["Pincode", d.zip_code],
+        ["Landmark", d.near_landmark || d.landmarks],
+      ],
+    },
+    {
+      title: isRent ? "Rules & Preferences" : "Features & Facilities",
+      rows: [
+        ["Preferred tenant", d.suited_for || d.available_for],
+        ["Parking", d.parking_availability],
+        ["Lift", d.lift_availability],
+        ["Power backup", d.power_backup],
+        ["Water source", d.water_source],
+      ],
+    },
+  ];
+
+  const sectionTitle = (text) => (
+    <div className="pb-1.5 mb-3 border-b border-slate-100">
+      <h2 className="inline-block pb-1 text-sm font-bold border-b-2 text-slate-900 border-[#800020]">
+        {text}
+      </h2>
+    </div>
+  );
+
+  const renderCol = (title, rows) => {
+    const list = rows.filter(([, value]) => value);
+    if (!list.length) return null;
+    return (
+      <div key={title}>
+        <h3 className="text-[11px] font-bold text-[#800020] uppercase tracking-wide mb-1.5">{title}</h3>
+        <dl className="divide-y divide-slate-100">
+          {list.map(([label, value]) => (
+            <div key={label} className="flex justify-between gap-3 py-1.5">
+              <dt className="text-slate-500">{label}</dt>
+              <dd className="font-semibold text-right break-words text-slate-800">{value}</dd>
             </div>
-          )}
+          ))}
+        </dl>
+      </div>
+    );
+  };
 
-          {/* <h2 className="mt-2 ml-6 text-3xl font-normal">
-            {propertyDetails?.bhk_type ? `${propertyDetails.bhk_type} ` : ""}
-            {propertyDetails?.area ? `${propertyDetails.area} Sq-ft ` : ""}
-            {propertyDetails?.property_type
-              ? `${propertyDetails.property_type} `
-              : ""}
-            for {propertyDetails?.property_category_type
-              ? `${propertyDetails.property_category_type}`
-              : ""}
-          </h2> */}
+  // Lightbox keyboard support: Esc closes, arrows move between photos
+  useEffect(() => {
+    if (!showAllImages) return undefined;
+    const onKey = (e) => {
+      if (e.key === "Escape") setShowAllImages(false);
+      if (e.key === "ArrowLeft") stepImage(-1);
+      if (e.key === "ArrowRight") stepImage(1);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showAllImages, n]);
 
-          <h2 className="mt-2 ml-6 text-3xl font-normal detail-title">
-            {propertyDetails?.property_name
-              ? `${propertyDetails.property_name} `
-              : ""}
-          </h2>
-
-          <p className="ml-6 text-xl font-bold text-gray-700 break-words whitespace-normal max-w-[80ch] detail-address">
-            <img
-              src="/image/address_icon.png"
-              alt="Address Icon"
-              className="inline-block w-5 h-5 mr-2"
-            />
-            {propertyDetails?.address || "Address N/A"}
-          </p>
-          <div className="flex items-center mt-6 ml-5 space-x-8 detail-info-row">
-            {propertyDetails?.bhk_type && (
-              <div className="flex items-center space-x-2">
-                <FaBed className="text-2xl my-text" />
-                <span className="text-lg font-bold">
-                  {propertyDetails.bhk_type}
-                </span>
-              </div>
-            )}
-
-            {propertyDetails?.area && (
-              <div className="flex items-center space-x-2">
-                <FaRulerCombined className="text-2xl my-text" />
-                <span className="text-lg font-bold">
-                  {formatArea(propertyDetails.area, propertyDetails.area_in)}
-                </span>
-              </div>
-            )}
-
-            {propertyDetails?.bathroom && (
-              <div className="flex items-center space-x-2">
-                <FaBath className="text-2xl my-text" />
-                <span className="text-lg font-bold">
-                  {propertyDetails.bathroom} Bathroom
-                </span>
-              </div>
-            )}
+  return (
+    <div className="min-h-screen bg-[#fbf3ec] pb-20 lg:pb-8">
+      <main className="w-full max-w-6xl px-3 py-4 mx-auto space-y-4 sm:px-6 lg:px-8 sm:py-8">
+        {/* ===== Property header bar ===== */}
+        <div className="flex flex-col justify-between gap-3 p-4 bg-white border shadow-sm rounded-xl border-slate-200 md:flex-row md:items-center">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="bg-[#800020] text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded tracking-wider uppercase">
+                ZEROBRIKS
+              </span>
+              <span className="text-xs font-medium truncate text-slate-400">
+                <Link to="/" className="hover:underline hover:text-[#800020]">Home</Link>
+                {breadcrumb.slice(4)}
+              </span>
+            </div>
+            <h1 className="text-base font-bold tracking-tight sm:text-lg text-slate-900">
+              {d.property_name || "Property"}
+              {d.property_no && (
+                <span className="ml-1.5 text-[10px] font-normal text-slate-400">– {d.property_no}</span>
+              )}
+            </h1>
+            <p className="flex items-center gap-1 mt-0.5 text-xs text-slate-500">
+              <FaMapMarkerAlt size={11} className="text-[#800020] shrink-0" />
+              <span className="truncate">{fullAddress || "Address N/A"}</span>
+            </p>
           </div>
 
-          <div className="flex justify-end mt-6 space-x-4 detail-actions-row">
-            {propertyDetails.virtual_tour_availability === "Yes" && (
-              <button
-                className={`px-6 py-2 text-lg flex items-center gap-2 w-full sm:w-auto justify-center detail-action-btn
-      ${tourSchedule?.[0]?.status === "Accepted"
-                    ? "bg-green-500 text-white rounded-full"
-                    : scheduledDateLabel === "Virtual Tour"
-                      ? "bg-white border my-text rounded-lg"
-                      : "bg-[#FFD700] text-black rounded-full"
-                  }`}
-                onClick={() => {
-                  const token = sessionStorage.getItem("accessToken");
-
-                  if (scheduledDateLabel !== "Virtual Tour") {
-                    history.push({
-                      pathname: "/dashboard",
-                      state: { page: "myVirtualtour" },
-                    });
-                  } else {
-                    if (token) {
-                      setIsModalOpen(true);
-                    } else {
-                      setOpenVirtualTourAfterLogin(true);
-                      setIsLoginModalOpen(true);
-                    }
-                  }
-                }}
-              >
-                <PiCubeFocus size={20} />
-                {scheduledDateLabel}
-                {scheduledDateLabel !== "Virtual Tour" && (
-                  <HiOutlineArrowRight size={16} />
+          <div className="flex items-center gap-4 pt-2.5 border-t border-slate-100 md:border-t-0 md:pt-0 shrink-0">
+            <div>
+              <span className="text-[10px] text-slate-400 font-semibold uppercase block">
+                {isRent ? "Rent" : "Price"}
+              </span>
+              <span className="text-lg font-extrabold text-[#800020]">
+                {formatPriceLabel(headlinePrice) || "On request"}
+                {isRent && d.maintenance_included && (
+                  <span className="text-[10px] font-normal text-slate-500"> Included</span>
                 )}
+              </span>
+            </div>
+            <div className="pl-3 border-l border-slate-200">
+              <span className="text-[10px] text-slate-400 font-semibold uppercase block">Sq.Ft</span>
+              <span className="text-sm font-bold text-slate-800">{sqftLabel || "—"}</span>
+            </div>
+            <div className="pl-3 border-l border-slate-200">
+              <span className="text-[10px] text-slate-400 font-semibold uppercase block">
+                {isRent ? "Deposit" : "Per Sq.Ft"}
+              </span>
+              <span className="text-sm font-bold text-slate-800">
+                {isRent ? formatINR(d.custom_deposit_amount) || "—" : perSqftText || "—"}
+              </span>
+            </div>
+            {isRent && (
+              <button type="button" onClick={handleContactClick} className="px-3.5 py-2 bg-[#FAF6F0] text-[#800020] border-[1.5px] border-[#800020] font-bold text-xs rounded-lg transition-all duration-200 hover:bg-[#800020] hover:text-white hover:shadow-md">
+                Contact Owner
               </button>
             )}
-
-            {isModalOpen && (
-              <GetScheduleVTourproperty
-                onClose={() => setIsModalOpen(false)}
-                propertyDetails={propertyDetails}
-                setScheduledDateLabel={setScheduledDateLabel}
-                setIsModalOpen={setIsModalOpen}
-              />
-            )}
-            <div
-              className="w-full px-3 py-1 text-sm text-white my-bg rounded-lg cursor-pointer sm:px-4 sm:py-2 sm:text-lg sm:w-auto detail-action-btn detail-contact-btn"
-              onClick={() => {
-                const token = sessionStorage.getItem("accessToken");
-                if (token) {
-                  if (!userDetails) {
-                    // Avoid opening the modal if user data is missing
-                    toast.error("User data not found");
-                    return;
-                  }
-
-                  if (freeViewCount > 0) {
-                    const updatedCount = -1;
-                    setFreeViewCount(updatedCount);
-                    handleAddCount(updatedCount);
-                  } else if (paidViewCount > 0) {
-                    const updatedCount = -1;
-                    setPaidViewCount(updatedCount);
-                    handleAddCount(updatedCount);
-                  }
-
-                  setIsContactModalOpen(true);
-                } else {
-                  setOpenContactModalAfterLogin(true);
-                  setIsLoginModalOpen(true);
-                }
-              }}
-            >
-              Contact Details
-            </div>
-            {isContactModalOpen &&
-              userDetails &&
-              !Array.isArray(userDetails) &&
-              userDetails.full_name && (
-                <ContactDetails
-                  onClose={() => setIsContactModalOpen(false)}
-                  fullName={
-                    freeViewCount <= 0 && paidViewCount <= 0
-                      ? `****${userDetails.full_name.slice(-1) || "N/A"}`
-                      : userDetails.full_name || "N/A"
-                  }
-                  mobile={
-                    freeViewCount <= 0 && paidViewCount <= 0
-                      ? `********${userDetails.mobile_number?.slice(-3) || "000"}`
-                      : userDetails.mobile_number || "N/A"
-                  }
-                  userEmail={
-                    freeViewCount <= 0 && paidViewCount <= 0
-                      ? userDetails.email
-                        ? `*******${userDetails.email.slice(-3)}`
-                        : "N/A"
-                      : userDetails.email || "N/A"
-                  }
-                  showUpgradePrompt={freeViewCount <= 0 && paidViewCount <= 0}
-                />
-              )}
-            <div
-              className="flex items-center justify-center w-10 h-10 bg-white rounded-md cursor-pointer detail-icon-btn"
-              onClick={() => {
-                if (propertyDetails.is_favorite) {
-                  removeFromFavoritesRecommendedProperty(
-                    propertyDetails.favorite_id,
-                  );
-                } else {
-                  addToFavoritesRecommendedProperty(propertyDetails._id);
-                }
-              }}
-            >
-              <FiHeart
-                className={`text-2xl ${propertyDetails.is_favorite
-                  ? "text-red-600 fill-red-600"
-                  : "text-gray-600"
-                  }`}
-              />
-            </div>
-
-            <div
-              className="flex items-center justify-center w-8 h-8 bg-white rounded-md cursor-pointer sm:w-10 sm:h-10 detail-icon-btn"
-              onClick={() => {
-                setIsShareModalOpen(true);
-              }}
-            >
-              <FiShare2 className="text-xl text-gray-600 sm:text-2xl" />
-            </div>
           </div>
         </div>
 
-        {/* Image Section & Contact Form */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 h-auto md:h-[550px] detail-main-grid">
-          {/* Left Side Image Section */}
-          <div className="grid grid-cols-1 col-span-2 gap-1 md:grid-cols-1 detail-left-col">
-            {/* Image Section */}
-            <div className="flex flex-col gap-2 mt-6 md:flex-row detail-image-row">
-              {propertyImages.length === 0 ? (
-                <div className="w-full relative">
+        {/* ===== Two-column layout ===== */}
+        <div className="grid items-start grid-cols-1 gap-4 lg:grid-cols-3">
+          {/* LEFT COLUMN */}
+          <div className="space-y-4 lg:col-span-2">
+            {/* Photo gallery */}
+            <div className="p-2 bg-white border shadow-sm rounded-xl border-slate-200">
+              <div className="relative grid grid-cols-1 gap-2 sm:grid-cols-3">
+                <div
+                  onClick={() => openLightboxAt(activeImg)}
+                  className="relative overflow-hidden rounded-lg cursor-pointer group sm:col-span-2 h-56 sm:h-64"
+                >
                   <img
-                    src={propertyDetails?.cover_image}
-                    alt="Main"
-                    className="rounded-2xl w-full h-64 md:h-[400px] object-cover detail-cover-image"
+                    src={currentImage}
+                    alt={d.property_name || "Property"}
+                    className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
                   />
-                  {/* Watermark */}
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <span className="text-4xl md:text-3xl font-extrabold text-white rotate-[-30deg] opacity-40 select-none">
-                      NowayBroker
+                  <div className="absolute flex gap-1.5 top-2.5 left-2.5">
+                    <span className="bg-[#800020]/90 text-white text-[10px] font-semibold px-2 py-1 rounded flex items-center gap-1">
+                      <FaCamera size={9} /> Photos ({totalPhotos})
+                    </span>
+                    <span className="bg-slate-900/80 text-white text-[10px] font-semibold px-2 py-1 rounded">
+                      Click to view full
                     </span>
                   </div>
-                </div>
-              ) : (
-                <>
-                  {/* Left Side - Main Image */}
-                  <div className="md:basis-[60%]">
-                    <div className="relative">
-                      <img
-                        src={propertyDetails.cover_image}
-                        alt="Main"
-                        className="rounded-2xl w-full h-64 md:h-[400px] object-cover detail-cover-image"
-                      />
-                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <span className="text-4xl md:text-3xl font-extrabold text-white rotate-[-30deg] opacity-40 select-none">
-                          NowayBroker
-                        </span>
-                      </div>
-                    </div>
+                  <div className="absolute inset-0 flex items-center justify-center transition-opacity opacity-0 bg-black/20 group-hover:opacity-100">
+                    <span className="bg-white/90 text-[#800020] font-bold text-xs px-3 py-1.5 rounded-full shadow flex items-center gap-1">
+                      <FaExpand size={10} /> Open Lightbox
+                    </span>
                   </div>
-
-                  {/* Right Side - Video on Top + One Image Below */}
-                  <div className="md:basis-[40%] flex flex-col justify-start gap-2 px-2">
-                    {/* Property Main Image Section */}
-                    <div
-                      className="relative cursor-pointer"
-                      onClick={() => setShowAllImages(true)}
+                  {d.virtual_tour_availability === "Yes" && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleTourClick();
+                      }}
+                      className={`absolute z-10 flex items-center gap-1.5 px-2.5 py-1 text-[9.5px] font-semibold rounded-md shadow bottom-2.5 right-2.5 ${tourButtonClass}`}
                     >
-                      {propertyImages.length > 0 && (
-                        <div className="relative">
-                          <img
-                            src={propertyImages[0].image}
-                            alt="Preview"
-                            className="rounded-2xl w-full h-48 md:h-[195px] object-cover detail-gallery-image"
-                          />
-                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                            <span className="text-4xl md:text-3xl font-extrabold text-white rotate-[-30deg] opacity-40 select-none">
-                              NowayBroker
-                            </span>
-                          </div>
+                      <PiCubeFocus size={11} />
+                      {scheduledDateLabel === "Virtual Tour" ? "VIRTUAL TOUR" : scheduledDateLabel}
+                    </button>
+                  )}
+                </div>
+
+                <div className="grid h-56 grid-rows-2 gap-2 sm:h-64">
+                  {[1, 2].map((off) => (
+                    <div
+                      key={off}
+                      onClick={() => openLightboxAt((activeImg + off) % Math.max(n, 1))}
+                      className="relative h-full overflow-hidden rounded-lg cursor-pointer group"
+                    >
+                      <img
+                        src={imageAt(activeImg + off)}
+                        alt=""
+                        className="object-cover w-full h-full transition-transform group-hover:scale-105"
+                      />
+                      {off === 2 && n > 3 ? (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center text-xs font-bold text-white transition bg-slate-900/60 hover:bg-slate-900/50">
+                          <FaImages size={14} className="mb-1" />
+                          <span>+{n - 3} More Photos</span>
+                        </div>
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center transition-opacity opacity-0 bg-black/20 group-hover:opacity-100">
+                          <FaExpand size={14} className="text-white" />
                         </div>
                       )}
                     </div>
-
-                    {/* Property Additional Images Section */}
-                    {propertyImages.length > 1 && (
-                      <div className="grid grid-cols-1 gap-2 mt-2">
-                        {(() => {
-                          const filteredImages = propertyImages.filter(
-                            (img) => img.image !== propertyDetails.cover_image,
-                          );
-
-                          // Case 1: No images after filtering → Don’t render
-                          if (filteredImages.length === 0) {
-                            return null;
-                          }
-
-                          // Case 2: Only one image → Don’t render second section
-                          if (filteredImages.length === 1) {
-                            return null;
-                          }
-
-                          // Case 3: More than one image → Render the 2nd preview + overlay
-                          return (
-                            <div
-                              className="relative cursor-pointer"
-                              onClick={() => setShowAllImages(true)}
-                            >
-                              <div className="relative">
-                                <img
-                                  src={filteredImages[1]?.image}
-                                  alt="Preview"
-                                  className="rounded-2xl w-full h-48 md:h-[190px] object-cover detail-gallery-image"
-                                />
-                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                  <span className="text-4xl md:text-3xl font-extrabold text-white rotate-[-30deg] opacity-40 select-none">
-                                    NowayBroker
-                                  </span>
-                                </div>
-                              </div>
-                              {filteredImages.length > 1 && (
-                                <div className="absolute inset-0 flex items-center justify-center text-xl font-semibold text-white bg-black bg-opacity-50 rounded-2xl">
-                                  {(() => {
-                                    const count =
-                                      filteredImages.length -
-                                      1 +
-                                      (propertyDetails?.property_video ? 1 : 0);
-
-                                    return count > 0 ? (
-                                      <div className="absolute inset-0 flex items-center justify-center text-xl font-semibold text-white bg-black bg-opacity-50 rounded-2xl">
-                                        +{count} View All
-                                      </div>
-                                    ) : null;
-                                  })()}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })()}
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
-            {/* Mobile-only first View More button */}
-            {isMobile && detailStep === 1 && (
-              <div className="flex justify-center my-4 md:hidden">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setDetailStep(2);
-                    setTimeout(() => {
-                      overviewRef.current?.scrollIntoView({
-                        behavior: "smooth",
-                        block: "start",
-                      });
-                    }, 100);
-                  }}
-                  className="w-auto px-6 py-2 text-sm font-semibold text-white rounded-md my-bg shadow-sm active:scale-95 transition-transform"
-                >
-                  View More
-                </button>
-              </div>
-            )}
-
-            {/* Navigation Tabs */}
-            <div className="hidden md:flex sticky top-0 z-20 items-center gap-8 px-6 py-4 mb-4 bg-white rounded-lg shadow-sm detail-tabs">
-              <button
-                onClick={() => scrollToSection(overviewRef, "overview")}
-                className={`relative font-medium pb-1 detail-tab-btn ${activeSection === "overview"
-                  ? "text-red-600"
-                  : "hover:text-[#8A2432]"
-                  }`}
-              >
-                Overview
-                {activeSection === "overview" && (
-                  <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-2/3 h-[2px] bg-red-500 rounded-full"></span>
-                )}
-              </button>
-
-              <button
-                onClick={() =>
-                  scrollToSection(statusTimelineRef, "statusTimeline")
-                }
-                className={`relative font-medium pb-1 detail-tab-btn ${activeSection === "statusTimeline"
-                  ? "text-red-600"
-                  : "hover:text-[#8A2432]"
-                  }`}
-              >
-                Status & Timeline
-                {activeSection === "statusTimeline" && (
-                  <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-2/3 h-[2px] bg-red-500 rounded-full"></span>
-                )}
-              </button>
-              <button
-                onClick={() => scrollToSection(moreDetailsRef, "moreDetails")}
-                className={`relative font-medium pb-1 detail-tab-btn ${activeSection === "moreDetails"
-                  ? "text-red-600"
-                  : "hover:text-[#8A2432]"
-                  }`}
-              >
-                More Details
-                {activeSection === "moreDetails" && (
-                  <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-2/3 h-[2px] bg-red-500 rounded-full"></span>
-                )}
-              </button>
-
-              <button
-                onClick={() => scrollToSection(amenitiesRef, "amenities")}
-                className={`relative font-medium pb-1 detail-tab-btn ${activeSection === "amenities"
-                  ? "text-red-600"
-                  : "hover:text-[#8A2432]"
-                  }`}
-              >
-                Amenities
-                {activeSection === "amenities" && (
-                  <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-2/3 h-[2px] bg-red-500 rounded-full"></span>
-                )}
-              </button>
-
-              <button
-                onClick={() => scrollToSection(aboutRef, "about")}
-                className={`relative font-medium pb-1 detail-tab-btn ${activeSection === "about"
-                  ? "text-red-600"
-                  : "hover:text-[#8A2432]"
-                  }`}
-              >
-                About Property
-                {activeSection === "about" && (
-                  <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-2/3 h-[2px] bg-red-500 rounded-full"></span>
-                )}
-              </button>
-
-              <button
-                onClick={() => scrollToSection(locationRef, "location")}
-                className={`relative font-medium pb-1 detail-tab-btn ${activeSection === "location"
-                  ? "text-red-600"
-                  : "hover:text-[#8A2432]"
-                  }`}
-              >
-                Location
-                {activeSection === "location" && (
-                  <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-2/3 h-[2px] bg-red-500 rounded-full"></span>
-                )}
-              </button>
-            </div>
-            {/* Add the Overview Component Below */}
-            {overviewFields.length > 0 && (!isMobile || detailStep >= 2) && (
-              <div
-                ref={overviewRef}
-                className="w-full p-4 bg-white rounded-lg shadow-sm scroll-mt-20"
-              >
-                {/* <h3 className="mb-4 text-3xl font-semibold">Overview</h3> */}
-                <h3 className="mb-4 text-3xl font-semibold max-[767px]:text-xl">
-                    Overview
-                  </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 text-[18px] max-[767px]:text-sm max-[767px]:gap-y-1">
-                  {overviewFields.map(([key, value], index) => (
-                    <div
-                      key={index}
-                      className="flex justify-start p-2 border-gray-200 max-[767px]:flex-col max-[767px]:gap-1 max-[767px]:p-2"
-                    >
-                      <span className="w-1/2 text-gray-500 max-[767px]:w-full">{key}</span>
-                      <span className="text-black break-words max-[767px]:w-full">{value}</span>
-                    </div>
                   ))}
                 </div>
-              </div>
-            )}
 
-
-            {statusTimelineItems.length > 0 && (!isMobile || detailStep >= 3) && (
-              <div
-                ref={statusTimelineRef}
-                className="w-full p-5 mt-4 bg-white rounded-lg shadow-sm scroll-mt-20 max-[767px]:p-3"
-              >
-                {/* <h3 className="mb-5 text-2xl font-semibold text-gray-800">
-                  Status & Timeline
-                </h3> */}
-                <h3 className="mb-5 text-2xl font-semibold text-gray-800 max-[767px]:text-xl">
-                  Status & Timeline
-                </h3>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-[767px]:gap-3">
-                  {statusTimelineItems.map((item, index) => (
-                    <div
-                      key={index}
-                      className={`flex items-start p-4 rounded-xl border border-gray-200 ${item.bgColor} max-[767px]:p-3`}
-                    >
-                      {/* Icon */}
-                      <div
-                        className={`w-10 h-10 rounded-full flex items-center justify-center ${item.bgColor} max-[767px]:w-8 max-[767px]:h-8`}
-                      >
-                        <span className={`text-xl ${item.iconColor} max-[767px]:text-base`}>
-                          {item.icon}
-                        </span>
-                      </div>
-
-                      {/* Content */}
-                      <div className="ml-4 flex-1 max-[767px]:ml-3">
-                        <p className="text-sm text-gray-500">
-                          {item.title}
-                        </p>
-
-                        <p className="mt-1 text-base font-semibold text-gray-800 break-words max-[767px]:text-sm">
-                          {item.value}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {isMobile && detailStep === 2 && statusTimelineItems.length > 0 && (
-              <div className="flex justify-center mt-4 md:hidden">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setDetailStep(3);
-                    setTimeout(() => {
-                      statusTimelineRef.current?.scrollIntoView({
-                        behavior: "smooth",
-                        block: "start",
-                      });
-                    }, 100);
-                  }}
-                  className="px-6 py-2 text-sm font-medium text-white rounded-md my-bg"
-                >
-                  View Status & Timeline
-                </button>
-              </div>
-            )}
-
-            {/* More Details Section */}
-            {/* {moreDetailsFields.length > 0 && (
-              <div className="w-full p-4 mt-4 bg-white rounded-lg shadow-sm">
-                <h3 className="mb-4 ml-2 text-3xl font-semibold">
-                  More Details
-                </h3>
-                <table className="min-w-full table-auto text-left text-[16px] text-black ml-2">
-                  <tbody>
-                    {moreDetailsFields.map(([label, value], index) => (
-                      <tr key={index} className="align-top">
-                        <td className="py-1 pr-2 text-gray-500 sm:pr-6 md:pr-12 lg:pr-20 whitespace-nowrap">
-                          {label}:
-                        </td>
-                        <td className="py-1 pl-1 break-words">{value}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )} */}
-
-            {moreDetailsFields.length > 0 && (!isMobile || detailStep >= 4) && (
-              <div
-                ref={moreDetailsRef}
-                className="w-full p-4 mt-4 bg-white rounded-lg shadow-sm scroll-mt-20 max-[767px]:p-3"
-              >
-                <h3 className="mb-4 text-xl font-semibold text-gray-800 max-[767px]:mb-3 max-[767px]:text-lg">
-                  More Details
-                </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4 max-[767px]:gap-x-3 max-[767px]:gap-y-3">
-                  {moreDetailsFields.map(([label, value], index) => (
-                    <div key={index} className="flex flex-col">
-                      <span className="text-xs text-gray-500 uppercase tracking-wide max-[767px]:text-[10px] max-[767px]:leading-4">
-                        {label}
-                      </span>
-                      <span className="text-sm font-semibold text-gray-800 mt-0.5 break-words max-[767px]:text-xs max-[767px]:leading-4">
-                        {value}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {isMobile && detailStep === 3 && moreDetailsFields.length > 0 && (
-              <div className="flex justify-center mt-4 md:hidden">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setDetailStep(4);
-                    setTimeout(() => {
-                      moreDetailsRef.current?.scrollIntoView({
-                        behavior: "smooth",
-                        block: "start",
-                      });
-                    }, 100);
-                  }}
-                  className="px-6 py-2 text-sm font-medium text-white rounded-md my-bg"
-                >
-                  View More Details
-                </button>
-              </div>
-            )}
-
-            {/* Amenities Section */}
-            {(!isMobile || detailStep >= 4) && (
-            <div
-              ref={amenitiesRef}
-              className="w-full p-3 mt-4 bg-white rounded-lg shadow-sm scroll-mt-20"
-            >
-              <h3 className="ml-4 font-semibold text-lm">Amenities</h3>
-              {/* <h3 className="ml-4 font-semibold text-lm max-[767px]:text-sm">
-                Amenities
-              </h3> */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1 mt-4 ml-4 text-[18px]">
-                {visibleAmenities.map((amenity, index) => (
-                  <p key={index} className="flex items-center text-lg max-[767px]:text-sm max-[767px]:leading-5">
-                    {amenity.icon ? (
-                      <img
-                        src={`${process.env.REACT_APP_API_URL}/media/${amenity.icon}`}
-                        alt={amenity.name}
-                        className="w-10 h-10 mr-2"
-                      />
-                    ) : (
-                      <PiCricketThin className="mr-2 text-lg text-black" />
-                    )}
-                    {amenity.name}
-                  </p>
-                ))}
-              </div>
-              {!showAll && allAmenities.length > 8 && (
-                <p
-                  className="mt-2 ml-4 font-bold my-text cursor-pointer "
-                  onClick={() => setShowAll(true)}
-                >
-                  +{allAmenities.length - 8} More
-                </p>
-              )}
-            </div>
-            )}
-
-            {/* About Property Section */}
-            {(!isMobile || detailStep >= 4) && (
-            <div
-              ref={aboutRef}
-              className="bg-white shadow-sm mt-4 rounded-2xl p-3 h-auto md:h-[250px] w-full scroll-mt-20"
-            >
-              <h2 className="justify-center ml-4 font-bold text-gray-700 text-ml max-[767px]:text-sm">
-                About property
-              </h2>
-              <div className="mt-3 ml-4 max-[767px]:mr-2">
-                <p
-                  className={`mt-3 text-gray-700 justify-center ml-4 text-[18px] max-[767px]:text-sm max-[767px]:leading-5 ${
-                    !showAboutPropertyMobile ? "max-[767px]:line-clamp-2" : ""
-                  }`}
-                >
-                  {aboutPropertyText}
-                </p>
-
-                {aboutPropertyText && aboutPropertyText.length > 120 && (
+                <div className="absolute z-20 flex gap-1.5 top-3 right-3">
                   <button
                     type="button"
-                    onClick={() =>
-                      setShowAboutPropertyMobile((prev) => !prev)
-                    }
-                    className="hidden max-[767px]:inline-flex mt-1 px-0 text-sm font-semibold my-text hover:underline focus:outline-none"
+                    aria-label="Share property"
+                    onClick={() => setIsShareOpen(true)}
+                    className="p-2 transition rounded-full shadow-md bg-white/90 hover:bg-white text-slate-700"
                   >
-                    {showAboutPropertyMobile ? "See less" : "See more ..."}
+                    <FiShare2 size={13} />
                   </button>
-                )}
+                  <button
+                    type="button"
+                    aria-label="Save property"
+                    onClick={() =>
+                      d._id && toggleFavorite({ propertyId: d._id, favId: favoriteId, saved: isFavorite })
+                    }
+                    className="p-2 transition rounded-full shadow-md bg-white/90 hover:bg-white"
+                  >
+                    <FiHeart size={13} className={isFavorite ? "fill-red-600 text-red-600" : "text-[#800020]"} />
+                  </button>
+                </div>
               </div>
             </div>
-            )}
 
-            {/* Location Section with Map */}
-            {(!isMobile || detailStep >= 4) && (
-            <div
-              ref={locationRef}
-              className="bg-white shadow-sm mt-4 rounded-2xl p-3 h-auto md:h-[600px] w-full scroll-mt-20"
-            >
-              {/* <h2 className="ml-4 text-3xl font-bold text-gray-900">
-                Location
-              </h2> */}
-              <h2 className="ml-4 text-3xl font-bold text-gray-900 max-[767px]:text-xl">
-                Location
-              </h2>
-              <div className="mt-4 overflow-hidden rounded-lg">
-                <iframe
-                  className="w-full h-48 md:h-[450px] rounded-2xl"
-                  src={`https://maps.google.com/maps?q=${latitude},${longitude}&z=15&output=embed`}
-                  allowFullScreen
-                  loading="lazy"
-                ></iframe>
+            {/* 8-cell highlight specs */}
+            {specCells.length > 0 && (
+              <div className="grid grid-cols-2 gap-3 p-3 text-xs bg-white border shadow-sm rounded-xl border-slate-200 sm:grid-cols-4">
+                {specCells.map((c, i) => {
+                  const Icon = c.icon;
+                  return (
+                    <div
+                      key={c.label}
+                      className={`p-2 flex items-start gap-2 border-slate-100 ${i % 4 !== 3 ? "sm:border-r" : ""} ${i < 4 ? "border-b" : ""}`}
+                    >
+                      <Icon size={11} className="mt-0.5 text-[#800020] shrink-0" />
+                      <div className="min-w-0">
+                        <span className="block font-bold truncate text-slate-800">{c.value}</span>
+                        <span className="block text-[10px] font-medium text-slate-400">{c.label}</span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            </div>
             )}
 
-            {/* Final mobile collapse button */}
-            {isMobile && detailStep === 4 && (
-              <div className="flex justify-center my-4 md:hidden">
+            {/* Nearby tags */}
+            {nearby.length > 0 && (
+              <div className="flex items-center gap-2 p-2.5 overflow-x-auto text-xs bg-white border shadow-sm rounded-xl border-slate-200">
+                <span className="text-[11px] font-bold text-slate-500 shrink-0">Nearby:</span>
+                {nearby.map((place) => (
+                  <span
+                    key={place}
+                    className="bg-[#FAF6F0] border border-slate-200 text-slate-700 px-2 py-0.5 rounded text-[11px] shrink-0 font-medium"
+                  >
+                    {place}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Overview */}
+            {overviewCells.length > 0 && (
+              <div className="p-4 bg-white border shadow-sm rounded-xl border-slate-200">
+                {sectionTitle("Overview")}
+                <div className="grid grid-cols-2 gap-x-2 gap-y-3.5 text-xs sm:grid-cols-4">
+                  {overviewCells.map((c) => {
+                    const Icon = c.icon;
+                    return (
+                      <div key={c.label} className="flex items-center gap-2">
+                        <Icon size={11} className="w-4 text-center text-slate-400 shrink-0" />
+                        <div className="min-w-0">
+                          <span className="block text-[10px] text-slate-400">{c.label}</span>
+                          <span className="block font-bold truncate text-slate-800">{c.value}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Description with show more */}
+            <div className="relative p-4 bg-white border shadow-sm rounded-xl border-slate-200">
+              {sectionTitle("Description")}
+              <div
+                className={`text-xs text-slate-600 leading-relaxed space-y-2 overflow-hidden transition-all duration-300 ${showFullDesc ? "" : "max-h-20"}`}
+              >
+                <p className="whitespace-pre-line">{aboutPropertyText || "No description provided."}</p>
+              </div>
+              <div className="pt-2 mt-2 text-center border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => {
-                    setDetailStep(1);
-                    setShowAboutPropertyMobile(false);
-                    window.scrollTo({ top: 0, behavior: "smooth" });
-                  }}
-                  className="px-6 py-2 text-sm font-semibold bg-white border border-rose-500 rounded-md my-text active:scale-95 transition-transform"
+                  onClick={() => setShowFullDesc((s) => !s)}
+                  className="flex items-center justify-center gap-1 mx-auto text-xs font-bold text-[#800020] hover:underline"
                 >
-                  View Less
+                  <span>{showFullDesc ? "Show Less" : "Show More"}</span>
+                  <FaChevronDown size={9} className={`transition-transform ${showFullDesc ? "rotate-180" : ""}`} />
                 </button>
               </div>
-            )}
-          </div>
-          {/* Right Side Contact Form with Increased Height */}
-          <div className={`${isMobile && detailStep < 4 ? "hidden" : ""} sticky top-0 flex flex-col max-h-screen pt-4 overflow-auto detail-enquiry-col`}>
-            <div className="bg-white shadow-lg rounded-2xl p-4 min-h-[650px] flex flex-col justify-between detail-enquiry-card max-[767px]:p-3 max-[767px]:min-h-0 max-[767px]:rounded-xl max-[767px]:shadow-md">
-              <div>
-                <h3 className="mb-5 text-xl font-semibold max-[767px]:mb-3 max-[767px]:text-base">Make an Enquiry</h3>
-                <div className="flex items-center pb-3 mb-6 space-x-6 border-b-2 border-black detail-agent-row max-[767px]:pb-2 max-[767px]:mb-4 max-[767px]:space-x-3">
-                  <Link
-                    to={`/agentdetail/${userDetails?._id}`}
-                    onClick={() =>
-                      window.scrollTo({ top: 0, behavior: "smooth" })
-                    }
-                    className="block overflow-hidden no-underline shadow-md rounded-2xl hover:no-underline"
-                  >
-                    <img
-                      src={
-                        userDetails?.profile_image
-                          ? userDetails?.profile_image
-                          : "/image/app.png"
-                      }
-                      alt="Agent"
-                      className="object-contain w-16 h-16 rounded-full max-[767px]:w-11 max-[767px]:h-11"
-                    />
-                  </Link>
-                  <div className="flex flex-col items-center">
-                    <span className="text-lg font-semibold max-[767px]:text-sm">
-                      {userDetails.full_name || "N/A"}
-                    </span>
-                    <span className="text-sm font-semibold max-[767px]:text-xs">
-                      {userDetails.user_type || "N/A"}
-                    </span>
-                  </div>
-                </div>
+            </div>
 
-                <form onSubmit={handleEnquirySubmit} className="flex flex-col">
-                  <input
-                    type="text"
-                    placeholder="Name"
-                    value={name}
-                    onChange={(e) => {
-                      setName(e.target.value);
-                      handleFieldChange();
-                    }}
-                    className="w-full p-3 mb-4 text-lg border rounded-md outline-none focus:ring-2 focus:ring-rose-500 max-[767px]:p-2.5 max-[767px]:mb-3 max-[767px]:text-sm"
-                    required
-                  />
-                  <input
-                    type="text"
-                    placeholder="Phone Number"
-                    value={contactNumber}
-                    readOnly
-                    className="w-full p-3 mb-4 text-lg border rounded-md outline-none focus:ring-2 focus:ring-rose-500 max-[767px]:p-2.5 max-[767px]:mb-3 max-[767px]:text-sm"
-                  />
-
-                  {/* IMPORTANT: TextArea wrapper Div with 'relative' */}
-                  <div className="relative w-full mb-4 max-[767px]:mb-3">
-                    <textarea
-                      placeholder="Message"
-                      value={message}
-                      maxLength={255}
-                      onChange={(e) => {
-                        setMessage(e.target.value);
-                        handleFieldChange();
-                      }}
-                      className="w-full h-28 p-3 pb-7 pr-16 text-base border border-gray-300 rounded-md outline-none focus:ring-2 focus:ring-rose-500 resize-none block max-[767px]:h-24 max-[767px]:p-2.5 max-[767px]:pb-6 max-[767px]:pr-12 max-[767px]:text-sm"
-                      required
-                    ></textarea>
-                    {/* Counter inside the textarea box */}
-                    <span className="absolute bottom-2 right-3 text-xs text-gray-400 pointer-events-none select-none z-10">
-                      {message.length}/255
-                    </span>
-                  </div>
-
-                  <button
-                    type="submit"
-                    // className="w-full mt-2 py-4 text-lg text-white my-bg rounded-lg max-[767px]:mt-1 max-[767px]:py-2.5 max-[767px]:text-sm max-[767px]:rounded-md"
-                  className="w-full mt-2 py-4 text-lg text-white my-bg rounded-lg max-[767px]:w-[85%] max-[767px]:mx-auto max-[767px]:mt-1 max-[767px]:py-1.5 max-[767px]:text-xs max-[767px]:rounded-md"
-                    // className="w-full mt-2 py-4 text-lg text-white my-bg rounded-lg max-[767px]:py-2 max-[767px]:text-sm max-[767px]:mt-1 max-[767px]:rounded-md"
-                  >
-                    Send an Enquiry
-                  </button>
-                </form>
+            {/* More details */}
+            <div className="p-4 bg-white border shadow-sm rounded-xl border-slate-200">
+              {sectionTitle("More Details")}
+              <div className="grid grid-cols-1 gap-4 text-xs sm:grid-cols-2">
+                {moreCols.map((col) => renderCol(col.title, col.rows))}
               </div>
+            </div>
 
-              {enquiryStatus && (
-                <div
-                  className={`text-center mt-4 text-lg max-[767px]:mt-3 max-[767px]:text-sm ${enquiryStatus.type === "success"
-                    ? "text-green-600"
-                    : "text-red-600"
-                    }`}
-                >
-                  {enquiryStatus.message}
-                </div>
+            {/* Amenities */}
+            <div className="p-4 bg-white border shadow-sm rounded-xl border-slate-200">
+              {sectionTitle("Amenities")}
+              {allAmenities.length > 0 ? (
+                <>
+                  <div className="flex flex-wrap items-center gap-3">
+                    {visibleAmenities.map((amenity, i) => (
+                      <div
+                        key={`${amenity.name}-${i}`}
+                        className="w-20 p-3 text-center border rounded-lg shadow-sm bg-[#FAF6F0] border-slate-200"
+                      >
+                        {amenity.icon ? (
+                          <img
+                            src={`${API_BASE}/media/${amenity.icon}`}
+                            alt={amenity.name}
+                            className="block object-contain w-6 h-6 mx-auto mb-1"
+                          />
+                        ) : (
+                          <FiCheckCircle size={17} className="block mx-auto mb-1 text-[#800020]" />
+                        )}
+                        <span className="block text-[11px] font-semibold leading-tight text-slate-800">
+                          {amenity.name}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  {allAmenities.length > 9 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllAmenities((s) => !s)}
+                      className="mt-3 text-xs font-bold text-[#800020] hover:underline"
+                    >
+                      {showAllAmenities ? "Show less" : `+${allAmenities.length - 9} More`}
+                    </button>
+                  )}
+                </>
+              ) : (
+                <p className="text-xs text-slate-500">No amenities listed.</p>
               )}
             </div>
           </div>
-        </div>
 
-        {/* Modal for Viewing All Images */}
-        {showAllImages && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75">
-            <div className="bg-white p-6 rounded-lg w-[80%] h-[80%] overflow-auto">
-              <button
-                className="absolute text-3xl text-white top-4 right-4"
-                onClick={() => setShowAllImages(false)}
-              >
-                ×
-              </button>
-              <h2 className="mb-4 text-2xl font-semibold">Gallery</h2>
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3">
-                {propertyImages.map((img, index) => (
-                  <div className="relative">
-                    <img
-                      key={index}
-                      src={img.image}
-                      alt={`Room ${index + 1}`}
-                      className="object-cover w-full h-48 rounded-lg"
+          {/* RIGHT COLUMN */}
+          <div className="space-y-4">
+            {/* Enquiry form */}
+            <section id="enquiry" className="p-4 bg-white border shadow-sm scroll-mt-16 rounded-xl border-slate-200">
+              {sectionTitle("Send an Enquiry")}
+              <p className="mb-3 text-[11px] text-slate-500">
+                Fill in your details and the owner will get back to you. No brokerage fee.
+              </p>
+              <form onSubmit={handleEnquirySubmit} className="space-y-2.5 text-xs">
+                <div>
+                  <label className="block mb-1 font-semibold text-slate-700">
+                    Full Name <span className="text-[#800020]">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Enter your name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    onFocus={() => !userId && setIsLoginOpen(true)}
+                    className="w-full p-2 border rounded-md outline-none border-slate-300 focus:border-[#800020]"
+                  />
+                </div>
+                <div>
+                  <label className="block mb-1 font-semibold text-slate-700">
+                    Mobile Number <span className="text-[#800020]">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    readOnly
+                    placeholder="+91 9876543210"
+                    value={contactNumber}
+                    className="w-full p-2 border rounded-md outline-none bg-gray-50 border-slate-300"
+                  />
+                </div>
+                <div>
+                  <label className="block mb-1 font-semibold text-slate-700">
+                    Email <span className="font-normal text-slate-400">(optional)</span>
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="you@example.com"
+                    value={enqEmail}
+                    onChange={(e) => setEnqEmail(e.target.value)}
+                    className="w-full p-2 border rounded-md outline-none border-slate-300 focus:border-[#800020]"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block mb-1 font-semibold text-slate-700">Move-in Date</label>
+                    <input
+                      type="date"
+                      value={enqDate}
+                      onChange={(e) => setEnqDate(e.target.value)}
+                      className="w-full p-2 border rounded-md outline-none border-slate-300 focus:border-[#800020]"
                     />
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <span className="text-4xl md:text-3xl font-extrabold text-white rotate-[-30deg] opacity-40 select-none">
-                        NowayBroker
-                      </span>
-                    </div>
                   </div>
-                ))}
-
-                {/* Property  Video at the end */}
-                {propertyDetails?.property_video && (
-                  <video
-                    controls
-                    className="rounded-2xl w-full h-48 md:h-[195px] object-cover"
-                  >
-                    <source
-                      src={propertyDetails.property_video}
-                      type="video/mp4"
-                    />
-                    Your browser does not support the video tag.
-                  </video>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Exclusive Recommended Section */}
-        <div className="w-full px-2 sm:px-6 lg:px-4">
-          <div className="flex flex-col items-start justify-between gap-3 px-2 sm:px-4 pt-3 mb-3 sm:flex-row sm:items-center">
-            <div className="flex flex-col">
-              <h2 className="mb-2 text-xl font-bold tracking-wide text-gray-800 sm:text-2xl lg:text-3xl">
-                Exclusive Recommended
-              </h2>
-              <p className="text-gray-500"></p>
-            </div>
-
-            <div className="flex items-center w-full sm:w-auto justify-between sm:justify-end mt-2 space-x-3 sm:space-x-5 sm:mt-0">
-              <button
-                className="px-4 py-2 text-xs sm:text-sm text-rose-700 bg-white my-border rounded-lg sm:px-6"
-                onClick={handleClick}
-              >
-                View All Properties
-              </button>
-
-              <div className="hidden sm:flex items-center space-x-3">
-                <button
-                  className="p-2 text-lg font-semibold text-gray-700 bg-white rounded-full shadow-md sm:text-2xl hover:shadow-lg"
-                  onClick={() => sliderRef.current.slickPrev()}
-                >
-                  <GoArrowLeft className="text-2xl sm:text-3xl text-black" />
-                </button>
-
-                <button
-                  className="p-2 text-lg font-semibold text-gray-700 bg-white rounded-full shadow-md sm:text-2xl hover:shadow-lg"
-                  onClick={() => sliderRef.current.slickNext()}
-                >
-                  <GoArrowRight className="text-2xl sm:text-3xl text-black" />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <Slider {...settings} className="slider-container" ref={sliderRef}>
-            {properties.map((property) => {
-              let distance = null;
-              if (userLocation && property.latitude && property.longitude) {
-                distance = calculateDistance(
-                  userLocation.latitude,
-                  userLocation.longitude,
-                  parseFloat(property.latitude),
-                  parseFloat(property.longitude),
-                ).toFixed(1);
-              }
-
-              const subtitle = (() => {
-                const area = property.address_area || "";
-                const city = property.city_name || "";
-
-                const location =
-                  area.toLowerCase().includes(city.toLowerCase())
-                    ? area
-                    : `${area}, ${city}`;
-
-                const type =
-                  property.property_type === "Office"
-                    ? "Office Space"
-                    : property.property_type === "Retail"
-                      ? "Retail Space"
-                      : property.property_type || "";
-
-                const category = property.property_category_type || "";
-
-                if (
-                  category === "Commercial Buy" ||
-                  category === "Commercial Lease"
-                ) {
-                  return `${type} for ${category === "Commercial Buy" ? "Sale" : "Lease"
-                    } in ${location}`;
-                }
-
-                if (
-                  category.includes("PG") ||
-                  category.includes("Co-Living") ||
-                  category.includes("Coliving")
-                ) {
-                  return `${type} for Rent in ${location}`;
-                }
-
-                const action = category === "Buy" ? "Sale" : category;
-
-                return `${property.bhk_type} ${type} for ${action} in ${location}`;
-              })();
-
-              function getValidImageUrl(img) {
-                if (typeof img !== "string") return null;
-                if (img.trim() === "") return null;
-                return img.startsWith("http") ? img : BASE_URL + img;
-              }
-
-              const coverImage = getValidImageUrl(property.cover_image);
-              const additionalImages = (property.property_images || [])
-                .map((imgObj) => getValidImageUrl(imgObj?.image))
-                .filter(Boolean);
-              const allImages = [
-                ...(coverImage ? [coverImage] : []),
-                ...additionalImages,
-              ];
-
-              return (
-                <div key={property._id} className="box-border h-full px-1.5 sm:px-2 pb-2">
-                  <div className="flex flex-col h-full overflow-hidden bg-white shadow-md rounded-2xl">
-                    <div className="relative">
-                      <Link
-                        to={`/propertydetails/${property._id}?property_owner_id=${property.user_id}`}
-                        onClick={() =>
-                          window.scrollTo({ top: 0, behavior: "smooth" })
-                        }
-                        className="block overflow-hidden no-underline bg-white border-2 rounded-lg hover:no-underline"
-                      >
-                        {allImages.length > 1 ? (
-                          <Slider
-                            key={`${property._id}-${allImages.length}`}
-                            dots
-                            infinite
-                            speed={500}
-                            slidesToShow={1}
-                            slidesToScroll={1}
-                            arrows
-                            autoplay
-                            autoplaySpeed={2000}
-                            beforeChange={(current, next) =>
-                              setActiveIndexes((prev) => ({
-                                ...prev,
-                                [property._id]: next,
-                              }))
-                            }
-                            initialSlide={activeIndexes[property._id] || 0}
-                            customPaging={(i) => {
-                              const activeSlide =
-                                activeIndexes[property._id] || 0;
-                              const isActive =
-                                i === activeSlide % allImages.length;
-                              return (
-                                <div
-                                  style={{
-                                    width: "10px",
-                                    height: "10px",
-                                    borderRadius: "50%",
-                                    background: isActive ? "#fff" : "#888",
-                                    margin: "0 5px",
-                                    cursor: "pointer",
-                                  }}
-                                />
-                              );
-                            }}
-                            appendDots={(dots) => (
-                              <div
-                                style={{
-                                  position: "absolute",
-                                  bottom: "10px",
-                                  left: "50%",
-                                  transform: "translateX(-50%)",
-                                  display: "flex",
-                                  justifyContent: "center",
-                                  width: "100%",
-                                }}
-                              >
-                                {dots}
-                              </div>
-                            )}
-                            className="rounded-t-2xl"
-                          >
-                            {allImages.map((imgUrl, idx) => (
-                              <div key={`${property._id}-${idx}`}>
-                                <img
-                                  src={imgUrl}
-                                  alt="Property"
-                                  className="object-cover w-full h-40 sm:h-44 md:h-48 rounded-t-2xl"
-                                />
-                              </div>
-                            ))}
-                          </Slider>
-                        ) : (
-                          <img
-                            src={allImages[0] || defaultImage}
-                            alt="Property"
-                            className="object-cover w-full h-40 sm:h-44 md:h-48 rounded-t-2xl"
-                          />
-                        )}
-                      </Link>
-
-                      {/* Virtual Tour & Favorite Button */}
-                      <div className="absolute flex items-center space-x-2 top-2 right-2">
-                        {property.virtual_tour_availability === "Yes" && (
-                          <span className="flex items-center gap-1 px-2 py-1 text-xs font-normal text-white rounded-full bg-gray-800/60 backdrop-blur-sm">
-                            <PiCubeFocus className="text-sm text-white" />
-                            <span className="hidden sm:inline">Virtual Tour</span>
-                          </span>
-                        )}
-                        <button
-                          className="bg-gray-800/60 backdrop-blur-sm p-1.5 rounded-full shadow"
-                          onClick={() => {
-                            if (property.is_favorite) {
-                              removeFromFavoritesRecommendedProperty(
-                                property.favorite_id,
-                              );
-                            } else {
-                              addToFavoritesRecommendedProperty(property._id);
-                            }
-                          }}
-                        >
-                          <Heart
-                            size={20}
-                            stroke={property.is_favorite ? "none" : "white"}
-                            color={
-                              property.is_favorite
-                                ? "red"
-                                : "rgba(75, 85, 99, 0.4) "
-                            }
-                            fill={
-                              property.is_favorite
-                                ? "red"
-                                : "rgba(75, 85, 99, 0.4) "
-                            }
-                            strokeWidth={2}
-                          />
-                        </button>
-                      </div>
-
-                      {/* FOR BUY / RENT / UNKNOWN Tag (Bottom Left) */}
-                      <div className="absolute bottom-0 left-0">
-                        {(() => {
-                          const rawCategory =
-                            property.property_category_type || "";
-
-                          const normalizedCategory = rawCategory
-                            .replace(/\s+/g, " ")
-                            .replace(/-/g, " ")
-                            .replace(/\//g, " ")
-                            .trim()
-                            .toLowerCase();
-
-                          let badgeText = "UNKNOWN";
-                          let badgeColor = "bg-[#8B1E3F]";
-
-                          if (normalizedCategory === "buy") {
-                            badgeText = "FOR BUY";
-                            badgeColor = "bg-[#8B1E3F]";
-                          } else if (normalizedCategory === "rent") {
-                            badgeText = "FOR RENT";
-                            badgeColor = "bg-[#8B1E3F]";
-                          } else if (
-                            normalizedCategory.includes("commercial buy")
-                          ) {
-                            badgeText = "COMMERCIAL BUY";
-                            badgeColor = "bg-[#8B1E3F]";
-                          } else if (
-                            normalizedCategory.includes("commercial lease")
-                          ) {
-                            badgeText = "COMMERCIAL LEASE";
-                            badgeColor = "bg-[#8B1E3F]";
-                          } else if (
-                            normalizedCategory.includes("pg") ||
-                            normalizedCategory.includes("co living") ||
-                            normalizedCategory.includes("coliving")
-                          ) {
-                            badgeText = "PG / CO-LIVING";
-                            badgeColor = "bg-[#8B1E3F]";
-                          } else if (
-                            normalizedCategory.includes("residential")
-                          ) {
-                            badgeText = "RESIDENTIAL";
-                            badgeColor = "bg-[#8B1E3F]";
-                          }
-
-                          return (
-                            <span
-                              className={`text-white text-[10px] sm:text-xs px-2 sm:px-3 py-1 rounded-se-lg ${badgeColor}`}
-                            >
-                              {badgeText}
-                            </span>
-                          );
-                        })()}
-                      </div>
-
-                      {/* FEATURED Tag (Bottom Right) */}
-                      <div className="absolute bottom-0 right-0">
-                        {property.mark_as_featured === "Yes" && (
-                          <span className="px-2 sm:px-3 py-1 text-[10px] sm:text-xs text-white bg-yellow-500 rounded-ss-lg">
-                            FEATURED
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Property Details — same design as AdvisorDashboard */}
-                    <div className="flex flex-col flex-1 p-3 text-black bg-white">
-                      <div className="flex items-start justify-between gap-2 sm:gap-3 mb-0">
-                        <h3
-                          className="flex-1 min-w-0 m-0 text-base sm:text-lg font-semibold leading-6 text-gray-900 truncate"
-                          title={property.property_name}
-                        >
-                          {property.property_name || "N/A"}
-                        </h3>
-                        <span
-                          className="flex-shrink-0 m-0 text-xs font-medium leading-6 text-black sm:text-sm whitespace-nowrap"
-                          title={property.furnished_type}
-                        >
-                          {property.furnished_type}
-                        </span>
-                      </div>
-
-                      <p
-                        className="mt-0 mb-1 text-xs sm:text-sm leading-5 text-gray-600 truncate"
-                        title={subtitle}
-                      >
-                        {subtitle}
-                      </p>
-
-                      <div className="flex flex-wrap items-center justify-between gap-y-1 mb-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-xl sm:text-2xl font-bold">
-                            ₹{" "}
-                            {property.property_category_type === "Rent"
-                              ? formatPrice(property.rent)
-                              : formatPrice(property.property_price)}
-                          </span>
-                          {property.property_category_type === "Rent" && (
-                            <span className="text-xs sm:text-sm text-gray-500">
-                              / {property.rent_duration}
-                            </span>
-                          )}
-                          {property.property_category_type?.includes("Buy") &&
-                            property.possession_status === "Ready To Move" && (
-                              <div className="flex items-center gap-2 px-2 py-1 text-white border rounded-full bg-[#8B1E3F] border-[#8B1E3F] sm:px-3">
-                                <MdApartment className="text-base text-white" />
-                                <span className="text-xs font-semibold text-white whitespace-nowrap">
-                                  Ready to Move
-                                </span>
-                              </div>
-                            )}
-                        </div>
-                        <div className="text-xs sm:text-sm font-medium whitespace-nowrap">
-                          {property.property_category_type?.includes("Buy") &&
-                            property.possession_status !== "Ready To Move" &&
-                            property.possession_date && (
-                              <>
-                                <span className="text-gray-500">
-                                  Possession:
-                                </span>
-                                <span className="ml-1 font-semibold">
-                                  {new Date(
-                                    property.possession_date,
-                                  ).toLocaleDateString("en-IN")}
-                                </span>
-                              </>
-                            )}
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-3 py-3 border-t border-b border-gray-100">
-                        <div className="flex items-center gap-1 sm:gap-2 px-1 sm:px-3 min-w-0">
-                          <MdApartment className="text-lg sm:text-[22px] text-gray-700 flex-shrink-0" />
-                          <div className="flex flex-col justify-center min-w-0">
-                            <p className="m-0 text-xs sm:text-sm font-semibold leading-4 truncate">
-                              {property.building_type === "Commercial"
-                                ? property.property_type === "Office"
-                                  ? "Office Space"
-                                  : property.property_type === "Retail"
-                                    ? "Retail Space"
-                                    : property.property_type
-                                : property.property_category_type?.includes(
-                                  "PG",
-                                )
-                                  ? `${property.bathroom || 0} Bathrooms`
-                                  : property.bhk_type}
-                            </p>
-                            <p className="m-0 text-[10px] sm:text-xs leading-4 text-gray-500 truncate">
-                              {property.building_type === "Commercial"
-                                ? "Property Type"
-                                : property.property_category_type?.includes(
-                                  "PG",
-                                )
-                                  ? "Bathrooms"
-                                  : property.property_type}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-1 sm:gap-2 px-1 sm:px-3 border-l border-gray-200 min-w-0">
-                          {property.property_category_type?.includes("PG") ? (
-                            <FaUser className="text-base sm:text-[20px] text-gray-700 flex-shrink-0" />
-                          ) : (
-                            <FaBath className="text-base sm:text-[20px] text-gray-700 flex-shrink-0" />
-                          )}
-                          <div className="flex flex-col justify-center min-w-0">
-                            <p className="m-0 text-xs sm:text-sm font-semibold leading-4 truncate">
-                              {property.property_category_type?.includes("PG")
-                                ? property.available_for
-                                : `${property.bathroom || 0} Baths`}
-                            </p>
-                            <p className="m-0 text-[10px] sm:text-xs leading-4 text-gray-500 truncate">
-                              {property.property_category_type?.includes("PG")
-                                ? "Available For"
-                                : "Bathrooms"}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-1 sm:gap-2 px-1 sm:px-3 border-l border-gray-200 min-w-0">
-                          <RiRuler2Line className="text-lg sm:text-[22px] text-gray-700 flex-shrink-0" />
-                          <div className="flex flex-col justify-center min-w-0">
-                            <p className="m-0 text-xs sm:text-sm font-semibold leading-4 truncate">
-                              {property.area} {property.area_in}
-                            </p>
-                            <p className="m-0 text-[10px] sm:text-xs leading-4 text-gray-500 truncate">
-                              Built Up Area
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      <hr className="my-1 border-gray-100" />
-
-                      <div className="flex flex-wrap items-center justify-between gap-y-1 pt-1 pb-2 text-[12px] sm:text-[13px] text-gray-600">
-                        <div className="flex items-center flex-wrap min-w-0">
-                          <div className="flex items-center">
-                            <AiOutlineClockCircle className="mr-1 text-[15px] text-gray-700" />
-                            <span className="truncate">
-                              Posted by {property.user_type || "Owner"}
-                            </span>
-                          </div>
-                          <span className="mx-2 text-gray-400">•</span>
-                          <span className="whitespace-nowrap">
-                            {property.days_since_created
-                              ? `${property.days_since_created} days ago`
-                              : "Recently"}
-                          </span>
-                          {distance && (
-                            <>
-                              <span className="mx-2 text-gray-400">•</span>
-                              <div className="flex items-center whitespace-nowrap">
-                                <FaMapMarkerAlt className="mr-1 text-red-500" />
-                                {distance} km from you
-                              </div>
-                            </>
-                          )}
-                        </div>
-                        <PiShareNetworkLight
-                          className="ml-2 text-[20px] text-gray-500 cursor-pointer hover:text-blue-500"
-                          onClick={() =>
-                            openShareModal(
-                              `${window.location.origin}/propertydetails/${property._id}`,
-                              property._id,
-                            )
-
-                          }
-                        />
-                      </div>
-
-                      <div className="flex flex-wrap items-center justify-between mt-auto pt-3 gap-2">
-                        <div className="flex items-center min-w-0">
-                          <div className="flex items-center justify-center flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 overflow-hidden rounded-full bg-blue-100">
-                            {property.property_owner_image ? (
-                              <img
-                                src={`${process.env.REACT_APP_API_URL}/media/${property.property_owner_image}`}
-                                alt="Owner"
-                                className="object-cover w-full h-full rounded-full"
-                              />
-                            ) : (
-                              <AiOutlineUser className="text-blue-600" size={24} />
-                            )}
-                          </div>
-                          <div className="flex flex-col ml-2 sm:ml-3 min-w-0">
-                            <span
-                              className="text-xs sm:text-sm font-semibold text-gray-900 truncate"
-                              title={property.connect_to_name}
-                            >
-                              {property.connect_to_name || "Owner"}
-                            </span>
-                            <span className="text-[10px] sm:text-xs text-gray-500 truncate">
-                              {property.user_type || "Owner"}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* RIGHT SIDE - Buttons */}
-                        <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
-                          {/* Contact */}
-                          <div
-                            className="flex items-center justify-center px-3 sm:px-4 h-8 sm:h-9 text-xs sm:text-sm font-semibold text-white bg-red-800 rounded-md cursor-pointer hover:bg-red-900 whitespace-nowrap"
-                            onClick={() => {
-                              const token =
-                                sessionStorage.getItem("accessToken");
-                              if (token) {
-                                if (freeViewCount > 0) {
-                                  handleAddCount(-1);
-                                } else if (paidViewCount > 0) {
-                                  handleAddCount(-1);
-                                }
-                                setIsContactModalOpen(true);
-                              } else {
-                                setOpenContactModalAfterLogin(true);
-                                setIsLoginModalOpen(true);
-                              }
-                            }}
-                          >
-                            Contact
-                          </div>
-
-                          {/* WhatsApp */}
-                          <a
-                            href={`https://wa.me/91${property.connect_to_no}?text=Hello, I am interested in your property`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 text-white bg-green-500 rounded-md hover:bg-green-600"
-                          >
-                            <FaWhatsapp />
-                          </a>
-
-                          {/* Call */}
-                          <a
-                            href={`tel:${property.connect_to_no}`}
-                            onClick={(e) => e.stopPropagation()}
-                            className="flex items-center justify-center w-9 h-9 flex-shrink-0 rounded-lg bg-blue-500 text-white hover:bg-blue-600"
-                          >
-                            <FaPhoneAlt className="text-base" />
-                          </a>
-                        </div>
-                      </div>
-                    </div>
+                  <div>
+                    <label className="block mb-1 font-semibold text-slate-700">{enquiryTypeLabel}</label>
+                    <select
+                      value={enqType || enquiryTypes[0]}
+                      onChange={(e) => setEnqType(e.target.value)}
+                      className="w-full p-2 bg-white border rounded-md outline-none border-slate-300 focus:border-[#800020]"
+                    >
+                      {enquiryTypes.map((t) => (
+                        <option key={t}>{t}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
-              );
-            })}
-          </Slider>
+                <div>
+                  <label className="block mb-1 font-semibold text-slate-700">Message</label>
+                  <textarea
+                    rows={3}
+                    placeholder="Anything you'd like the owner to know?"
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    onFocus={() => !userId && setIsLoginOpen(true)}
+                    className="w-full p-2 border rounded-md outline-none resize-none border-slate-300 focus:border-[#800020]"
+                  />
+                </div>
+                <div className="flex items-start gap-2 pt-1">
+                  <input
+                    id="enquiry-terms"
+                    type="checkbox"
+                    required
+                    checked={agreedTerms}
+                    onChange={(e) => setAgreedTerms(e.target.checked)}
+                    className="mt-0.5 h-3.5 w-3.5 shrink-0 cursor-pointer accent-[#800020]"
+                  />
+                  <label htmlFor="enquiry-terms" className="text-[11px] leading-snug text-slate-600 cursor-pointer">
+                    I agree to the{" "}
+                    <a href="/terms-and-conditions" target="_blank" rel="noreferrer" className="font-semibold text-[#800020] hover:underline">
+                      Terms & Conditions
+                    </a>{" "}
+                    and{" "}
+                    <a href="/privacy-policy" target="_blank" rel="noreferrer" className="font-semibold text-[#800020] hover:underline">
+                      Privacy Policy
+                    </a>
+                    .
+                  </label>
+                </div>
+                <button
+                  type="submit"
+                  disabled={!agreedTerms}
+                  className="flex items-center justify-center w-full gap-1.5 py-2.5 rounded-md shadow text-xs font-bold text-white bg-[#800020] border-[1.5px] border-[#800020] hover:bg-[#5A0017] hover:border-[#5A0017] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <FaPaperPlane size={11} /> Send Enquiry
+                </button>
+              </form>
+              {enquiryStatus && (
+                <p
+                  className={`mt-2 text-center text-[11px] ${enquiryStatus.type === "success" ? "text-green-600" : "text-red-600"}`}
+                >
+                  {enquiryStatus.message}
+                </p>
+              )}
+            </section>
+
+            {/* Owner profile */}
+            <OwnerProfileCard owner={userDetails} ownerId={propertyDetails?.user_id} />
+
+            {/* Visit and contact actions */}
+            <div className="p-4 space-y-3 bg-white border shadow-sm rounded-xl border-slate-200">
+              <div className="flex items-center justify-between p-2.5 text-xs text-[#800020] border rounded-lg bg-[#fdf2f4] border-[#800020]/20">
+                <span className="text-[11px]">
+                  <FaCalendarCheck size={10} className="inline mr-1" /> Next visit slot:{" "}
+                  <strong>{scheduledDateLabel === "Virtual Tour" ? "Choose a slot" : scheduledDateLabel}</strong>
+                </span>
+                <button
+                  type="button"
+                  onClick={handleTourClick}
+                  className="text-[11px] font-bold underline hover:text-[#5A0017]"
+                >
+                  Select
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                <button type="button" onClick={handleContactClick} className="w-full py-2.5 shadow-sm bg-[#FAF6F0] text-[#800020] border-[1.5px] border-[#800020] font-bold text-xs rounded-lg transition-all duration-200 hover:bg-[#800020] hover:text-white hover:shadow-md">
+                  Contact Owner
+                </button>
+                <button
+                  type="button"
+                  onClick={handleTourClick}
+                  className="flex items-center justify-center w-full gap-1.5 py-2.5 shadow bg-[#800020] text-white border-[1.5px] border-[#800020] font-bold text-xs rounded-lg transition-all duration-200 hover:bg-[#5A0017] hover:border-[#5A0017] hover:shadow-md"
+                >
+                  <FaCalendarPlus size={11} /> Book Schedule for Visit
+                </button>
+              </div>
+
+              <div className="pt-2 border-t border-slate-100">
+                <p className="flex items-center gap-1 mb-1.5 text-[10px] text-slate-400">
+                  <FaInfoCircle size={10} className="text-[#800020]" /> Report what was not correct in this property
+                </p>
+                <div className="flex flex-wrap gap-1 text-[10px]">
+                  {reportOptions.map((r) => (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => toast.info(`Reported: ${r}`)}
+                      className="px-2 py-1 border rounded bg-[#FAF6F0] hover:bg-slate-200 text-slate-700 border-slate-300"
+                    >
+                      {r}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        {isShareModalOpen && (
-          <ShareModal
-            currentShareUrl={window.location.href}
-            closeShareModal={handleCloseShareModal}
-            copyLink={() => {
-              const url = window.location.href;
 
-              if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard
-                  .writeText(url)
-                  .then(() => alert("Link copied!"))
-                  .catch((err) => {
-                    console.error(err);
-                    fallbackCopyTextToClipboard(url);
-                  });
-              } else {
-                fallbackCopyTextToClipboard(url);
-              }
+        {/* ===== Location and similar properties ===== */}
+        <section className="flex flex-col gap-3 mt-4">
+          {/* Location */}
+          <section id="sec-location" className="p-3.5 bg-white shadow-sm scroll-mt-16 rounded-2xl">
+            <div className="flex items-center justify-between">
+              <h2 className="flex items-center gap-2 text-[12px] font-bold text-gray-900">
+                <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-[#fbf1f3] text-[#7a1630]">
+                  <FiMapPin size={11} />
+                </span>
+                Location
+              </h2>
+              {mapsLink && (
+                <a
+                  href={mapsLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1 text-[10.5px] font-medium text-[#7a1630] hover:underline"
+                >
+                  Open in Maps <FiExternalLink size={10} />
+                </a>
+              )}
+            </div>
+            <p className="mt-1 ml-9 text-[10.5px] text-gray-500">{fullAddress || "Address N/A"}</p>
+            <div className="mt-2.5 overflow-hidden rounded-xl">
+              <iframe
+                title="Property location"
+                src={mapEmbed}
+                className="w-full h-48 md:h-64"
+                allowFullScreen
+                loading="lazy"
+              />
+            </div>
+          </section>
 
-              function fallbackCopyTextToClipboard(text) {
-                const textArea = document.createElement("textarea");
-                textArea.value = text;
-                textArea.style.position = "fixed";
-                textArea.style.left = "-9999px";
-                document.body.appendChild(textArea);
-                textArea.focus();
-                textArea.select();
+          {/* Similar properties */}
+          {similarProperties.length > 0 && (
+            <section id="sec-similar" className="p-3.5 bg-white shadow-sm scroll-mt-16 rounded-2xl">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+                <div>
+                  <h2 className="text-[12px] font-bold text-gray-900">Exclusive Recommended</h2>
+                  <p className="text-[9.5px] text-gray-500">Go from browsing to buying</p>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => history.push("/featuredDashboard")}
+                    className="px-2.5 py-1 text-[9.5px] font-medium text-[#7a1630] bg-white border rounded-lg border-[#7a1630]"
+                  >
+                    View All
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Previous"
+                    onClick={() => sliderRef.current?.slickPrev()}
+                    className="flex items-center justify-center w-7 h-7 bg-white border rounded-full shadow-sm"
+                  >
+                    <FiChevronLeft size={11} />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Next"
+                    onClick={() => sliderRef.current?.slickNext()}
+                    className="flex items-center justify-center w-7 h-7 bg-white border rounded-full shadow-sm"
+                  >
+                    <FiChevronRight size={11} />
+                  </button>
+                </div>
+              </div>
 
-                try {
-                  const successful = document.execCommand("copy");
-                  alert(successful ? "Link copied!" : "Copy failed");
-                } catch (err) {
-                  console.error("Fallback: Could not copy text: ", err);
-                  alert("Copy failed");
-                }
+              <Slider {...SIMILAR_SLIDER_SETTINGS} ref={sliderRef} className="slider-container">
+                {similarProperties.map((p) => {
+                  const badge = categoryBadge(p.property_category_type);
+                  const cardPrice = p.property_category_type === "Rent" ? p.rent : p.property_price;
+                  return (
+                    <div key={p._id} className="px-1.5 py-1">
+                      <div
+                        onClick={(e) => {
+                          if (e.target.closest("button, a, svg")) return;
+                          window.scrollTo(0, 0);
+                          // replace (not push) so Back returns to the page before this detail view
+                          history.replace(`/propertydetails/${p._id}?property_owner_id=${p.user_id}`);
+                        }}
+                        className="relative overflow-hidden bg-white border shadow-sm rounded-xl border-slate-100 cursor-pointer transition-transform duration-300 hover:scale-105">
+                        <Link
+                          to={`/propertydetails/${p._id}?property_owner_id=${p.user_id}`}
+                          replace
+                          onClick={() => window.scrollTo(0, 0)}
+                          className="block"
+                        >
+                          <div className="relative">
+                            <img
+                              src={resolveImage(p.cover_image) || DEFAULT_IMAGE}
+                              alt={p.property_name || "Property"}
+                              className="object-cover w-full h-32"
+                            />
+                            <span className="absolute px-2 py-0.5 text-[9px] text-white rounded-full top-1.5 left-1.5 bg-black/50">
+                              {p.days_since_created}d on ZeroBriks
+                            </span>
+                            <span
+                              className={`absolute bottom-0 left-0 px-2.5 py-0.5 text-[9px] text-white rounded-tr-lg ${badge.cls}`}
+                            >
+                              {badge.label}
+                            </span>
+                            {p.mark_as_featured === "Yes" && (
+                              <span className="absolute bottom-0 right-0 px-2.5 py-0.5 text-[9px] text-white rounded-tl-lg bg-amber-500">
+                                FEATURED
+                              </span>
+                            )}
+                          </div>
 
-                document.body.removeChild(textArea);
-              }
-            }}
-          />
-        )}
+                          <div className="p-2.5">
+                            <h3 className="text-[10.5px] font-semibold text-gray-900 truncate">{p.property_name}</h3>
+                            <p className="flex items-center gap-1 mt-1 text-[9.5px] text-gray-500 truncate">
+                              <FiMapPin size={9} className="shrink-0" />
+                              {p.address_area || "No Address Provided"}
+                            </p>
+                            <div className="flex flex-wrap gap-x-2.5 gap-y-0.5 mt-1.5 text-[9.5px] text-gray-700">
+                              {cardPrice && (
+                                <span className="font-semibold text-[#7a1630]">
+                                  ₹{formatPriceShort(cardPrice)}
+                                  {p.property_category_type === "Rent" && p.rent_duration
+                                    ? ` / ${p.rent_duration}`
+                                    : ""}
+                                </span>
+                              )}
+                              {p.bhk_type && <span>{p.bhk_type}</span>}
+                              {formatArea(p.area, p.area_in) && <span>{formatArea(p.area, p.area_in)}</span>}
+                            </div>
+                          </div>
+                        </Link>
 
-        {isShareModalOpen && (
-          <div className="absolute right-0 z-50">
-            <ShareModal
-              currentShareUrl={currentShareUrl}
-              closeShareModal={handleCloseShareModal}
-              copyLink={() => {
-                navigator.clipboard.writeText(currentShareUrl);
-                alert("Link copied!");
-              }}
+                        <button
+                          type="button"
+                          aria-label="Save property"
+                          onClick={() =>
+                            toggleFavorite({
+                              propertyId: p._id,
+                              favId: p.favorite_id,
+                              saved: p.is_favorite,
+                            })
+                          }
+                          className="absolute z-10 flex items-center justify-center bg-white rounded-full shadow top-1.5 right-1.5 w-6 h-6"
+                        >
+                          <FiHeart size={10} className={p.is_favorite ? "fill-red-600 text-red-600" : "text-gray-500"} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </Slider>
+            </section>
+          )}
+        </section>
+      </main>
+
+      {/* Mobile sticky action bar */}
+      <div className="fixed inset-x-0 bottom-0 z-40 flex gap-2 p-2.5 bg-white border-t shadow-lg lg:hidden">
+        <button
+          type="button"
+          onClick={handleContactClick}
+          className="flex items-center justify-center flex-1 gap-1.5 py-2.5 text-[12px] font-semibold text-white bg-[#7a1630] rounded-lg"
+        >
+          <FiPhone size={12} /> Call Owner
+        </button>
+        <button
+          type="button"
+          onClick={scrollToEnquiry}
+          className="flex items-center justify-center flex-1 gap-1.5 py-2.5 text-[12px] font-semibold text-white bg-[#c98a1b] rounded-lg"
+        >
+          <FiMessageCircle size={12} /> Enquire
+        </button>
+      </div>
+
+      {/* Lightbox (HTML design) */}
+      {showAllImages && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center p-4 bg-black/95">
+          <button
+            type="button"
+            aria-label="Close photo viewer"
+            onClick={() => setShowAllImages(false)}
+            className="absolute z-50 p-2 text-xl text-white top-4 right-4 hover:text-[#9E0028]"
+          >
+            <FiX />
+          </button>
+          <div className="absolute px-3 py-1.5 text-xs font-semibold text-white rounded-full top-4 left-4 bg-white/10 backdrop-blur-md">
+            {Math.min(activeImg + 1, n || 1)} / {n || 1} — {d.property_name || "Photo Gallery"}
+          </div>
+          {n > 1 && (
+            <>
+              <button
+                type="button"
+                aria-label="Previous photo"
+                onClick={() => stepImage(-1)}
+                className="absolute p-3 text-white -translate-y-1/2 rounded-full left-4 top-1/2 bg-white/10 hover:bg-[#800020] backdrop-blur-md"
+              >
+                <FiChevronLeft size={18} />
+              </button>
+              <button
+                type="button"
+                aria-label="Next photo"
+                onClick={() => stepImage(1)}
+                className="absolute p-3 text-white -translate-y-1/2 rounded-full right-4 top-1/2 bg-white/10 hover:bg-[#800020] backdrop-blur-md"
+              >
+                <FiChevronRight size={18} />
+              </button>
+            </>
+          )}
+          <div className="flex items-center justify-center w-full max-w-4xl h-[70vh]">
+            <img
+              src={currentImage}
+              alt={d.property_name || "Property"}
+              className="max-w-full max-h-full object-contain transition-all duration-300 rounded-lg shadow-2xl"
             />
           </div>
-        )}
+          <div className="flex items-center max-w-xl gap-2 p-1 mt-4 overflow-x-auto">
+            {galleryImages.map((src, i) => (
+              <button
+                key={src}
+                type="button"
+                onClick={() => setActiveImg(i)}
+                className={`shrink-0 w-12 h-12 rounded overflow-hidden border-2 transition ${
+                  i === activeImg
+                    ? "border-[#800020] scale-105 opacity-100"
+                    : "border-transparent opacity-60 hover:opacity-100"
+                }`}
+              >
+                <img src={src} alt="" className="object-cover w-full h-full" />
+              </button>
+            ))}
+          </div>
+          {hasVideo && (
+            <video controls className="object-contain mt-3 rounded-lg h-40">
+              <source src={d.property_video} type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+          )}
+        </div>
+      )}
 
-        {/* Modals */}
-        {isLoggedIn ? (
-          <div>Welcome, {contactNumber}</div> // Display logged-in content
-        ) : (
-          <>
-            <Login1
-              isOpen={isLoginModalOpen}
-              onClose={() => setIsLoginModalOpen(false)}
-              onSwitchToSignUp={() => {
-                setIsLoginModalOpen(false);
-                setIsSignUpModalOpen(true); // Open sign-up modal
-              }}
-              onLoginSuccess={handleLoginSuccess} // Pass the callback to Login1 component
-            />
-            <SignUp1
-              isOpen={isSignUpModalOpen}
-              onClose={() => setIsSignUpModalOpen(false)}
-              onSwitchToLogin={() => {
-                setIsSignUpModalOpen(false);
-                setIsLoginModalOpen(true); // Open login modal
-              }}
-            />
-          </>
-        )}
-        {/* Share Modal */}
-        {isShareModalOpen && (
-          <ShareModal
-            currentShareUrl={window.location.href}
-            closeShareModal={handleCloseShareModal}
-            copyLink={() => {
-              navigator.clipboard.writeText(window.location.href);
-              alert("Link copied!");
-            }}
-          />
-        )}
-      </div>
-    </>
+      {/* Modals */}
+      {isTourOpen && (
+        <GetScheduleVTourproperty
+          onClose={() => setIsTourOpen(false)}
+          propertyDetails={propertyDetails}
+          setScheduledDateLabel={setScheduledDateLabel}
+          setIsModalOpen={setIsTourOpen}
+        />
+      )}
+
+      {isContactOpen && userDetails?.full_name && (
+        <ContactDetails
+          onClose={() => setIsContactOpen(false)}
+          fullName={isLocked ? `****${userDetails.full_name.slice(-1)}` : userDetails.full_name}
+          mobile={
+            isLocked
+              ? `********${(userDetails.mobile_number || "").slice(-3) || "000"}`
+              : userDetails.mobile_number || "N/A"
+          }
+          userEmail={
+            isLocked
+              ? userDetails.email
+                ? `*******${userDetails.email.slice(-3)}`
+                : "N/A"
+              : userDetails.email || "N/A"
+          }
+          showUpgradePrompt={isLocked}
+        />
+      )}
+
+      {isShareOpen && (
+        <ShareModal
+          currentShareUrl={window.location.href}
+          closeShareModal={() => setIsShareOpen(false)}
+          copyLink={copyLink}
+        />
+      )}
+
+      <Login1
+        isOpen={isLoginOpen}
+        onClose={() => setIsLoginOpen(false)}
+        onSwitchToSignUp={() => {
+          setIsLoginOpen(false);
+          setIsSignUpOpen(true);
+        }}
+        onLoginSuccess={handleLoginSuccess}
+      />
+      <SignUp1
+        isOpen={isSignUpOpen}
+        onClose={() => setIsSignUpOpen(false)}
+        onSwitchToLogin={() => {
+          setIsSignUpOpen(false);
+          setIsLoginOpen(true);
+        }}
+      />
+    </div>
   );
 };
 

@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zerobriks | India's No. 1 Zero Brokerage Property Site</title>
+  <meta name="description" content="Buy, rent, or lease residential, commercial, and upcoming builder projects with zero brokerage." />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            maroon: {
+              50: '#fbf1f3', 100: '#f5dfe4', 200: '#eab9c4', 300: '#dd8ca0',
+              500: '#8e1d3c', 600: '#7a1431', 700: '#5f0f26', 800: '#4a0b1e',
+            },
+            gold: { 400: '#e0ae3a', 500: '#c08a1a', 600: '#a2740f' },
+            cream: '#faf6f3',
+          },
+          fontFamily: {
+            serif: ['"Playfair Display"', 'Georgia', 'serif'],
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Inter', system-ui, sans-serif; }
+    .reveal { opacity: 0; transform: translateY(20px); transition: opacity .6s ease, transform .6s ease; }
+    .reveal.is-visible { opacity: 1; transform: none; }
+    .notch { position: absolute; height: 24px; width: 24px; border-radius: 9999px; background: #faf6f3; }
+    .ticket:hover .ticket-img { transform: scale(1.05); }
+    .sugg-item.is-active { background: #fbf1f3; }
+  </style>
+</head>
+
+<body class="bg-cream text-slate-800 antialiased">
+
+  <!-- ============ HEADER (nav + global filter) ============ -->
+  <header id="header" class="sticky top-0 z-50 border-b border-maroon-100 bg-white/95 backdrop-blur transition-shadow duration-300">
+    <nav class="mx-auto flex max-w-7xl items-center justify-between gap-6 px-6 py-3 lg:px-8">
+      <a href="#home" class="flex items-center gap-3">
+        <span class="grid h-10 w-10 place-items-center rounded-lg bg-maroon-600 shadow-md shadow-maroon-600/25">
+          <svg class="h-6 w-6" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+            <rect x="4" y="6" width="24" height="6" rx="1" fill="#e0ae3a"/>
+            <rect x="4" y="14" width="24" height="6" rx="1" fill="#e0ae3a"/>
+            <rect x="4" y="22" width="24" height="4" rx="1" fill="#e0ae3a"/>
+          </svg>
+        </span>
+        <span class="font-serif text-xl font-extrabold tracking-wide text-maroon-700">ZERO<span class="text-gold-500">BRIKS</span></span>
+      </a>
+
+      <ul class="hidden items-center gap-7 text-[15px] font-medium text-slate-700 lg:flex">
+        <li><a href="#residential" class="transition hover:text-maroon-600">Residential</a></li>
+        <li><a href="#commercial" class="transition hover:text-maroon-600">Commercial</a></li>
+        <li><a href="#upcoming" class="transition hover:text-maroon-600">Upcoming Projects</a></li>
+        <li><a href="#why" class="transition hover:text-maroon-600">Why Us</a></li>
+      </ul>
+
+      <div class="flex items-center gap-2">
+        <a href="#post" class="inline-flex items-center gap-2 rounded-md bg-maroon-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-maroon-600/20 transition hover:bg-maroon-700">
+          Post Property
+          <span class="rounded bg-gold-400 px-1.5 py-0.5 text-[10px] font-bold text-maroon-800">FREE</span>
+        </a>
+        <button aria-label="Account" class="hidden h-10 w-10 place-items-center rounded-full border border-maroon-100 text-maroon-600 transition hover:bg-maroon-50 sm:grid">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path stroke-linecap="round" d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>
+        </button>
+        <button id="menuBtn" aria-label="Toggle menu" aria-expanded="false" class="grid h-10 w-10 place-items-center rounded-md border border-maroon-100 text-maroon-600 lg:hidden">
+          <svg id="iconOpen" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+          <svg id="iconClose" class="hidden h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 6l12 12M6 18L18 6"/></svg>
+        </button>
+      </div>
+    </nav>
+
+    <div id="mobileMenu" class="hidden border-t border-maroon-50 bg-white lg:hidden">
+      <ul class="flex flex-col gap-1 px-6 py-4 font-medium">
+        <li><a href="#residential" class="mobile-link block rounded-lg px-3 py-2 hover:bg-maroon-50">Residential</a></li>
+        <li><a href="#commercial" class="mobile-link block rounded-lg px-3 py-2 hover:bg-maroon-50">Commercial</a></li>
+        <li><a href="#upcoming" class="mobile-link block rounded-lg px-3 py-2 hover:bg-maroon-50">Upcoming Projects</a></li>
+        <li><a href="#why" class="mobile-link block rounded-lg px-3 py-2 hover:bg-maroon-50">Why Us</a></li>
+      </ul>
+    </div>
+
+    <!-- Global filter bar -->
+    <div class="border-t border-maroon-50 bg-cream">
+      <div class="mx-auto flex max-w-7xl flex-col gap-3 px-6 py-3 lg:flex-row lg:items-center lg:justify-between lg:px-8">
+        <div id="purposeTabs" class="flex w-full rounded-full bg-white p-1 ring-1 ring-maroon-100 lg:w-auto">
+          <button data-purpose="all" class="purpose-tab flex-1 rounded-full px-6 py-2 text-sm font-semibold transition lg:flex-none">All</button>
+          <button data-purpose="buy" class="purpose-tab flex-1 rounded-full px-6 py-2 text-sm font-semibold transition lg:flex-none">Buy</button>
+          <button data-purpose="rent" class="purpose-tab flex-1 rounded-full px-6 py-2 text-sm font-semibold transition lg:flex-none">Rent</button>
+          <button data-purpose="lease" class="purpose-tab flex-1 rounded-full px-6 py-2 text-sm font-semibold transition lg:flex-none">Lease</button>
+        </div>
+
+        <div class="relative w-full lg:w-96">
+          <div class="flex items-center gap-3 rounded-full border border-slate-200 bg-white px-4 py-2.5 transition hover:border-maroon-500 focus-within:border-maroon-600 focus-within:ring-4 focus-within:ring-maroon-600/10">
+            <svg class="h-4 w-4 flex-none text-maroon-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5a7 7 0 1114 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+            <input id="locInput" type="text" autocomplete="off" placeholder="Search location or property" aria-label="Search location" class="w-full bg-transparent text-sm outline-none placeholder:text-slate-400" />
+          </div>
+          <ul id="sugg" class="absolute left-0 right-0 top-full z-40 mt-2 hidden overflow-hidden rounded-xl border border-maroon-100 bg-white py-2 shadow-2xl"></ul>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ============ HERO ============ -->
+    <section id="home" class="bg-cream pt-12 pb-8 lg:pt-16">
+      <div class="mx-auto grid max-w-7xl items-center gap-12 px-6 lg:grid-cols-2 lg:px-8">
+        <div class="reveal">
+          <p class="text-xs font-bold uppercase tracking-[0.2em] text-gold-500">Welcome to Zerobriks</p>
+          <h1 class="mt-4 font-serif text-4xl font-extrabold leading-tight text-slate-900 sm:text-5xl">
+            India's No. 1 <span class="text-gold-500">Zero Brokerage</span> Property Site
+          </h1>
+          <p class="mt-4 font-serif text-xl font-bold text-maroon-600">No brokerage. No middlemen. Just direct deals.</p>
+          <p class="mt-3 max-w-lg text-slate-600">Buy, rent, or lease property directly with verified owners and trusted builders across India.</p>
+          <div class="mt-6 flex flex-wrap gap-2 text-xs font-semibold text-slate-700">
+            <span class="rounded-full border border-maroon-100 bg-white px-3 py-1.5">Zero Brokerage</span>
+            <span class="rounded-full border border-maroon-100 bg-white px-3 py-1.5">Verified Owners</span>
+            <span class="rounded-full border border-maroon-100 bg-white px-3 py-1.5">Virtual Tours</span>
+            <span class="rounded-full border border-maroon-100 bg-white px-3 py-1.5">RERA Projects</span>
+          </div>
+        </div>
+
+        <div class="reveal grid grid-cols-2 gap-4" style="transition-delay:120ms">
+          <div class="rounded-2xl border border-maroon-100 bg-white p-6 shadow-sm">
+            <p class="text-[11px] font-bold uppercase tracking-widest text-gold-500">Listings</p>
+            <p class="mt-3 font-serif text-3xl font-bold text-slate-900">30,000+</p>
+            <p class="mt-1 text-xs text-slate-500">Across India</p>
+          </div>
+          <div class="rounded-2xl border border-maroon-100 bg-white p-6 shadow-sm">
+            <p class="text-[11px] font-bold uppercase tracking-widest text-gold-500">Verified Owners</p>
+            <p class="mt-3 font-serif text-3xl font-bold text-slate-900">5,000+</p>
+            <p class="mt-1 text-xs text-slate-500">Genuine and trusted</p>
+          </div>
+          <div class="rounded-2xl border border-maroon-100 bg-white p-6 shadow-sm">
+            <p class="text-[11px] font-bold uppercase tracking-widest text-gold-500">Cities</p>
+            <p class="mt-3 font-serif text-3xl font-bold text-slate-900">8+</p>
+            <p class="mt-1 text-xs text-slate-500">Growing every month</p>
+          </div>
+          <div class="rounded-2xl border border-maroon-100 bg-white p-6 shadow-sm">
+            <p class="text-[11px] font-bold uppercase tracking-widest text-gold-500">User Rating</p>
+            <p class="mt-3 font-serif text-3xl font-bold text-slate-900">5 / 5</p>
+            <p class="mt-1 text-xs text-slate-500">Trusted by thousands</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ RESIDENTIAL GALLERY ============ -->
+    <section id="residential" class="bg-cream py-16">
+      <div class="mx-auto max-w-7xl px-6 lg:px-8">
+        <div class="reveal flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p class="text-xs font-bold uppercase tracking-[0.2em] text-gold-500">Residential</p>
+            <h2 class="mt-2 font-serif text-3xl font-bold text-slate-900 sm:text-4xl">Homes for every family</h2>
+            <p class="mt-2 text-slate-600">Flats, independent houses, and villas from verified owners.</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <span id="residentialCount" class="rounded-full bg-maroon-50 px-3 py-1 text-xs font-semibold text-maroon-700"></span>
+            <a href="#" class="rounded-md border border-maroon-600 px-4 py-2 text-sm font-semibold text-maroon-600 transition hover:bg-maroon-600 hover:text-white">View All</a>
+          </div>
+        </div>
+        <div id="residentialFilters" class="mt-8 flex flex-wrap gap-2"></div>
+        <div id="residentialGrid" class="mt-8 grid gap-6 md:grid-cols-2"></div>
+        <p id="residentialEmpty" class="hidden mt-6 rounded-2xl border border-dashed border-maroon-200 p-8 text-center text-slate-500">No residential listings match these filters.</p>
+      </div>
+    </section>
+
+    <!-- ============ COMMERCIAL GALLERY ============ -->
+    <section id="commercial" class="bg-cream py-16">
+      <div class="mx-auto max-w-7xl px-6 lg:px-8">
+        <div class="reveal flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p class="text-xs font-bold uppercase tracking-[0.2em] text-gold-500">Commercial</p>
+            <h2 class="mt-2 font-serif text-3xl font-bold text-slate-900 sm:text-4xl">Spaces that grow your business</h2>
+            <p class="mt-2 text-slate-600">Offices, retail, warehouses, and co-working spaces.</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <span id="commercialCount" class="rounded-full bg-maroon-50 px-3 py-1 text-xs font-semibold text-maroon-700"></span>
+            <a href="#" class="rounded-md border border-maroon-600 px-4 py-2 text-sm font-semibold text-maroon-600 transition hover:bg-maroon-600 hover:text-white">View All</a>
+          </div>
+        </div>
+        <div id="commercialFilters" class="mt-8 flex flex-wrap gap-2"></div>
+        <div id="commercialGrid" class="mt-8 grid gap-6 md:grid-cols-2"></div>
+        <p id="commercialEmpty" class="hidden mt-6 rounded-2xl border border-dashed border-maroon-200 p-8 text-center text-slate-500">No commercial listings match these filters.</p>
+      </div>
+    </section>
+
+    <!-- ============ UPCOMING / BUILDER PROJECTS ============ -->
+    <section id="upcoming" class="bg-cream py-16">
+      <div class="mx-auto max-w-7xl px-6 lg:px-8">
+        <div class="reveal flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p class="text-xs font-bold uppercase tracking-[0.2em] text-gold-500">Builder & Upcoming</p>
+            <h2 class="mt-2 font-serif text-3xl font-bold text-slate-900 sm:text-4xl">Upcoming projects from trusted builders</h2>
+            <p class="mt-2 text-slate-600">Pre-launch, under-construction, and RERA-registered projects.</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <span id="upcomingCount" class="rounded-full bg-maroon-50 px-3 py-1 text-xs font-semibold text-maroon-700"></span>
+            <a href="#" class="rounded-md border border-maroon-600 px-4 py-2 text-sm font-semibold text-maroon-600 transition hover:bg-maroon-600 hover:text-white">View All</a>
+          </div>
+        </div>
+        <div id="upcomingFilters" class="mt-8 flex flex-wrap gap-2"></div>
+        <div id="upcomingGrid" class="mt-8 grid gap-6 md:grid-cols-2"></div>
+        <p id="upcomingEmpty" class="hidden mt-6 rounded-2xl border border-dashed border-maroon-200 p-8 text-center text-slate-500">No upcoming projects match these filters.</p>
+      </div>
+    </section>
+
+    <!-- ============ WHY CHOOSE US ============ -->
+    <section id="why" class="bg-white py-16">
+      <div class="mx-auto max-w-7xl px-6 lg:px-8">
+        <div class="reveal mx-auto max-w-2xl text-center">
+          <p class="text-xs font-bold uppercase tracking-[0.2em] text-gold-500">Why Choose Us</p>
+          <h2 class="mt-2 font-serif text-3xl font-bold text-slate-900 sm:text-4xl">The Zerobriks difference</h2>
+        </div>
+        <div class="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div class="reveal rounded-2xl border border-maroon-100 bg-cream p-7 transition duration-300 hover:-translate-y-1 hover:border-maroon-500 hover:shadow-xl">
+            <div class="grid h-12 w-12 place-items-center rounded-xl bg-maroon-600 text-lg font-bold text-white">%</div>
+            <h3 class="mt-5 font-bold text-slate-900">Zero Brokerage</h3>
+            <p class="mt-2 text-sm leading-relaxed text-slate-600">Deal directly with owners and keep every rupee where it belongs.</p>
+          </div>
+          <div class="reveal rounded-2xl border border-maroon-100 bg-cream p-7 transition duration-300 hover:-translate-y-1 hover:border-maroon-500 hover:shadow-xl" style="transition-delay:100ms">
+            <div class="grid h-12 w-12 place-items-center rounded-xl bg-maroon-600 text-white">
+              <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" stroke-linecap="round"/></svg>
+            </div>
+            <h3 class="mt-5 font-bold text-slate-900">Verified Owners</h3>
+            <p class="mt-2 text-sm leading-relaxed text-slate-600">Every listing is checked so you connect with genuine sellers.</p>
+          </div>
+          <div class="reveal rounded-2xl border border-maroon-100 bg-cream p-7 transition duration-300 hover:-translate-y-1 hover:border-maroon-500 hover:shadow-xl" style="transition-delay:200ms">
+            <div class="grid h-12 w-12 place-items-center rounded-xl bg-maroon-600 text-white">
+              <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 19L19 5M14 5l5 5" stroke-linecap="round"/></svg>
+            </div>
+            <h3 class="mt-5 font-bold text-slate-900">Smart Match</h3>
+            <p class="mt-2 text-sm leading-relaxed text-slate-600">Filter by budget, locality, and need to find the best-fit property fast.</p>
+          </div>
+          <div class="reveal rounded-2xl border border-maroon-100 bg-cream p-7 transition duration-300 hover:-translate-y-1 hover:border-maroon-500 hover:shadow-xl" style="transition-delay:300ms">
+            <div class="grid h-12 w-12 place-items-center rounded-xl bg-maroon-600 text-white">
+              <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9l5 3-5 3z" fill="currentColor"/></svg>
+            </div>
+            <h3 class="mt-5 font-bold text-slate-900">Virtual Tours</h3>
+            <p class="mt-2 text-sm leading-relaxed text-slate-600">Walk through properties from home before you visit in person.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ POST PROPERTY CTA ============ -->
+    <section id="post" class="bg-cream py-16">
+      <div class="mx-auto max-w-7xl px-6 lg:px-8">
+        <div class="reveal relative overflow-hidden rounded-[2rem] bg-gradient-to-r from-maroon-700 via-maroon-600 to-maroon-800 px-8 py-14 text-white shadow-2xl shadow-maroon-900/30 sm:px-16">
+          <div class="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-gold-400/20 blur-2xl"></div>
+          <div class="relative grid items-center gap-8 lg:grid-cols-[1.4fr_1fr]">
+            <div>
+              <p class="text-xs font-bold uppercase tracking-[0.2em] text-gold-400">Owners, Agents & Builders</p>
+              <h2 class="mt-3 font-serif text-3xl font-bold sm:text-4xl">Post your property for free</h2>
+              <p class="mt-4 max-w-xl text-maroon-100">Reach genuine buyers, tenants, and lessees directly. No commission, no hidden fees.</p>
+            </div>
+            <div class="flex flex-wrap gap-3 lg:justify-end">
+              <a href="#" class="inline-flex items-center rounded-md bg-gold-400 px-6 py-3.5 font-semibold text-maroon-800 shadow-lg transition hover:-translate-y-0.5 hover:bg-gold-500">Post Property FREE</a>
+              <a href="mailto:hello@zerobriks.com" class="inline-flex items-center rounded-md border border-white/30 px-6 py-3.5 font-semibold text-white transition hover:bg-white/10">Talk to us</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="bg-maroon-800 text-maroon-100">
+    <div class="mx-auto grid max-w-7xl gap-12 px-6 py-16 sm:grid-cols-2 lg:grid-cols-4 lg:px-8">
+      <div>
+        <div class="font-serif text-2xl font-extrabold text-white">ZERO<span class="text-gold-400">BRIKS</span></div>
+        <p class="mt-2 text-xs uppercase tracking-widest text-gold-400">A Brand of Nowaybroker</p>
+        <p class="mt-5 text-sm leading-relaxed text-maroon-200">India's zero brokerage property platform, connecting you directly with verified owners.</p>
+      </div>
+      <div>
+        <h4 class="font-semibold text-white">Quick Links</h4>
+        <ul class="mt-5 space-y-3 text-sm">
+          <li><a href="#residential" class="transition hover:text-gold-400">Residential</a></li>
+          <li><a href="#commercial" class="transition hover:text-gold-400">Commercial</a></li>
+          <li><a href="#upcoming" class="transition hover:text-gold-400">Upcoming Projects</a></li>
+          <li><a href="#post" class="transition hover:text-gold-400">Post Property</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-semibold text-white">Popular Cities</h4>
+        <ul class="mt-5 grid grid-cols-2 gap-3 text-sm">
+          <li><a href="#" class="transition hover:text-gold-400">Indore</a></li>
+          <li><a href="#" class="transition hover:text-gold-400">Bengaluru</a></li>
+          <li><a href="#" class="transition hover:text-gold-400">Mumbai</a></li>
+          <li><a href="#" class="transition hover:text-gold-400">Delhi</a></li>
+          <li><a href="#" class="transition hover:text-gold-400">Pune</a></li>
+          <li><a href="#" class="transition hover:text-gold-400">Hyderabad</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-semibold text-white">Newsletter</h4>
+        <p class="mt-5 text-sm text-maroon-200">New listings and market updates, straight to your inbox.</p>
+        <form id="newsletterForm" class="mt-4 flex gap-2">
+          <input id="newsletterEmail" type="email" placeholder="Your email" class="w-full rounded-lg border border-white/15 bg-white/5 px-4 py-2.5 text-sm text-white outline-none placeholder:text-maroon-300 focus:border-gold-400" />
+          <button type="submit" class="rounded-lg bg-gold-400 px-4 text-sm font-semibold text-maroon-800 transition hover:bg-gold-500">Join</button>
+        </form>
+        <p id="newsletterMsg" class="mt-2 hidden text-xs text-gold-400">Subscribed. Thank you!</p>
+      </div>
+    </div>
+    <div class="border-t border-white/10">
+      <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 py-6 text-sm text-maroon-300 sm:flex-row lg:px-8">
+        <p>&copy; <span id="year"></span> Zerobriks. All rights reserved.</p>
+        <div class="flex gap-6">
+          <a href="#" class="transition hover:text-white">Privacy</a>
+          <a href="#" class="transition hover:text-white">Terms</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ============ SCRIPTS ============ -->
+  <script>
+    (function () {
+      const $ = (s, c = document) => c.querySelector(s);
+      const $$ = (s, c = document) => [...c.querySelectorAll(s)];
+
+      /* ---------- DATA ---------- */
+      // cat: residential | commercial | upcoming
+      // purpose: buy | rent | lease
+      // sub: the sub-filter key for that gallery (see FILTERS below)
+      const listings = [
+        // Residential
+        { id: 1, cat: 'residential', sub: 'house', purpose: 'buy', code: 'ZB-R-01', title: 'Lakeview Family Home', loc: 'Vijay Nagar, Indore', price: '₹ 1.2 Cr', badge: 'Ready to Move', specs: [['3 BHK', 'Bedrooms'], ['2', 'Bathrooms'], ['1,850 sq.ft', 'Built-up']], owner: 'Sonu', role: 'Owner', cta: 'Contact', photos: 8, color: 'from-amber-200 to-orange-500', house: '#7a1431' },
+        { id: 2, cat: 'residential', sub: 'apartment', purpose: 'rent', code: 'ZB-R-02', title: 'Skyline Serviced Flat', loc: 'Palasia, Indore', price: '₹ 32,000/mo', badge: 'Immediate', specs: [['2 BHK', 'Bedrooms'], ['2', 'Bathrooms'], ['1,100 sq.ft', 'Built-up']], owner: 'Meera', role: 'Owner', cta: 'Contact', photos: 6, color: 'from-rose-200 to-maroon-600', house: '#fff' },
+        { id: 3, cat: 'residential', sub: 'apartment', purpose: 'lease', code: 'ZB-R-03', title: 'Green Nest Apartment', loc: 'Bhawarkuan, Indore', price: '₹ 2.5 L/yr', badge: 'Lease Available', specs: [['2 BHK', 'Bedrooms'], ['2', 'Bathrooms'], ['950 sq.ft', 'Built-up']], owner: 'Rahul', role: 'Owner', cta: 'Contact', photos: 5, color: 'from-sky-300 to-indigo-500', house: '#1e3a8a' },
+        { id: 4, cat: 'residential', sub: 'villa', purpose: 'buy', code: 'ZB-R-04', title: 'Cedar Garden Villa', loc: 'Super Corridor, Indore', price: '₹ 85 L', badge: 'Ready to Move', specs: [['3 BHK', 'Bedrooms'], ['3', 'Bathrooms'], ['2,200 sq.ft', 'Built-up']], owner: 'Anil', role: 'Owner', cta: 'Contact', photos: 10, color: 'from-lime-300 to-emerald-600', house: '#15803d' },
+
+        // Commercial
+        { id: 5, cat: 'commercial', sub: 'office', purpose: 'rent', code: 'ZB-C-01', title: 'Metro Work Hub', loc: 'Hinjewadi, Pune', price: '₹ 1.8 L/mo', badge: 'Ready to Move', specs: [['3,000 sq.ft', 'Area'], ['8', 'Workstations'], ['2', 'Floors']], owner: 'Kiran', role: 'Owner', cta: 'Enquire', photos: 9, color: 'from-cyan-300 to-teal-700', house: '#0f766e' },
+        { id: 6, cat: 'commercial', sub: 'retail', purpose: 'buy', code: 'ZB-C-02', title: 'Downtown Retail Plaza', loc: 'MG Road, Indore', price: '₹ 4.5 Cr', badge: 'Ready to Move', specs: [['5,400 sq.ft', 'Built-up'], ['Ground', 'Floor'], ['12', 'Parking']], owner: 'Priya', role: 'Owner', cta: 'Enquire', photos: 7, color: 'from-slate-300 to-slate-700', house: '#334155' },
+        { id: 7, cat: 'commercial', sub: 'warehouse', purpose: 'lease', code: 'ZB-C-03', title: 'Warehouse Hub 40K', loc: 'Pithampur, Indore', price: '₹ 9 L/yr', badge: 'Lease Available', specs: [['40,000 sq.ft', 'Area'], ['12 m', 'Height'], ['24x7', 'Access']], owner: 'Vikas', role: 'Owner', cta: 'Enquire', photos: 6, color: 'from-yellow-200 to-lime-500', house: '#4d7c0f' },
+        { id: 8, cat: 'commercial', sub: 'coworking', purpose: 'rent', code: 'ZB-C-04', title: 'Co-working Floor', loc: 'Vijay Nagar, Indore', price: '₹ 65,000/mo', badge: 'Immediate', specs: [['2,000 sq.ft', 'Area'], ['30', 'Seats'], ['AC', 'Fitted']], owner: 'Neha', role: 'Owner', cta: 'Enquire', photos: 5, color: 'from-violet-300 to-purple-700', house: '#4c1d95' },
+
+        // Builder / Upcoming (sub = project stage)
+        { id: 9, cat: 'upcoming', sub: 'launching', purpose: 'buy', code: 'ZB-U-01', title: 'Zerobriks Heights', loc: 'Scheme 54, Indore', price: 'From ₹ 45 L', badge: 'Launching Dec 2026', specs: [['2–3 BHK', 'Units'], ['18', 'Floors'], ['2028', 'Possession']], owner: 'Zerobriks Developers', role: 'Builder', cta: 'Register', photos: 12, color: 'from-rose-300 to-maroon-700', house: '#7a1431' },
+        { id: 10, cat: 'upcoming', sub: 'construction', purpose: 'buy', code: 'ZB-U-02', title: 'Riverside Greens', loc: 'Khajrana, Indore', price: 'From ₹ 62 L', badge: 'Under Construction', specs: [['3 BHK', 'Units'], ['Gated', 'Township'], ['2027', 'Possession']], owner: 'Shree Sai Builders', role: 'Builder', cta: 'Register', photos: 11, color: 'from-cyan-200 to-sky-600', house: '#0369a1' },
+        { id: 11, cat: 'upcoming', sub: 'leasing', purpose: 'lease', code: 'ZB-U-03', title: 'Grand Business Park', loc: 'Ring Road, Indore', price: 'From ₹ 60/sq.ft', badge: 'Pre-Leasing', specs: [['1 Lakh', 'Sq.ft'], ['Office', 'Type'], ['2027', 'Handover']], owner: 'Aarav Realty', role: 'Builder', cta: 'Register', photos: 9, color: 'from-slate-400 to-slate-800', house: '#1e293b' },
+        { id: 12, cat: 'upcoming', sub: 'prelaunch', purpose: 'buy', code: 'ZB-U-04', title: 'Lotus Villas', loc: 'Bypass Road, Indore', price: 'From ₹ 1.1 Cr', badge: 'Pre-Launch', specs: [['4 BHK', 'Villas'], ['Clubhouse', 'Amenity'], ['2028', 'Possession']], owner: 'Lotus Developers', role: 'Builder', cta: 'Register', photos: 14, color: 'from-amber-100 to-amber-500', house: '#a16207' },
+      ];
+
+      // Per-gallery filter options: [key, label]
+      const FILTERS = {
+        residential: [['all', 'All'], ['apartment', 'Apartments'], ['house', 'Independent Houses'], ['villa', 'Villas']],
+        commercial: [['all', 'All'], ['office', 'Offices'], ['retail', 'Retail'], ['warehouse', 'Warehouses'], ['coworking', 'Co-working']],
+        upcoming: [['all', 'All'], ['prelaunch', 'Pre-Launch'], ['launching', 'Launching Soon'], ['construction', 'Under Construction'], ['leasing', 'Pre-Leasing']],
+      };
+
+      const CATS = Object.keys(FILTERS);
+      const PURPOSE_LABEL = { buy: 'For Buy', rent: 'For Rent', lease: 'For Lease' };
+      const LOCATIONS = [...new Set(listings.map((l) => l.loc))];
+
+      const state = {
+        purpose: 'all',
+        query: '',
+        sub: { residential: 'all', commercial: 'all', upcoming: 'all' },
+      };
+
+      /* ---------- HELPERS ---------- */
+      const houseSVG = (color) => `
+        <svg viewBox="0 0 200 140" class="h-full w-full" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <rect x="0" y="110" width="200" height="30" fill="rgba(0,0,0,0.15)"/>
+          <polygon points="28,70 100,22 172,70" fill="${color}"/>
+          <rect x="44" y="70" width="112" height="40" fill="rgba(255,255,255,0.8)"/>
+          <rect x="86" y="86" width="28" height="24" fill="${color}"/>
+          <rect x="56" y="78" width="16" height="16" fill="${color}"/>
+          <rect x="128" y="78" width="16" height="16" fill="${color}"/>
+        </svg>`;
+
+      const ticketHTML = (p) => `
+        <article class="ticket group relative flex min-h-[230px] overflow-hidden rounded-2xl bg-white shadow-md shadow-maroon-900/5 ring-1 ring-maroon-100 transition duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-maroon-900/10">
+          <div class="relative w-[38%] flex-none overflow-hidden bg-gradient-to-br ${p.color}">
+            <div class="ticket-img absolute inset-0 transition duration-500">${houseSVG(p.house)}</div>
+            <span class="absolute left-0 top-4 rounded-r-md bg-maroon-600 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow">${PURPOSE_LABEL[p.purpose]}</span>
+            <span class="absolute bottom-3 left-3 rounded bg-black/40 px-2 py-0.5 text-[10px] font-medium text-white backdrop-blur">${p.photos} photos</span>
+          </div>
+
+          <div class="relative flex flex-1 flex-col justify-between border-l-2 border-dashed border-maroon-200 p-5">
+            <span class="notch -left-3 -top-3" aria-hidden="true"></span>
+            <span class="notch -left-3 -bottom-3" aria-hidden="true"></span>
+
+            <div>
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-[10px] font-bold uppercase tracking-widest text-gold-500">${p.code}</span>
+                <span class="rounded-md bg-gold-400/15 px-2 py-0.5 text-[10px] font-semibold text-gold-600">${p.badge}</span>
+              </div>
+              <h3 class="mt-2 font-serif text-lg font-bold leading-snug text-slate-900">${p.title}</h3>
+              <p class="mt-1 text-xs text-slate-500">📍 ${p.loc}</p>
+            </div>
+
+            <div>
+              <dl class="mt-4 grid grid-cols-3 gap-2 border-y border-dashed border-maroon-100 py-3 text-xs">
+                ${p.specs.map(([v, l]) => `<div><dt class="text-slate-500">${l}</dt><dd class="font-semibold text-slate-800">${v}</dd></div>`).join('')}
+              </dl>
+              <div class="mt-4 flex items-end justify-between gap-2">
+                <div>
+                  <p class="font-serif text-xl font-extrabold text-maroon-700">${p.price}</p>
+                  <p class="text-[11px] text-slate-500">${p.role}: ${p.owner}</p>
+                </div>
+                <button type="button" class="rounded-md bg-maroon-600 px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-maroon-700">${p.cta}</button>
+              </div>
+            </div>
+          </div>
+        </article>`;
+
+      /* ---------- PER-GALLERY FILTER CHIPS ---------- */
+      const renderChips = (cat) => {
+        $(`#${cat}Filters`).innerHTML = FILTERS[cat].map(([key, label]) => {
+          const on = state.sub[cat] === key;
+          const style = on
+            ? 'bg-maroon-600 text-white shadow-md shadow-maroon-600/20'
+            : 'bg-white text-maroon-700 ring-1 ring-maroon-100 hover:ring-maroon-500 hover:bg-maroon-50';
+          return `<button type="button" data-cat="${cat}" data-sub="${key}" aria-pressed="${on}" class="sub-chip rounded-full px-4 py-2 text-sm font-semibold transition ${style}">${label}</button>`;
+        }).join('');
+      };
+
+      /* ---------- RENDER ---------- */
+      const render = () => {
+        const q = state.query.trim().toLowerCase();
+        CATS.forEach((cat) => {
+          const all = listings.filter((l) => l.cat === cat);
+          const items = all.filter((l) =>
+            (state.purpose === 'all' || l.purpose === state.purpose) &&
+            (state.sub[cat] === 'all' || l.sub === state.sub[cat]) &&
+            (!q || l.loc.toLowerCase().includes(q) || l.title.toLowerCase().includes(q))
+          );
+          $(`#${cat}Grid`).innerHTML = items.map(ticketHTML).join('');
+          $(`#${cat}Count`).textContent = `Showing ${items.length} of ${all.length}`;
+          $(`#${cat}Empty`).classList.toggle('hidden', items.length > 0);
+          renderChips(cat);
+        });
+      };
+
+      // One delegated listener handles every gallery's filter chips
+      document.addEventListener('click', (e) => {
+        const chip = e.target.closest('.sub-chip');
+        if (!chip) return;
+        state.sub[chip.dataset.cat] = chip.dataset.sub;
+        render();
+      });
+
+      /* ---------- HEADER: NAV, MOBILE MENU, SHADOW ---------- */
+      const header = $('#header');
+      window.addEventListener('scroll', () => header.classList.toggle('shadow-lg', window.scrollY > 20), { passive: true });
+
+      const menuBtn = $('#menuBtn');
+      menuBtn.addEventListener('click', () => {
+        const open = $('#mobileMenu').classList.toggle('hidden') === false;
+        $('#iconOpen').classList.toggle('hidden', open);
+        $('#iconClose').classList.toggle('hidden', !open);
+        menuBtn.setAttribute('aria-expanded', String(open));
+      });
+      $$('.mobile-link').forEach((a) => a.addEventListener('click', () => $('#mobileMenu').classList.add('hidden')));
+
+      /* ---------- GLOBAL PURPOSE TABS (Buy / Rent / Lease) ---------- */
+      const setTabStyle = () => {
+        $$('.purpose-tab').forEach((t) => {
+          const active = t.dataset.purpose === state.purpose;
+          t.classList.toggle('bg-maroon-600', active);
+          t.classList.toggle('text-white', active);
+          t.classList.toggle('shadow-md', active);
+          t.classList.toggle('shadow-maroon-600/25', active);
+          t.classList.toggle('text-slate-600', !active);
+          t.classList.toggle('hover:text-maroon-600', !active);
+        });
+      };
+      $$('.purpose-tab').forEach((tab) => {
+        tab.addEventListener('click', () => {
+          state.purpose = tab.dataset.purpose;
+          setTabStyle();
+          render();
+        });
+      });
+
+      /* ---------- LOCATION SEARCH (hover + keyboard) ---------- */
+      const input = $('#locInput');
+      const sugg = $('#sugg');
+      let matches = [];
+      let activeIdx = -1;
+
+      const highlight = (text, q) => {
+        if (!q) return text;
+        const i = text.toLowerCase().indexOf(q);
+        if (i < 0) return text;
+        return `${text.slice(0, i)}<span class="font-bold text-maroon-600">${text.slice(i, i + q.length)}</span>${text.slice(i + q.length)}`;
+      };
+
+      const openSuggestions = () => {
+        const q = input.value.trim().toLowerCase();
+        matches = LOCATIONS.filter((l) => !q || l.toLowerCase().includes(q)).slice(0, 6);
+        if (!matches.length) {
+          sugg.innerHTML = `<li class="px-4 py-3 text-sm text-slate-500">No locations found. Press Enter to search anyway.</li>`;
+        } else {
+          sugg.innerHTML = matches.map((loc, i) => `
+            <li data-i="${i}" class="sugg-item flex cursor-pointer items-center gap-3 px-4 py-2.5 text-sm transition">
+              <span class="grid h-8 w-8 flex-none place-items-center rounded-full bg-maroon-50 text-maroon-600">📍</span>
+              <span class="font-medium text-slate-800">${highlight(loc, q)}</span>
+            </li>`).join('');
+        }
+        activeIdx = -1;
+        sugg.classList.remove('hidden');
+      };
+
+      const setActive = (i) => {
+        const items = $$('.sugg-item', sugg);
+        items.forEach((el) => el.classList.remove('is-active'));
+        if (items[i]) { items[i].classList.add('is-active'); activeIdx = i; }
+      };
+
+      const pickLocation = (loc) => {
+        input.value = loc;
+        state.query = loc;
+        sugg.classList.add('hidden');
+        render();
+        $('#residential').scrollIntoView({ behavior: 'smooth' });
+      };
+
+      input.addEventListener('focus', openSuggestions);
+      input.addEventListener('input', () => {
+        state.query = input.value;
+        openSuggestions();
+        render();
+      });
+      input.addEventListener('keydown', (e) => {
+        if (sugg.classList.contains('hidden')) return;
+        const n = matches.length;
+        if (e.key === 'ArrowDown' && n) { e.preventDefault(); setActive((activeIdx + 1) % n); }
+        if (e.key === 'ArrowUp' && n) { e.preventDefault(); setActive((activeIdx - 1 + n) % n); }
+        if (e.key === 'Enter') { e.preventDefault(); activeIdx >= 0 ? pickLocation(matches[activeIdx]) : sugg.classList.add('hidden'); }
+        if (e.key === 'Escape') sugg.classList.add('hidden');
+      });
+      sugg.addEventListener('mouseover', (e) => {
+        const li = e.target.closest('.sugg-item');
+        if (li) setActive(+li.dataset.i);
+      });
+      sugg.addEventListener('mousedown', (e) => {
+        const li = e.target.closest('.sugg-item');
+        if (li) pickLocation(matches[+li.dataset.i]);
+      });
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('#locInput') && !e.target.closest('#sugg')) sugg.classList.add('hidden');
+      });
+
+      /* ---------- SCROLL REVEAL ---------- */
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach((en) => {
+          if (en.isIntersecting) { en.target.classList.add('is-visible'); io.unobserve(en.target); }
+        });
+      }, { threshold: 0.15 });
+      $$('.reveal').forEach((el) => io.observe(el));
+
+      /* ---------- NEWSLETTER & YEAR ---------- */
+      const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      $('#newsletterForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const f = $('#newsletterEmail');
+        if (emailRe.test(f.value.trim())) {
+          $('#newsletterMsg').classList.remove('hidden');
+          f.value = '';
+          setTimeout(() => $('#newsletterMsg').classList.add('hidden'), 4000);
+        }
+      });
+      $('#year').textContent = new Date().getFullYear();
+
+      /* ---------- INIT ---------- */
+      setTabStyle();
+      render();
+    })();
+  </script>
+</body>
+</html>

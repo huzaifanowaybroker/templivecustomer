@@ -1250,8 +1250,6 @@ return (
           HEADER SECTION
       ========================================================== */}
       <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center md:gap-0">
-        <h2 className="text-2xl font-semibold">My Properties</h2>
-
         {/* Search */}
         <div className="relative w-full md:w-auto">
           <IoIosSearch
@@ -1413,7 +1411,7 @@ return (
       </div>
 
       {/* Property Listings */}
-<div className="mt-6 space-y-4">
+<div className="mt-4 space-y-2.5">
   {loading ? (
     <div className="flex items-center justify-center py-20">
       <div className="w-10 h-10 border-4 border-gray-300 rounded-full border-t-[#8B1E3F] animate-spin"></div>
@@ -1426,11 +1424,11 @@ return (
     properties.map((property) => (
       <div
         key={property.id}
-        className={`bg-white shadow-sm rounded-lg p-4
+        className={`bg-white shadow-sm rounded-lg p-3
           flex flex-col md:flex-row
           items-start md:items-center
           justify-between relative
-          overflow-hidden
+          overflow-hidden transition-shadow duration-150 hover:shadow-md
           ${
             property.published === "Approved"
               ? "border-2 border-green-500"

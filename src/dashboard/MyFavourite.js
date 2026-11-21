@@ -328,8 +328,7 @@ const MyFavourite = () => {
   };
 
   return (
-    <div className="px-4 py-8 mx-auto max-w-7xl">
-      <h2 className="mb-6 text-3xl font-bold">My Favourites</h2>
+    <div className="px-3 sm:px-4 py-4 sm:py-6 mx-auto max-w-7xl">
       {errorMsg && <p className="mb-4 text-red-500">{errorMsg}</p>}
 
       {/* Tabs */}

@@ -14,6 +14,10 @@ import ShareModal from "../containers/ShareModal";
 import BuyProperty from "./BuyProperty";
 import Commercial from "./Commercial";
 import FeaturesSection from "./FeaturesSection";
+import Student from "./Student";
+import StaticFAQ from "./StaticFAQ";
+import WhyZeroBriks from "./WhyZeroBriks";
+import CatoryLinks from "./CategoryLinks";
 const Home = () => {
   const [cityName, setCityName] = useState("");
   const [showShareModal, setShowShareModal] = useState(false);
@@ -22,27 +26,27 @@ const Home = () => {
 
   const [homeData, setHomeData] = useState({
     recommendedProperties: {
-  status: 0,
-  data: [],
-},
+      status: 0,
+      data: [],
+    },
     offersForYou: [],
     spotlight: {
-  status: 0,
-  data: [],
-},
+      status: 0,
+      data: [],
+    },
     manyMore: {
-    status: 0,
-    data: [],
-  },
+      status: 0,
+      data: [],
+    },
     cities: [],
     adviser: {},
   });
 
   const [ownerProperties, setOwnerProperties] = useState([]);
   const [ownerData, setOwnerData] = useState({
-  status: 0,
-  data: [],
-});
+    status: 0,
+    data: [],
+  });
 
   const [buyData, setBuyProperty] = useState({
     status: 0,
@@ -66,8 +70,6 @@ const Home = () => {
         }
       );
 
-      // console.log("BUY API DATA:", response.data);
-
       if (response.data.status === 1) {
         setBuyProperty({
           status: 1,
@@ -79,34 +81,30 @@ const Home = () => {
     }
   };
 
-const [offersData, setOffersData] = useState({
-  status: 0,
-  data: [],
-});
-const fetchOffers = async () => {
-  try {
-    const formData = new FormData();
-    formData.append("page", 1);
-    formData.append("page_size", 10);
+  const [offersData, setOffersData] = useState({
+    status: 0,
+    data: [],
+  });
+  const fetchOffers = async () => {
+    try {
+      const formData = new FormData();
+      formData.append("page", 1);
+      formData.append("page_size", 10);
 
-    // if (userId) {
-    //   formData.append("user_id", userId);
-    // }
+      const response = await axios.post(
+        `${process.env.REACT_APP_API_URL}/cust_api/get_offer`,
+        formData
+      );
 
-    const response = await axios.post(
-      `${process.env.REACT_APP_API_URL}/cust_api/get_offer`,
-      formData
-    );
-
-    setOffersData(response.data);
-  } catch (error) {
-    console.error("Error fetching offers:", error);
-    setOffersData({
-      status: 0,
-      data: [],
-    });
-  }
-};
+      setOffersData(response.data);
+    } catch (error) {
+      console.error("Error fetching offers:", error);
+      setOffersData({
+        status: 0,
+        data: [],
+      });
+    }
+  };
   const [commercialData, setCommercialData] = useState({
     status: 0,
     data: [],
@@ -129,8 +127,6 @@ const fetchOffers = async () => {
           },
         }
       );
-
-      // console.log("COMMERCIAL API DATA:", response.data);
 
       if (response.data.status === 1) {
         setCommercialData({
@@ -156,11 +152,9 @@ const fetchOffers = async () => {
       formData.append("user_id", userId);
       formData.append("city_name", cityName);
 
-
       const response = await axios.post(
         `${process.env.REACT_APP_API_URL}/cust_api/get_home_data`,
         formData,
-
         {
           headers: {
             "Content-Type": "multipart/form-data",
@@ -169,20 +163,20 @@ const fetchOffers = async () => {
       );
       if (response.data) {
         setHomeData({
-         recommendedProperties: response.data.featured_properties || {
-  status: 0,
-  data: [],
-},
+          recommendedProperties: response.data.featured_properties || {
+            status: 0,
+            data: [],
+          },
           offersForYou: response.data.offers || [],
           spotlight: response.data.projects || {
-  status: 0,
-  data: [],
-},
-         manyMore:
-  response.data.recommended_properties || {
-    status: 0,
-    data: [],
-  },
+            status: 0,
+            data: [],
+          },
+          manyMore:
+            response.data.recommended_properties || {
+              status: 0,
+              data: [],
+            },
           cities: response.data.city_property_count || [],
           adviser: response.data.user_type_property_count || {},
         });
@@ -211,13 +205,13 @@ const fetchOffers = async () => {
       );
 
       if (response.data.status === 1) {
-  setOwnerProperties(response.data.data || []);
+        setOwnerProperties(response.data.data || []);
 
-  setOwnerData({
-    status: 1,
-    data: response.data.data || [],
-  });
-}
+        setOwnerData({
+          status: 1,
+          data: response.data.data || [],
+        });
+      }
     } catch (error) {
       console.error("Owner API Error:", error);
     }
@@ -231,50 +225,32 @@ const fetchOffers = async () => {
     }
 
     if ("geolocation" in navigator) {
-      // console.log("Geolocation supported");
-
       navigator.geolocation.getCurrentPosition(
         async (position) => {
-          // console.log("Location permission granted");
-
           const { latitude, longitude } = position.coords;
-
-          // console.log("Latitude:", latitude);
-          // console.log("Longitude:", longitude);
 
           sessionStorage.setItem(
             "userLocation",
             JSON.stringify({ latitude, longitude }),
           );
 
-          // Reload page after saving location
-          //window.location.reload();
-
           try {
             const response = await axios.get(
               `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=AIzaSyAUCNwxnNo52kFWJNGhRVj-AnkoffmzYe0`,
             );
 
-            // console.log("Google API Response:", response.data);
-
             if (response.data.status === "OK") {
               const addressComponents =
                 response.data.results[0].address_components;
-
-              // console.log("Address Components:", addressComponents);
 
               const cityComponent = addressComponents.find((component) =>
                 component.types.includes("locality"),
               );
 
-              // console.log("Detected City:", cityComponent);
-
               if (cityComponent) {
                 setCityName(cityComponent.long_name);
 
                 sessionStorage.setItem("cityName", cityComponent.long_name);
-
-                // console.log("Saved city:", sessionStorage.getItem("cityName"));
               }
             }
           } catch (error) {
@@ -286,23 +262,19 @@ const fetchOffers = async () => {
           console.error("Geolocation Error:", error);
         },
       );
-    } else {
-      // console.log("Geolocation is not supported by this browser.");
     }
   }, []);
 
   // Fetch home data with debounce
   useEffect(() => {
-    // if (!cityName) return;
-
     const debounceFetch = setTimeout(() => {
       fetchHomeData();
-       fetchOffers();
+      fetchOffers();
       fetchOwnerProperties();
     }, 300);
 
     return () => clearTimeout(debounceFetch);
-  }, [cityName, fetchHomeData]); //fetchOwnerProperties]);
+  }, [cityName, fetchHomeData]);
 
   const openRecommendedShareModal = useCallback((propertyId) => {
     const baseUrl = window.location.origin;
@@ -326,26 +298,20 @@ const fetchOffers = async () => {
     navigator.clipboard.writeText(currentShareUrl);
     alert("Link copied: " + currentShareUrl);
   }, [currentShareUrl]);
-  //console.log("ownerProperties", ownerProperties);
-  console.log("Recommended:", homeData.recommendedProperties);
-console.log("Spotlight:", homeData.spotlight);
+
   return (
     <>
       <Helmet>
-        <title>NOWAYBROKER - Home</title>
+        <title>Zerobriks - Home</title>
         <meta name="description" content="sign up page" />
       </Helmet>
 
-
       <section className="">
         <Search />
-        <FeaturesSection />
+        {/* <FeaturesSection /> */}
 
-        <div className="w-full mx-auto px-2 md:max-w-[97%]">
+        <div className="w-full pr-2 pl-2  flex flex-col">
           <Cities data={homeData?.cities || []} />
-
-
-          {/* <Shots /> */}
           <BuyProperty
             data={buyData}
             fetchHomeData={fetchHomeData}
@@ -354,6 +320,9 @@ console.log("Spotlight:", homeData.spotlight);
             copyLink={copyLink}
             currentShareUrl={currentShareUrl}
           />
+
+          <WhyZeroBriks />
+
           <Commercial
             data={commercialData}
             fetchHomeData={fetchHomeData}
@@ -395,8 +364,11 @@ console.log("Spotlight:", homeData.spotlight);
             currentShareUrl={currentShareUrl}
             fetchHomeData={fetchHomeData}
           />
+          {/* <Student /> */}
           <Adviser data={homeData.adviser} />
+          <StaticFAQ />
           <ExploreServices />
+          <CatoryLinks />
         </div>
 
         {showShareModal && (

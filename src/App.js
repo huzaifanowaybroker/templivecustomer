@@ -7,15 +7,18 @@ import { store } from "./store/store";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import { SearchProvider } from "./containers/SearchContext";
+import SmoothScroll from "./components/SmoothScroll";
 
 function App() {
   return (
     <Provider store={store}>
       <SearchProvider>
         <BrowserRouter>
-          <Layout>
-            <Routes />
-          </Layout>
+          <SmoothScroll>
+            <Layout>
+              <Routes />
+            </Layout>
+          </SmoothScroll>
         </BrowserRouter>
       </SearchProvider>
     </Provider>

@@ -1,131 +1,103 @@
 import { useEffect, useState } from "react";
-import { FaDollarSign, FaCog } from "react-icons/fa";
-import { AiOutlineUser } from "react-icons/ai";
-import { FaCloudUploadAlt } from "react-icons/fa";
-import { IoCloseCircleOutline } from "react-icons/io5";
-import { IoIosSearch } from "react-icons/io";
-import { FaSearch, FaPhoneAlt, FaEnvelope, FaSort } from "react-icons/fa";
-import { Heart, Share2, Camera, Home, Ruler } from "lucide-react";
-import { FaTrash, FaShareAlt } from "react-icons/fa";
+import { Share2, Trash2, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { Link } from "react-router-dom";
-
-import {
-  FaHome,
-  FaEye,
-  FaVideo,
-  FaUser,
-  FaBars,
-  FaTimes,
-} from "react-icons/fa";
-
-import { FiSmartphone } from "react-icons/fi";
 import ShareModal from "../containers/ShareModal";
 
+const TABS = ["Buy", "Rent", "PG", "Commercial"];
+const PAGE_SIZE = 10;
+
+// Copy text to clipboard, with a fallback for non-secure contexts
+const copyText = async (text) => {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch (err) {
+    console.error("Clipboard API failed:", err);
+  }
+  const textArea = document.createElement("textarea");
+  textArea.value = text;
+  textArea.style.position = "fixed";
+  textArea.style.left = "-9999px";
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+  let ok = false;
+  try {
+    ok = document.execCommand("copy");
+  } catch (err) {
+    console.error("Fallback copy failed:", err);
+  }
+  document.body.removeChild(textArea);
+  return ok;
+};
+
 const SavedSerches = () => {
-  const [activeTa, setActiveTa] = useState("Buy");
+  const [activeTab, setActiveTab] = useState("Buy");
   const [savedSearches, setSavedSearches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
-  const [totalCount, setTotalCount] = useState(0);
-  const itemsPerPage = 10;
-  const user_id = sessionStorage.getItem("accessToken");
-  const [currentShareUrl, setCurrentShareUrl] = useState("");
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [activeShareId, setActiveShareId] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-  const [selectedSearchId, setSelectedSearchId] = useState(null);
-
-  const tabs = ["Buy", "Rent", "PG", "Commercial"];
+  const [shareState, setShareState] = useState({ id: null, url: "" });
+  const [selectedId, setSelectedId] = useState(null);
+  const userId = sessionStorage.getItem("accessToken");
 
   const fetchSavedSearches = async () => {
     try {
       setLoading(true);
-
       const formData = new FormData();
-
-      formData.append("user_id", user_id);
+      formData.append("user_id", userId);
       formData.append("page", currentPage);
-      formData.append("page_size", itemsPerPage);
+      formData.append("page_size", PAGE_SIZE);
 
-      // =========================
-      //  FIXED PAYLOAD MAPPING
-      // =========================
-
-      let payloadKey = "property_category_type";
-      let payloadValue = activeTa;
-
-      if (activeTa === "Commercial") {
-        payloadKey = "building_type";
-        payloadValue = "Commercial";
-      } else if (activeTa === "PG") {
-        payloadKey = "property_category_type";
-        payloadValue = "PG/Co-living"; // MUST match backend
+      // Map each tab to the key/value the backend expects
+      if (activeTab === "Commercial") {
+        formData.append("building_type", "Commercial");
+      } else if (activeTab === "PG") {
+        formData.append("property_category_type", "PG/Co-living");
+      } else {
+        formData.append("property_category_type", activeTab);
       }
 
-      formData.append(payloadKey, payloadValue);
-
-      // =========================
-      //  DEBUG (REMOVE LATER)
-      // =========================
-      // for (let pair of formData.entries()) {
-      //   console.log(pair[0], pair[1]);
-      // }
-
-      const response = await axios.post(
+      const { data } = await axios.post(
         `${process.env.REACT_APP_API_URL}/cust_api/get_save_search`,
         formData,
       );
-
-      if (response.data && response.data.data) {
-        setSavedSearches(response.data.data);
-        setTotalCount(response.data.total_count);
-        setTotalPages(Math.ceil(response.data.total_count / itemsPerPage));
-      } else {
-        setSavedSearches([]);
-        setTotalCount(0);
-        setTotalPages(0);
-      }
+      setSavedSearches(data?.data || []);
+      setTotalPages(Math.ceil((data?.total_count || 0) / PAGE_SIZE));
     } catch (error) {
       console.error("Error fetching saved searches:", error);
       setSavedSearches([]);
-      setTotalCount(0);
       setTotalPages(0);
     } finally {
       setLoading(false);
     }
   };
+
   useEffect(() => {
-    if (user_id) {
-      fetchSavedSearches();
-    }
-  }, [currentPage, activeTa]);
+    if (userId) fetchSavedSearches();
+  }, [currentPage, activeTab]);
 
-  const handleDelete = async (saved_search_id) => {
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [currentPage]);
+
+  const handleDelete = async (savedSearchId) => {
     try {
-      // Create FormData and append saved_search_id
       const formData = new FormData();
-      formData.append("saved_search_id", saved_search_id);
-      console.log("Deleted ID is:", saved_search_id);
-
-      // Make DELETE request with FormData
-      const response = await axios.delete(
+      formData.append("saved_search_id", savedSearchId);
+      const { data } = await axios.delete(
         `${process.env.REACT_APP_API_URL}/cust_api/delete_save_search`,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-          data: formData,
-        },
+        { headers: { "Content-Type": "multipart/form-data" }, data: formData },
       );
-
-      if (response.data.status === 1) {
-        toast.success("Saved search deleted successfully!");
+      if (data.status === 1) {
+        toast.success("Saved search deleted");
         fetchSavedSearches();
       } else {
-        toast.error(response.data.message || "Failed to delete saved search.");
+        toast.error(data.message || "Failed to delete saved search.");
       }
     } catch (error) {
       toast.error("Something went wrong while deleting.");
@@ -133,235 +105,174 @@ const SavedSerches = () => {
     }
   };
 
-  const openShareModal1 = (url, propertyId) => {
-    setCurrentShareUrl(url);
-    setActiveShareId(propertyId);
-    setIsShareModalOpen(true);
-  };
-
-  const handleCloseShareModal = () => {
-    setIsShareModalOpen(false);
-    setActiveShareId(null);
-  };
-
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [currentPage]);
-
   const confirmDelete = () => {
-    if (selectedSearchId) {
-      handleDelete(selectedSearchId);
-      setShowModal(false);
-      setSelectedSearchId(null);
+    if (selectedId) {
+      handleDelete(selectedId);
+      setSelectedId(null);
     }
   };
 
+  const handleCopy = async (url) => {
+    const ok = await copyText(url);
+    toast[ok ? "success" : "error"](ok ? "Link copied" : "Copy failed");
+  };
+
+  const formatDate = (value) =>
+    new Date(value).toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+
   return (
-    <>
-      <div className="max-w-6xl p-6 mx-auto">
-        <h2 className="mb-4 text-2xl font-semibold text-gray-900">
-          Saved Searches
-        </h2>
+    <div className="max-w-4xl space-y-3">
+      <p className="-mt-1 text-xs text-[#1e2a44]/60">Properties you saved from your searches.</p>
 
-        {/* Tabs */}
-        <div className="flex space-x-6 border-b">
-          {tabs.map((tab) => (
-            <button
-              key={tab}
-              className={`pb-2 text-lg font-medium ${
-                activeTa === tab
-                  ? "my-text border-b-2 border-rose-600"
-                  : "text-gray-500"
-              }`}
-              onClick={() => setActiveTa(tab)}
-            >
-              {tab}
-            </button>
-          ))}
+      {/* Tabs */}
+      <div className="flex gap-1 border-b border-[#ece6e1]">
+        {TABS.map((tab) => (
+          <button
+            key={tab}
+            onClick={() => {
+              setActiveTab(tab);
+              setCurrentPage(1);
+            }}
+            className={`px-3 py-2 text-sm border-b-2 -mb-px transition-colors ${
+              activeTab === tab
+                ? "border-[#700c28] text-[#700c28] font-medium"
+                : "border-transparent text-[#1e2a44]/60 hover:text-[#1e2a44]"
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      {/* List */}
+      {loading ? (
+        <p className="text-xs text-[#1e2a44]/60 py-6 text-center">Loading...</p>
+      ) : savedSearches.length === 0 ? (
+        <div className="bg-white border border-[#ece6e1] rounded-lg py-10 text-center">
+          <Search size={24} className="mx-auto text-[#1e2a44]/30 mb-2" />
+          <p className="text-sm text-[#1e2a44]/60">No saved searches in {activeTab}.</p>
         </div>
-
-        {/* Search List */}
-        <div className="mt-6 space-y-4">
+      ) : (
+        <ul className="grid gap-2 md:grid-cols-2">
           {savedSearches.map((search) => (
-            <div
+            <li
               key={search._id}
-              className="flex items-center justify-between p-4 bg-white rounded-lg shadow-md"
+              className="relative flex items-center gap-2 bg-white border border-[#ece6e1] rounded-lg px-3 py-2.5 transition-all duration-150 hover:shadow-md hover:border-[#700c28]/30"
             >
               <Link
                 to={`/propertydetails/${search.property_id}`}
-                className="flex-1 no-underline hover:no-underline"
+                className="flex-1 min-w-0 no-underline hover:text-[#700c28]"
               >
-                <div>
-                  <p className="text-lg font-medium text-gray-800">
-                    <p className="text-lg font-medium text-gray-800">
-                      {search.property_name}{" "}
-                      {search.address ? ` - ${search.address}` : ""}
-                    </p>
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    Saved on:{" "}
-                    {new Date(search.saved_on).toLocaleDateString("en-GB", {
-                      day: "2-digit",
-                      month: "long",
-                      year: "numeric",
-                    })}
-                  </p>
-                </div>
+                <p className="text-sm font-medium truncate">
+                  {search.property_name}
+                  {search.address ? ` - ${search.address}` : ""}
+                </p>
+                <p className="text-xs text-[#1e2a44]/60 mt-0.5">
+                  Saved on {formatDate(search.saved_on)}
+                </p>
               </Link>
 
-              <div className="flex ml-4 space-x-3">
-                <button className="relative p-2 bg-gray-100 rounded-lg hover:bg-gray-200">
-                  <FaShareAlt
-                    className="text-gray-600"
-                    onClick={() =>
-                      openShareModal1(
-                        `${window.location.origin}/propertydetails/${search.property_id}`,
-                        search.property_id,
-                      )
-                    }
+              <button
+                onClick={() => {
+                  const url = `${window.location.origin}/propertydetails/${search.property_id}`;
+                  setShareState(
+                    shareState.id === search.property_id
+                      ? { id: null, url: "" }
+                      : { id: search.property_id, url },
+                  );
+                }}
+                className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-[#700c28]/5 text-[#1e2a44]/70"
+                aria-label="Share"
+              >
+                <Share2 size={15} />
+              </button>
+
+              <button
+                onClick={() => setSelectedId(search._id)}
+                className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-red-50 text-red-600"
+                aria-label="Delete"
+              >
+                <Trash2 size={15} />
+              </button>
+
+              {shareState.id === search.property_id && (
+                <div className="absolute right-0 top-full mt-1 z-30">
+                  <ShareModal
+                    currentShareUrl={shareState.url}
+                    closeShareModal={() => setShareState({ id: null, url: "" })}
+                    copyLink={() => handleCopy(shareState.url)}
                   />
-                  {isShareModalOpen && activeShareId === search.property_id && (
-                    <div className="absolute right-0 z-50">
-                      <ShareModal
-                        currentShareUrl={currentShareUrl}
-                        closeShareModal={handleCloseShareModal}
-                        copyLink={() => {
-                          const url = currentShareUrl;
-
-                          if (navigator.clipboard && window.isSecureContext) {
-                            navigator.clipboard
-                              .writeText(url)
-                              .then(() => {
-                                alert("Link copied!");
-                              })
-                              .catch((err) => {
-                                console.error("Clipboard API failed:", err);
-                                fallbackCopyTextToClipboard(url);
-                              });
-                          } else {
-                            fallbackCopyTextToClipboard(url);
-                          }
-
-                          function fallbackCopyTextToClipboard(text) {
-                            const textArea = document.createElement("textarea");
-                            textArea.value = text;
-                            textArea.style.position = "fixed"; // Prevent scroll jump
-                            textArea.style.left = "-9999px";
-                            document.body.appendChild(textArea);
-                            textArea.focus();
-                            textArea.select();
-
-                            try {
-                              const successful = document.execCommand("copy");
-                              alert(
-                                successful ? "Link copied!" : "Copy failed",
-                              );
-                            } catch (err) {
-                              console.error("Fallback copy failed:", err);
-                              alert("Copy failed");
-                            }
-
-                            document.body.removeChild(textArea);
-                          }
-                        }}
-                      />
-                    </div>
-                  )}
-                </button>
-                <button
-                  className="p-2 bg-red-100 rounded-lg hover:bg-red-200"
-                  onClick={() => {
-                    setSelectedSearchId(search._id);
-                    setShowModal(true);
-                  }}
-                >
-                  <FaTrash className="text-red-600" />
-                </button>
-              </div>
-            </div>
+                </div>
+              )}
+            </li>
           ))}
+        </ul>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-1 pt-2">
+          <button
+            onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+            disabled={currentPage === 1}
+            className="w-8 h-8 flex items-center justify-center rounded-md border border-[#ece6e1] disabled:opacity-40 hover:bg-white"
+            aria-label="Previous page"
+          >
+            <ChevronLeft size={14} />
+          </button>
+          {[...Array(totalPages)].map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrentPage(i + 1)}
+              className={`w-8 h-8 rounded-md text-xs ${
+                currentPage === i + 1
+                  ? "bg-[#700c28] text-white"
+                  : "hover:bg-white border border-transparent hover:border-[#ece6e1]"
+              }`}
+            >
+              {i + 1}
+            </button>
+          ))}
+          <button
+            onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            className="w-8 h-8 flex items-center justify-center rounded-md border border-[#ece6e1] disabled:opacity-40 hover:bg-white"
+            aria-label="Next page"
+          >
+            <ChevronRight size={14} />
+          </button>
         </div>
+      )}
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-center mt-6 space-x-3">
-            <button
-              className={`px-3 py-2 border rounded-full ${
-                currentPage === 1
-                  ? "text-gray-400 cursor-not-allowed"
-                  : "hover:bg-gray-100"
-              }`}
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-            >
-              &lt;
-            </button>
-
-            {[...Array(totalPages)].map((_, index) => (
+      {/* Delete confirmation */}
+      {selectedId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white rounded-xl p-5 w-full max-w-xs text-center shadow-lg">
+            <h2 className="text-base font-semibold">Delete this search?</h2>
+            <p className="text-xs text-[#1e2a44]/60 mt-1">This cannot be undone.</p>
+            <div className="flex gap-2 mt-4">
               <button
-                key={index}
-                className={`w-10 h-10 flex items-center justify-center rounded-full text-lg font-medium ${
-                  currentPage === index + 1
-                    ? "my-border my-text"
-                    : "text-gray-500 hover:bg-gray-100"
-                }`}
-                onClick={() => setCurrentPage(index + 1)}
+                onClick={() => setSelectedId(null)}
+                className="flex-1 h-9 rounded-md border border-[#700c28] text-[#700c28] hover:bg-[#700c28]/5"
               >
-                {index + 1}
+                Cancel
               </button>
-            ))}
-
-            <button
-              className={`px-3 py-2 border rounded-full ${
-                currentPage === totalPages
-                  ? "text-gray-400 cursor-not-allowed"
-                  : "hover:bg-gray-100"
-              }`}
-              onClick={() =>
-                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-              }
-              disabled={currentPage === totalPages}
-            >
-              &gt;
-            </button>
-          </div>
-        )}
-      </div>
-
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="relative p-6 text-center bg-white shadow-lg rounded-2xl w-96">
-            {/* Close (X) Icon */}
-            <button
-              className="absolute text-2xl text-black top-2 right-2"
-              onClick={() => setShowModal(false)}
-            >
-              <IoCloseCircleOutline />
-            </button>
-
-            <h2 className="text-2xl font-semibold">Are you sure?</h2>
-            <p className="mt-2 text-gray-500">
-              You want to delete this save search!
-            </p>
-
-            <div className="flex justify-center gap-6 mt-4">
               <button
-                className="px-8 py-2 text-white my-bg rounded-md hover:my-bg"
                 onClick={confirmDelete}
+                className="flex-1 h-9 rounded-md bg-[#700c28] text-white hover:bg-[#580920]"
               >
-                Yes
-              </button>
-              <button
-                className="px-8 py-2 text-black bg-white border border-black rounded-md hover:bg-gray-100"
-                onClick={() => setShowModal(false)}
-              >
-                No
+                Delete
               </button>
             </div>
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 };
+
 export default SavedSerches;

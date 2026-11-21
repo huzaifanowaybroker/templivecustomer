@@ -38,37 +38,6 @@ class AddUpcomingProject extends Component {
 
 
 
-    updateProfileAndCount = async (userId) => {
-        try {
-            const profileResponse = await axios.post(`${process.env.REACT_APP_API_URL}/cust_api/get_profile`, {
-                user_id: userId,
-            });
-
-            const currentCounts = profileResponse.data.count_data;
-            const currentUpcomingProjectCount = parseInt(currentCounts.upcoming_project_count, 10) || 0;
-            const updatedUpcomingProjectCount = currentUpcomingProjectCount - 1;
-            const newUpcomingProjectCount = Math.max(updatedUpcomingProjectCount, 0); // Ensure non-negative count
-
-            const updateCountResponse = await axios.post(`${process.env.REACT_APP_API_URL}/cust_api/add_count`, {
-                user_id: userId,
-                free_view_count: currentCounts.free_view_count,
-                free_post_count: currentCounts.free_post_count,
-                paid_view_count: currentCounts.paid_view_count,
-                paid_post_count: currentCounts.paid_post_count,
-                feature_count: currentCounts.feature_count,
-                offer_count: currentCounts.offer_count,
-                upcoming_project_count: newUpcomingProjectCount,
-            });
-
-            if (updateCountResponse.data.status === 1) {
-                sessionStorage.setItem('upcoming_project_count', newUpcomingProjectCount);
-            } else {
-                console.error("Failed to update upcoming project count");
-            }
-        } catch (error) {
-            console.error("Error updating profile and count:", error.message);
-        }
-    };
 
     updateProfileAndCount = async (userId) => {
         try {

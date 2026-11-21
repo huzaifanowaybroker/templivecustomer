@@ -776,8 +776,6 @@ const [loading, setLoading] = useState(true);
     <div className="max-w-6xl p-3 mx-auto sm:p-4 md:p-5 lg:p-">
       {/* Header Section */}
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <h2 className="text-xl font-semibold sm:text-2xl">My Projects</h2>
-
         <div className="relative w-full lg:w-auto">
           <IoIosSearch
             className="absolute text-gray-500 transform -translate-y-1/2 cursor-pointer left-3 top-1/2"

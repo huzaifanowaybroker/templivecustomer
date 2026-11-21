@@ -21,6 +21,236 @@ import { MdErrorOutline } from "react-icons/md";
 import { Country, State } from "country-state-city";
 import { FaRupeeSign } from "react-icons/fa";
 
+const ZB_STYLES = `
+.zb-root{min-height:100vh;background:radial-gradient(1200px 500px at 80% -10%,#F8E3E7 0%,transparent 60%),#FDF9F6;color:#1f2937;font-size:13px;padding-bottom:84px;}
+.zb-topbar{background:#fff;border-bottom:1px solid #f1f1f1;}
+.zb-topbar-inner{max-width:1152px;margin:0 auto;padding:0 16px;height:42px;display:flex;align-items:center;gap:12px;}
+.zb-brand{display:flex;align-items:center;gap:7.5px;flex-shrink:0;}
+.zb-logo{font-size:22px;font-weight:900;letter-spacing:-.02em;line-height:1;}
+.zb-logo-zero{color:#700C28;}
+.zb-logo-briks{color:#D4A017;}
+.zb-brand-sub{font-size:10px;color:#6b7280;line-height:1.2;border-left:1px solid #e5e7eb;padding-left:10px;}
+.zb-links{display:none;gap:12px;font-size:12.5px;font-weight:600;color:#374151;}
+@media (min-width:1024px){.zb-links{display:flex;}}
+.zb-links a{color:inherit;text-decoration:none;}
+.zb-links a:hover{color:#700C28;}
+.zb-top-actions{margin-left:auto;display:flex;align-items:center;gap:6px;}
+.zb-btn-ghost{display:none;align-items:center;gap:4.5px;height:28px;padding:0 12px;border:1px solid #700C28;border-radius:8px;color:#700C28;background:#fff;font-size:12px;font-weight:600;cursor:pointer;}
+@media (min-width:768px){.zb-btn-ghost{display:inline-flex;}}
+.zb-btn-post{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 12px;border:0;border-radius:8px;background:#700C28;color:#fff;font-size:12px;font-weight:600;cursor:pointer;}
+.zb-free{background:#D4A017;color:#111827;font-size:10px;font-weight:700;border-radius:4px;padding:1.5px 6px;}
+.zb-icon-btn{width:30px;height:30px;border-radius:50%;background:#f3f4f6;color:#4b5563;display:flex;align-items:center;justify-content:center;}
+.zb-banner{position:relative;overflow:hidden;background:linear-gradient(90deg,rgba(63,6,22,.92) 0%,rgba(112,12,40,.82) 60%,rgba(112,12,40,.7) 100%),url('/images/property-hero.jpg') center/cover no-repeat,#700C28;}
+.zb-banner-inner{max-width:1152px;margin:0 auto;padding:8px 16px 6px;display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:3px;position:relative;}
+.zb-banner-text{text-align:left;max-width:680px;}
+.zb-banner-text h1{font-size:22px;font-weight:800;color:#fff;line-height:1.2;letter-spacing:-.01em;margin:0 0;}
+.zb-banner-text p{font-size:12px;line-height:1.3;color:rgba(255,255,255,.9);margin:2px 0 0;}
+.zb-banner-line{height:3px;background:linear-gradient(90deg,#D4A017,#F3D27A,#D4A017);}
+.zb-stepper{max-width:1152px;margin:18px auto 0;padding:0 16px;}
+.zb-stepper ol{display:flex;align-items:center;gap:9px;list-style:none;margin:0 0;padding:0 0;flex-wrap:wrap;}
+.zb-step-item{display:flex;align-items:center;gap:9px;}
+.zb-step{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 14px 0 5px;border-radius:999px;border:0;background:#fff;color:#9ca3af;font-size:13px;font-weight:600;box-shadow:inset 0 0 0 1px #e5e7eb;cursor:pointer;white-space:nowrap;}
+.zb-step:disabled{cursor:default;}
+.zb-step.is-active{background:#700C28;color:#fff;box-shadow:0 4px 10px rgba(112,12,40,.25);}
+.zb-step.is-done{background:#ecfdf5;color:#047857;box-shadow:none;}
+.zb-num{width:26px;height:26px;border-radius:50%;background:#f3f4f6;color:#6b7280;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;}
+.zb-step.is-active .zb-num{background:#fff;color:#700C28;}
+.zb-step.is-done .zb-num{background:#059669;color:#fff;}
+.zb-line{flex:1;height:2px;min-width:24px;background:#d1d5db;}
+.zb-line.is-done{background:#10b981;}
+.zb-main{max-width:1152px;margin:18px auto 0;padding:0 16px;display:grid;gap:18px;}
+.zb-main.zb-with-promo{grid-template-columns:minmax(0,1fr) 340px;}
+@media (max-width:1023px){.zb-main.zb-with-promo{grid-template-columns:minmax(0,1fr);}.zb-promo{display:none;}}
+.zb-card{background:#fff;border-radius:14px;border:1px solid #ebe7e7;box-shadow:0 1px 2px rgba(0,0,0,.04),0 12px 28px -18px rgba(112,12,40,.25);padding:16.5px 22px;min-width:0;}
+.zb-promo{background:#fff;border-radius:16px;border:1px solid #ebe7e7;box-shadow:0 12px 28px -18px rgba(112,12,40,.3);overflow:hidden;position:sticky;top:16px;align-self:start;}
+.zb-promo-art{background:#F9E2CB;}
+.zb-skyline{display:block;width:100%;height:auto;}
+.zb-promo-body{padding:13.5px 18px;}
+.zb-promo-logo{font-size:20px;font-weight:900;line-height:1;}
+.zb-promo h3{font-size:17px;font-weight:700;color:#700C28;margin:7.5px 0 0;}
+.zb-promo-tag{font-size:12px;color:#6b7280;margin:1.5px 0 0;}
+.zb-points{list-style:none;margin:10.5px 0 0;padding:0 0;display:flex;flex-direction:column;gap:9px;}
+.zb-points li{display:flex;gap:7.5px;align-items:flex-start;}
+.zb-point-ico{width:28px;height:28px;border-radius:10px;background:#F8EEF1;color:#700C28;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.zb-point-t{font-size:13px;font-weight:700;color:#700C28;margin:0 0;line-height:1.25;}
+.zb-point-s{font-size:12px;color:#6b7280;margin:0 0;line-height:1.35;}
+.zb-stats{margin-top:12px;display:grid;grid-template-columns:repeat(3,1fr);background:#F8EEF1;border-radius:12px;padding:9px 4px;text-align:center;}
+.zb-stats div{display:flex;flex-direction:column;}
+.zb-stats div+div{border-left:1px solid #efd3d9;}
+.zb-stats b{font-size:18px;font-weight:900;color:#700C28;}
+.zb-stats span{font-size:10.5px;color:#4b5563;}
+.zb-root input:not([type=checkbox]):not([type=radio]):not([type=file]),.zb-root select,.zb-root textarea{border:1px solid #d1d5db !important;border-radius:8px !important;font-size:13px !important;outline:none !important;background-color:#fff;}
+.zb-root input:not([type=checkbox]):not([type=radio]):not([type=file]):focus,.zb-root select:focus,.zb-root textarea:focus{border-color:#700C28 !important;box-shadow:0 0 0 3px rgba(112,12,40,.12) !important;}
+.zb-root input:not([type=checkbox]):not([type=radio]):not([type=file]):hover,.zb-root select:hover,.zb-root textarea:hover{border-color:#b9a3a8 !important;}
+.zb-root h2{color:#700C28;font-weight:700;}
+.zb-root .max-w-3xl,.zb-root .max-w-5xl,.zb-root .max-w-7xl{max-width:100% !important;}
+.zb-root .mb-32,.zb-root .mb-20{margin-bottom:12px !important;}
+.zb-footer{position:fixed;left:0;right:0;bottom:0;z-index:40;background:rgba(255,255,255,.97);border-top:1px solid #e5e7eb;box-shadow:0 -4px 12px rgba(0,0,0,.04);}
+.zb-footer-inner{max-width:1152px;margin:0 auto;padding:9px 16px;display:flex;align-items:center;justify-content:space-between;gap:9px;}
+.zb-step-count{font-size:12px;color:#6b7280;}
+.zb-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:38px;min-width:150px;padding:0 22px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:0;transition:background .15s, transform .15s;}
+.zb-btn:disabled{opacity:.6;cursor:not-allowed;}
+.zb-btn-primary{background:#700C28;color:#fff;box-shadow:0 4px 12px rgba(112,12,40,.25);}
+.zb-btn-primary:hover:not(:disabled){background:#580920;transform:translateY(-1px);}
+.zb-btn-outline{background:#fff;color:#700C28;box-shadow:inset 0 0 0 1.5px #700C28;}
+.zb-btn-outline:hover{background:#FBF3F5;}
+@media (max-width:640px){.zb-step-count{display:none;}.zb-brand-sub{display:none;}.zb-banner-inner{padding:8px 16px 6px;}}
+.zb-screen{display:flex;flex-direction:column;gap:10.5px;}
+.zb-summary{background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;border-radius:10px;padding:7.5px 14px;font-size:12.5px;font-weight:600;}
+.zb-head{display:flex;gap:9px;align-items:center;margin-bottom:3px;}
+.zb-head-ico{width:34px;height:34px;border-radius:12px;background:#700C28;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 10px rgba(112,12,40,.25);flex-shrink:0;}
+.zb-head h2{font-size:18px;margin:0 0;line-height:1.2;}
+.zb-head p{font-size:12.5px;color:#6b7280;margin:1.5px 0 0;}
+.zb-sub{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:700;color:#111827;margin-top:7.5px;padding-top:12px;border-top:1px solid #f0eded;}
+.zb-sub svg{color:#700C28;}
+.zb-note{font-size:12px;color:#6b7280;margin:-4.5px 0 0;}
+.zb-field{display:flex;flex-direction:column;gap:4.5px;min-width:0;}
+.zb-label{font-size:12px;font-weight:600;color:#1f2937;}
+.zb-label b{color:#dc2626;margin-left:2px;}
+.zb-err{font-size:11.5px;color:#dc2626;margin:0 0;}
+.zb-hint{font-size:11px;color:#6b7280;margin:0 0;}
+.zb-right{text-align:right;}
+.zb-rel{position:relative;}
+.zb-ico{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#700C28;pointer-events:none;z-index:1;}
+.zb-input{width:100%;height:32px;padding:0 12px;font-size:13px;color:#111827;background:#fff;border:1px solid #d1d5db;border-radius:8px;outline:none;box-sizing:border-box;}
+.zb-input:focus{border-color:#700C28;box-shadow:0 0 0 3px rgba(112,12,40,.12);}
+.zb-input:disabled{background:#f3f4f6;color:#9ca3af;}
+.zb-has-icon{padding-left:36px;}
+.zb-select{appearance:none;padding-right:32px;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;}
+.zb-textarea{height:auto;padding:7.5px 12px;resize:vertical;}
+.zb-grid-2{display:grid;grid-template-columns:1fr;gap:10.5px;}
+.zb-grid-3{display:grid;grid-template-columns:1fr;gap:10.5px;}
+@media (min-width:768px){.zb-grid-2{grid-template-columns:1fr 1fr;}.zb-grid-3{grid-template-columns:1fr 1fr 1fr;}}
+.zb-choices{display:grid;gap:7.5px;grid-template-columns:repeat(3,1fr);}
+.zb-cols-2{grid-template-columns:repeat(2,1fr);}
+.zb-choice{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4.5px;min-height:48px;padding:7.5px 8px;border:1.5px solid #e5e7eb;border-radius:10px;background:#fff;color:#374151;font-size:12.5px;font-weight:600;cursor:pointer;transition:all .15s;}
+.zb-choice:hover:not(:disabled){border-color:rgba(112,12,40,.45);transform:translateY(-1px);}
+.zb-choice:disabled{opacity:.4;cursor:not-allowed;}
+.zb-choice.is-on{border-color:#700C28;background:#FBF3F5;color:#700C28;box-shadow:0 1px 4px rgba(112,12,40,.12);}
+.zb-choice.is-on::after{content:"✓";position:absolute;top:6px;right:7px;width:17px;height:17px;border-radius:50%;background:#700C28;color:#fff;font-size:10px;line-height:17px;text-align:center;font-weight:700;}
+.zb-check{display:flex;align-items:center;gap:6.75px;padding:7.5px 12px;border:1px solid #e5e7eb;border-radius:9px;font-size:12.5px;font-weight:500;color:#374151;cursor:pointer;background:#fff;}
+.zb-check.is-on{border-color:#700C28;background:#FBF3F5;color:#700C28;}
+.zb-check input{accent-color:#700C28;width:16px;height:16px;}
+.zb-checks{display:grid;gap:7.5px;grid-template-columns:1fr;}
+@media (min-width:768px){.zb-checks{grid-template-columns:repeat(3,1fr);}}
+.zb-area{display:flex;height:32px;border:1px solid #d1d5db;border-radius:8px;background:#fff;overflow:hidden;}
+.zb-area:focus-within{border-color:#700C28;box-shadow:0 0 0 3px rgba(112,12,40,.12);}
+.zb-area.is-err{border-color:#f87171;}
+.zb-area input{flex:1;min-width:0;border:0;padding:0 12px;font-size:13px;outline:none;background:transparent;}
+.zb-area select{border:0;border-left:1px solid #e5e7eb;background:#f9fafb;font-size:12px;padding:0 8px;outline:none;color:#374151;max-width:130px;}
+.zb-mt{margin-top:3px;}
+.zb-row-between{display:flex;align-items:center;justify-content:space-between;margin-top:4.5px;}
+.zb-ai-btn{display:inline-flex;align-items:center;gap:4.5px;height:26px;padding:0 12px;border-radius:8px;background:#fffbeb;color:#8a6400;border:1px solid rgba(212,160,23,.55);font-size:12px;font-weight:600;cursor:pointer;}
+.zb-ai-btn:disabled{opacity:.6;cursor:not-allowed;}
+.zb-count{font-size:13px;color:#4b5563;margin:0 0;}
+.zb-count b{color:#700C28;}
+.zb-amen-grid{display:grid;gap:7.5px;grid-template-columns:1fr;}
+@media (min-width:768px){.zb-amen-grid{grid-template-columns:repeat(3,1fr);}}
+.zb-amen{display:flex;align-items:center;gap:7.5px;padding:6.75px 11px;border:1.5px solid #e5e7eb;border-radius:10px;background:#fff;text-align:left;font-size:13px;font-weight:600;color:#1f2937;cursor:pointer;transition:all .15s;}
+.zb-amen:hover{border-color:rgba(112,12,40,.45);transform:translateY(-1px);}
+.zb-amen.is-on{border-color:#700C28;background:#FBF3F5;}
+.zb-amen-ico{width:28px;height:28px;border-radius:8px;background:#F8EEF1;color:#700C28;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.zb-amen.is-on .zb-amen-ico{background:#700C28;color:#fff;}
+.zb-amen-name{flex:1;min-width:0;}
+.zb-amen-box{width:16px;height:16px;border:1.5px solid #d1d5db;border-radius:5px;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;}
+.zb-amen.is-on .zb-amen-box{background:#700C28;border-color:#700C28;}
+.zb-mini{border:1px solid #e5e7eb;border-radius:12px;padding:12px 16px;background:#fff;display:flex;flex-direction:column;gap:9px;}
+.zb-mini-head{display:flex;gap:7.5px;align-items:flex-start;}
+.zb-mini-ico{width:28px;height:28px;border-radius:10px;background:#F8EEF1;color:#700C28;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.zb-mini h3{font-size:14px;font-weight:700;color:#111827;margin:0 0;}
+.zb-mini p{font-size:12px;color:#6b7280;margin:1.5px 0 0;}
+.zb-media{align-items:start;}
+.zb-col{display:flex;flex-direction:column;gap:10.5px;min-width:0;}
+.zb-drop{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4.5px;padding:16.5px 12px;border:1.5px dashed rgba(112,12,40,.4);border-radius:12px;background:#fdf7f8;text-align:center;}
+.zb-drop-sm{padding:12px 12px;}
+.zb-drop p{font-size:13px;color:#374151;margin:0 0;}
+.zb-drop-ico{color:#700C28;}
+.zb-link{background:none;border:0;padding:0 0;color:#700C28;font-weight:600;text-decoration:underline;cursor:pointer;font-size:13px;}
+.zb-btn-pill{display:inline-flex;align-items:center;gap:4.5px;height:28px;padding:0 14px;border-radius:8px;background:#700C28;color:#fff;font-size:12px;font-weight:600;border:0;cursor:pointer;}
+.zb-hidden{display:none;}
+.zb-preview{position:relative;border-radius:10px;overflow:hidden;}
+.zb-preview img,.zb-preview video{width:100%;display:block;max-height:195px;object-fit:cover;}
+.zb-preview-x{position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.zb-thumbs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+.zb-thumb{position:relative;aspect-ratio:1/1;border-radius:8px;overflow:hidden;background:#f3f4f6;}
+.zb-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+.zb-thumb button{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.zb-or{display:flex;align-items:center;gap:9px;color:#6b7280;font-size:12px;font-weight:700;}
+.zb-or::before,.zb-or::after{content:"";flex:1;height:1px;background:#d1d5db;}
+.zb-or span{background:#fff;border:1px solid #e5e7eb;border-radius:999px;padding:2.25px 12px;}
+.zb-divider{height:1px;background:#f0eded;margin:4.5px 0;}
+.zb-root{background:#FDF9F6;color:#1E2A3B;}
+.zb-topbar{background:#fff;border-bottom:1px solid #EFE7DC;}
+.zb-card{background:#fff;border-color:#EFE7DC;box-shadow:0 1px 2px rgba(30,42,59,.04),0 10px 24px -16px rgba(112,12,40,.22);transition:box-shadow .2s ease;}
+.zb-card:hover{box-shadow:0 16px 32px -18px rgba(112,12,40,.34);}
+.zb-main{max-width:1120px;padding:0 12px;}
+.zb-stepper{max-width:1120px;padding:0 12px;}
+.zb-promo{border-color:#EFE7DC;background:#fff;}
+.zb-promo-art{background:#F9ECD9;}
+.zb-promo-photo{height:142.5px;background:url('/images/property-hero.jpg') center/cover no-repeat,#F9E2CB;}
+.zb-point-t{color:#700C28;}
+.zb-point-s{color:#5B6472;}
+.zb-point-ico{transition:transform .2s ease;}
+.zb-points li:hover .zb-point-ico{transform:scale(1.08);}
+.zb-stats{background:#FBF4F1;}
+.zb-stats b{color:#700C28;}
+.zb-stats span{color:#5B6472;}
+.zb-step{background:#fff;color:#7B8494;transition:background .2s ease,color .2s ease,transform .2s ease;}
+.zb-step:hover:not(:disabled){transform:translateY(-1px);}
+.zb-step.is-active{background:#700C28;color:#fff;}
+.zb-step.is-done{background:#F3F8F1;color:#2F6B45;}
+.zb-num{background:#F1ECE4;color:#5B6472;}
+.zb-line{background:#E2D9CB;}
+.zb-label{color:#1E2A3B;}
+.zb-head p,.zb-mini p,.zb-hint,.zb-note,.zb-count{color:#5B6472;}
+.zb-sub{color:#1E2A3B;border-top-color:#EFE7DC;}
+.zb-input{background:#FFFDFA;border-color:#E2D9CB;color:#1E2A3B;transition:border-color .15s ease,box-shadow .15s ease,background .15s ease;}
+.zb-input:hover:not(:disabled){border-color:#B9A3A8;background:#fff;}
+.zb-input:focus{background:#fff;}
+.zb-choice{background:#fff;border-color:#E2D9CB;color:#1E2A3B;}
+.zb-choice:hover:not(:disabled){box-shadow:0 10px 20px -14px rgba(112,12,40,.5);}
+.zb-check{background:#fff;border-color:#E2D9CB;color:#1E2A3B;transition:background .15s ease,border-color .15s ease;}
+.zb-check:hover{border-color:#B9A3A8;background:#FFFDFA;}
+.zb-amen{background:#fff;border-color:#E2D9CB;color:#1E2A3B;}
+.zb-amen:hover{box-shadow:0 10px 20px -14px rgba(112,12,40,.5);}
+.zb-drop{background:#FDF8F1;transition:background .15s ease,border-color .15s ease;}
+.zb-drop:hover{border-color:#700C28;background:#F9EEEF;}
+.zb-mini{background:#fff;border-color:#EFE7DC;transition:box-shadow .2s ease;}
+.zb-mini:hover{box-shadow:0 12px 24px -16px rgba(112,12,40,.3);}
+.zb-mini h3{color:#1E2A3B;}
+.zb-ai-btn{background:#FFF7E0;color:#7A5A00;border-color:#E9C768;transition:background .15s ease,box-shadow .15s ease;}
+.zb-ai-btn:hover:not(:disabled){background:#FFEFC2;box-shadow:0 6px 14px -10px rgba(212,160,23,.8);}
+.zb-thumb img{transition:transform .25s ease;}
+.zb-thumb:hover img{transform:scale(1.05);}
+.zb-link:hover{opacity:.8;}
+.zb-footer{background:rgba(255,255,255,.97);border-top:1px solid #EFE7DC;}
+.zb-step-count{color:#5B6472;}
+.zb-btn-primary:hover:not(:disabled){box-shadow:0 10px 20px -10px rgba(112,12,40,.7);}
+.zb-btn-outline:hover{box-shadow:inset 0 0 0 1.5px #700C28,0 8px 16px -12px rgba(112,12,40,.6);}
+.zb-notice{background:#FFF7E0;border:1px solid #F0D27A;color:#7A5A00;border-radius:10px;padding:7.5px 14px;font-size:12.5px;line-height:1.45;}
+.zb-progress{max-width:1120px;margin:10.5px auto 0;padding:0 12px;}
+.zb-progress-top{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#5B6472;margin-bottom:4.5px;}
+.zb-progress-top b{color:#700C28;font-size:13px;}
+.zb-progress-track{height:8px;border-radius:999px;background:#F1E3E6;overflow:hidden;}
+.zb-progress-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,#700C28,#700C28);transition:width .35s ease;}
+@keyframes zbEnter{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+.zb-enter{animation:zbEnter .2s ease-out both;will-change:opacity,transform;}
+@media (prefers-reduced-motion: reduce){.zb-enter{animation:none;}.zb-card,.zb-choice,.zb-amen,.zb-btn,.zb-step,.zb-input,.zb-progress-fill{transition:none;}}
+
+/* Project pages: map the remaining Tailwind colours to the property palette */
+.zb-root .my-bg{background:#700C28 !important;color:#fff !important;}
+.zb-root .my-text{color:#700C28 !important;}
+.zb-root .bg-rose-100{background-color:#FBF3F5 !important;}
+.zb-root .text-rose-700{color:#700C28 !important;}
+.zb-root .border-rose-500{border-color:#700C28 !important;}
+.zb-root textarea.zb-input{height:auto;padding:10px 12px;resize:vertical;}
+.zb-root input:not([type=checkbox]):not([type=radio]):not([type=file]).zb-invalid,
+.zb-root select.zb-invalid,.zb-root textarea.zb-invalid{border-color:#dc2626 !important;}
+.zb-root .zb-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px max(16px, calc((100% - 1152px) / 2 + 16px));}
+.zb-root .zb-footer > :only-child{margin-left:auto;}
+.zb-root .zb-footer .zb-btn{min-width:120px;}
+`;
+
 const AddNewProject = () => {
   // Define state for the form fields
   const [projectName, setProjectName] = useState("");
@@ -1136,48 +1366,64 @@ const AddNewProject = () => {
   }
   return (
     <>
-      <div className="flex flex-col items-center min-h-screen bg-white">
-        {/* Navbar */}
-        <nav className="items-center justify-center hidden w-full p-4 text-black bg-gray-200 md:flex">
-          <h1 className="text-xl">Add New Project</h1>
-        </nav>
+      <div className="zb-root">
+        <style>{ZB_STYLES}</style>
 
-        {/* Stepper Navigation */}
-        <div className="flex flex-wrap justify-center w-full gap-2 p-3 bg-white">
-          {steps.map((step, index) => (
-            <button
-              key={index}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition ${activeStep === index
-                ? "bg-gray-200 my-text"
-                : completedSteps.includes(index)
-                  ? "text-green-600"
-                  : "text-gray-600"
-                }`}
-              onClick={() => {
-                // Only allow clicking back to completed steps or current
-                if (completedSteps.includes(index) || index === activeStep) {
-                  setActiveStep(index);
-                }
-              }}
-            >
-              {index + 1}. {step}
-            </button>
-          ))}
-        </div>
+        <header className="zb-banner">
+          <div className="zb-banner-inner">
+            <div className="zb-banner-text">
+              <h1>Add New Project</h1>
+              <p>Create your project listing step by step.</p>
+            </div>
+          </div>
+          <div className="zb-banner-line" />
+        </header>
+        
+
+        {/* Stepper */}
+        <nav className="zb-stepper" aria-label="Progress">
+            <ol>
+              {steps.map((step, index) => {
+                const isActive = activeStep === index;
+                const isDone = completedSteps.includes(index);
+                return (
+                  <li key={index} className="zb-step-item">
+                    <button
+                      type="button"
+                      aria-current={isActive ? "step" : undefined}
+                      className={`zb-step ${isActive ? "is-active" : isDone ? "is-done" : ""}`}
+                      onClick={() => {
+                        // Only allow clicking back to completed steps or current
+                        if (completedSteps.includes(index) || index === activeStep) {
+                          setActiveStep(index);
+                        }
+                      }}
+                    >
+                      <span className="zb-num">{isDone ? "✓" : index + 1}</span>
+                      <span>{step}</span>
+                    </button>
+                    {index < steps.length - 1 && (
+                      <span className={`zb-line ${isDone ? "is-done" : ""}`} />
+                    )}
+                  </li>
+                );
+              })}
+            </ol>
+          </nav>
 
         {/* Form Card */}
-        <div className="w-full p-6 bg-white max-w-7xl">
+        <div className="zb-main">
           {/* Render Step Content */}
           {activeStep === 0 && (
             <>
-              <div className="max-w-3xl p-3 mx-auto mb-20 border border-gray-300 rounded-xl">
+              <div className="zb-card max-w-3xl mx-auto">
                 <h2 className="mb-4 text-xl font-semibold text-gray-800">
                   Project Basic Information
                 </h2>
 
                 {/* Property Name */}
                 <div className="mb-4">
-                  <label className="block mb-1 font-medium text-gray-700">
+                  <label className="zb-label block mb-1">
                     Project Name{" "}
                     <span className="text-xl font-bold text-red-500">*</span>
                   </label>
@@ -1193,13 +1439,10 @@ const AddNewProject = () => {
                       );
                       setProjectName(alphaNumericOnly);
                     }}
-                    className={`w-full p-3 rounded-lg outline-none focus:ring-2 focus:ring-rose-500 ${errors.projectName
-                      ? "border border-red-600"
-                      : "border border-gray-300"
-                      }`}
+                    className={`zb-input w-full ${errors.projectName ? "border zb-invalid" : "border " }`}
                   />
                   {errors.projectName && (
-                    <p className="flex items-center gap-1 mt-1 text-sm text-red-500">
+                    <p className="zb-err flex items-center gap-1 mt-1">
                       <MdErrorOutline className="text-lg" />
                       {errors.projectName}
                     </p>
@@ -1232,7 +1475,7 @@ const AddNewProject = () => {
 
                 {/* Building Type */}
                 <div className="mb-4">
-                  <label className="block mb-1 font-medium text-gray-700">
+                  <label className="zb-label block mb-1">
                     Project Type
                   </label>
 
@@ -1251,10 +1494,7 @@ const AddNewProject = () => {
                             bhk_type: "",
                           }));
                         }}
-                        className={`px-4 py-2 rounded-full border ${buildingType === type
-                          ? "bg-rose-100 text-rose-700 border-rose-500"
-                          : "border-gray-300 text-gray-600"
-                          }`}
+                        className={`px-4 py-2 rounded-full border ${buildingType === type ? "bg-rose-100 text-rose-700 border-rose-500" : " text-gray-600" }`}
                       >
                         {type}
                       </button>
@@ -1264,7 +1504,7 @@ const AddNewProject = () => {
 
                 {/* {buildingType === "Commercial" && (
   <div className="col-span-2">
-    <label className="block mb-1 font-medium text-gray-700">
+    <label className="zb-label block mb-1">
       Office Type
     </label>
 
@@ -1284,7 +1524,7 @@ const AddNewProject = () => {
 
                 {/* Property Type */}
                 {/* <div className="mb-4">
-                  <label className="block mb-1 font-medium text-gray-700">
+                  <label className="zb-label block mb-1">
                     Project Type{" "}
                     <span className="text-xl font-bold text-red-500">*</span>
                   </label>
@@ -1297,11 +1537,7 @@ const AddNewProject = () => {
                         <button
                           key={type}
                           onClick={() => setPropertyType(type)}
-                          className={`px-4 py-2 rounded-full border ${
-                            propertyType === type
-                              ? "bg-rose-100 text-rose-700 border-rose-500"
-                              : "border-gray-300 text-gray-600"
-                          }`}
+                          className={`px-4 py-2 rounded-full border ${ propertyType === type ? "bg-rose-100 text-rose-700 border-rose-500" : " text-gray-600" }`}
                         >
                           {type === "Plot/Land" ? "Land" : type}
                         </button>
@@ -1311,7 +1547,7 @@ const AddNewProject = () => {
                 </div>
                 {propertyType === "Hospitality" && (
                   <div className="mt-4">
-                    <label className="block mb-1 font-medium text-gray-700">
+                    <label className="zb-label block mb-1">
                       What kind of hospitality?
                     </label>
 
@@ -1320,11 +1556,7 @@ const AddNewProject = () => {
                         <button
                           key={type}
                           type="button"
-                          className={`px-4 py-2 rounded-full border transition ${
-                            hospitalityType === type
-                              ? "bg-rose-100 text-rose-700 border-rose-500"
-                              : "border-gray-300 text-gray-600 hover:bg-gray-100"
-                          }`}
+                          className={`px-4 py-2 rounded-full border transition ${ hospitalityType === type ? "bg-rose-100 text-rose-700 border-rose-500" : " text-gray-600 hover:bg-gray-100" }`}
                           onClick={() => {
                             setHospitalityType(type);
 
@@ -1342,7 +1574,7 @@ const AddNewProject = () => {
                 )}
                 {propertyType === "Plot/Land" && (
                   <div className="mt-4">
-                    <label className="block mb-1 font-medium text-gray-700">
+                    <label className="zb-label block mb-1">
                       What kind of land?
                     </label>
 
@@ -1351,11 +1583,7 @@ const AddNewProject = () => {
                         <button
                           key={type}
                           type="button"
-                          className={`px-4 py-2 rounded-full border transition ${
-                            landType === type
-                              ? "bg-rose-100 text-rose-700 border-rose-500"
-                              : "border-gray-300 text-gray-600 hover:bg-gray-100"
-                          }`}
+                          className={`px-4 py-2 rounded-full border transition ${ landType === type ? "bg-rose-100 text-rose-700 border-rose-500" : " text-gray-600 hover:bg-gray-100" }`}
                           onClick={() => {
                             setLandType(type);
 
@@ -1373,7 +1601,7 @@ const AddNewProject = () => {
                 )}
                 {propertyType === "Industry" && (
                   <div className="mt-4">
-                    <label className="block mb-1 font-medium text-gray-700">
+                    <label className="zb-label block mb-1">
                       What kind of industry?
                     </label>
 
@@ -1382,11 +1610,7 @@ const AddNewProject = () => {
                         <button
                           key={type}
                           type="button"
-                          className={`px-4 py-2 rounded-full border transition ${
-                            industryType === type
-                              ? "bg-rose-100 text-rose-700 border-rose-500"
-                              : "border-gray-300 text-gray-600 hover:bg-gray-100"
-                          }`}
+                          className={`px-4 py-2 rounded-full border transition ${ industryType === type ? "bg-rose-100 text-rose-700 border-rose-500" : " text-gray-600 hover:bg-gray-100" }`}
                           onClick={() => {
                             setIndustryType(type);
 
@@ -1404,7 +1628,7 @@ const AddNewProject = () => {
                 )}
                 {propertyType === "Storage" && (
                   <div className="mt-4">
-                    <label className="block mb-1 font-medium text-gray-700">
+                    <label className="zb-label block mb-1">
                       What kind of storage?
                     </label>
 
@@ -1413,11 +1637,7 @@ const AddNewProject = () => {
                         <button
                           key={type}
                           type="button"
-                          className={`px-4 py-2 rounded-full border transition ${
-                            storageType === type
-                              ? "bg-rose-100 text-rose-700 border-rose-500"
-                              : "border-gray-300 text-gray-600 hover:bg-gray-100"
-                          }`}
+                          className={`px-4 py-2 rounded-full border transition ${ storageType === type ? "bg-rose-100 text-rose-700 border-rose-500" : " text-gray-600 hover:bg-gray-100" }`}
                           onClick={() => {
                             setStorageType(type);
 
@@ -1435,7 +1655,7 @@ const AddNewProject = () => {
                 )}
                 {propertyType === "Office" && (
                   <div className="mt-4">
-                    <label className="block mb-1 font-medium text-gray-700">
+                    <label className="zb-label block mb-1">
                       What kind of office?
                     </label>
 
@@ -1444,11 +1664,7 @@ const AddNewProject = () => {
                         <button
                           key={type}
                           type="button"
-                          className={`px-4 py-2 rounded-full border transition ${
-                            officeSubType === type
-                              ? "bg-rose-100 text-rose-700 border-rose-500"
-                              : "border-gray-300 text-gray-600 hover:bg-gray-100"
-                          }`}
+                          className={`px-4 py-2 rounded-full border transition ${ officeSubType === type ? "bg-rose-100 text-rose-700 border-rose-500" : " text-gray-600 hover:bg-gray-100" }`}
                           onClick={() => {
                             setOfficeSubType(type);
 
@@ -1466,7 +1682,7 @@ const AddNewProject = () => {
                 )}
                 {propertyType === "Retail" && (
                   <div className="mt-4">
-                    <label className="block mb-1 font-medium text-gray-700">
+                    <label className="zb-label block mb-1">
                       What kind of retail?
                     </label>
 
@@ -1475,11 +1691,7 @@ const AddNewProject = () => {
                         <button
                           key={type}
                           type="button"
-                          className={`px-4 py-2 rounded-full border transition ${
-                            RetailSubType === type
-                              ? "bg-rose-100 text-rose-700 border-rose-500"
-                              : "border-gray-300 text-gray-600 hover:bg-gray-100"
-                          }`}
+                          className={`px-4 py-2 rounded-full border transition ${ RetailSubType === type ? "bg-rose-100 text-rose-700 border-rose-500" : " text-gray-600 hover:bg-gray-100" }`}
                           onClick={() => {
                             setRetailSubType(type);
                             setFormData((prev) => ({
@@ -1496,7 +1708,7 @@ const AddNewProject = () => {
                 )}
                 {propertyType === "Retail" && RetailSubType && (
                   <div className="mt-4">
-                    <label className="block mb-1 font-medium text-gray-700">
+                    <label className="zb-label block mb-1">
                       Your Retail located inside?
                     </label>
 
@@ -1505,11 +1717,7 @@ const AddNewProject = () => {
                         <button
                           key={type}
                           type="button"
-                          className={`px-4 py-2 rounded-full border transition ${
-                            retailLocation === type
-                              ? "bg-rose-100 text-rose-700 border-rose-500"
-                              : "border-gray-300 text-gray-600 hover:bg-gray-100"
-                          }`}
+                          className={`px-4 py-2 rounded-full border transition ${ retailLocation === type ? "bg-rose-100 text-rose-700 border-rose-500" : " text-gray-600 hover:bg-gray-100" }`}
                           onClick={() => {
                             setRetailLocation(type);
                             setFormData((prev) => ({
@@ -1553,7 +1761,7 @@ const AddNewProject = () => {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="col-span-2">
-                      <label className="font-medium text-gray-700">
+                      <label className="zb-label">
                         Address{" "}
                         <span className="text-xl font-bold text-red-500">
                           *
@@ -1574,10 +1782,7 @@ const AddNewProject = () => {
                                 setAddress(value);
                               }
                             }}
-                            className={`w-full border rounded-md p-3 text-gray-700 focus:ring-2 focus:ring-rose-500 outline-none ${formErrors.address
-                              ? "border-red-600"
-                              : "border-gray-300"
-                              }`}
+                            className={`zb-input w-full ${formErrors.address ? "zb-invalid" : "" }`}
                           />
                         </Autocomplete>
                       ) : (
@@ -1585,12 +1790,12 @@ const AddNewProject = () => {
                           type="text"
                           disabled
                           placeholder="Loading Google Maps..."
-                          className={`w-full border rounded-md p-3 text-gray-700 border-gray-300`}
+                          className={`zb-input w-full `}
                         />
                       )}
 
                       {formErrors.address && (
-                        <p className="flex items-center gap-1 mt-1 text-sm text-red-500">
+                        <p className="zb-err flex items-center gap-1 mt-1">
                           <MdErrorOutline className="text-lg" />
                           {formErrors.address}
                         </p>
@@ -1599,7 +1804,7 @@ const AddNewProject = () => {
 
                     {/* Country Dropdown */}
                     <div>
-                      <label className="font-medium text-gray-700">
+                      <label className="zb-label">
                         Country{" "}
                         <span className="text-xl font-bold text-red-500">
                           *
@@ -1611,10 +1816,7 @@ const AddNewProject = () => {
                           setCountry(e.target.value);
                           setState("");
                         }}
-                        className={`w-full border rounded-md p-3 text-gray-700 focus:ring-2 focus:ring-rose-500 outline-none ${formErrors.country
-                          ? "border-red-600"
-                          : "border-gray-300"
-                          }`}
+                        className={`zb-input w-full ${formErrors.country ? "zb-invalid" : "" }`}
                       >
                         <option value="">Select Country</option>
                         {allCountries.map((c) => (
@@ -1624,7 +1826,7 @@ const AddNewProject = () => {
                         ))}
                       </select>
                       {formErrors.country && (
-                        <p className="flex items-center gap-1 mt-1 text-sm text-red-500">
+                        <p className="zb-err flex items-center gap-1 mt-1">
                           <MdErrorOutline className="text-lg" />
                           {formErrors.country}
                         </p>
@@ -1633,7 +1835,7 @@ const AddNewProject = () => {
 
                     {/* State Dropdown */}
                     <div>
-                      <label className="font-medium text-gray-700">
+                      <label className="zb-label">
                         State{" "}
                         <span className="text-xl font-bold text-red-500">
                           *
@@ -1642,10 +1844,7 @@ const AddNewProject = () => {
                       <select
                         value={state}
                         onChange={(e) => setState(e.target.value)}
-                        className={`w-full border rounded-md p-3 text-gray-700 focus:ring-2 focus:ring-rose-500 outline-none ${formErrors.state
-                          ? "border-red-600"
-                          : "border-gray-300"
-                          }`}
+                        className={`zb-input w-full ${formErrors.state ? "zb-invalid" : "" }`}
                       >
                         <option value="">Select State</option>
                         {allStates.map((s) => (
@@ -1655,7 +1854,7 @@ const AddNewProject = () => {
                         ))}
                       </select>
                       {formErrors.state && (
-                        <p className="flex items-center gap-1 mt-1 text-sm text-red-500">
+                        <p className="zb-err flex items-center gap-1 mt-1">
                           <MdErrorOutline className="text-lg" />
                           {formErrors.state}
                         </p>
@@ -1663,7 +1862,7 @@ const AddNewProject = () => {
                     </div>
 
                     <div>
-                      <label className="font-medium text-gray-700">
+                      <label className="zb-label">
                         City{" "}
                         <span className="text-xl font-bold text-red-500">
                           *
@@ -1680,11 +1879,10 @@ const AddNewProject = () => {
                           }
                         }}
                         placeholder="Enter City"
-                        className={`w-full border rounded-md p-3 text-gray-700 focus:ring-2 focus:ring-rose-500 outline-none ${formErrors.city ? "border-red-600" : "border-gray-300"
-                          }`}
+                        className={`zb-input w-full ${formErrors.city ? "zb-invalid" : "" }`}
                       />
                       {formErrors.city && (
-                        <p className="flex items-center gap-1 mt-1 text-sm text-red-500">
+                        <p className="zb-err flex items-center gap-1 mt-1">
                           <MdErrorOutline className="text-lg" />
                           {formErrors.city}
                         </p>
@@ -1692,7 +1890,7 @@ const AddNewProject = () => {
                     </div>
                     {/* Locality */}
                     {/* <div>
-                      <label className="font-medium text-gray-700">
+                      <label className="zb-label">
                         Locality{" "}
                         <span className="invisible text-xl font-bold">*</span>
                       </label>
@@ -1701,13 +1899,13 @@ const AddNewProject = () => {
                         value={locality}
                         onChange={(e) => setLocality(e.target.value)}
                         placeholder="Enter Locality"
-                        className="w-full border rounded-md p-3 text-gray-700 focus:ring-2 focus:ring-rose-500 outline-none border-gray-300"
+                        className="zb-input w-full "
                       />
                     </div> */}
 
                     {/* Sub Locality */}
                     {/* <div>
-                      <label className="font-medium text-gray-700">
+                      <label className="zb-label">
                         Sub Locality{" "}
                         <span className="invisible text-xl font-bold">*</span>
                       </label>
@@ -1716,12 +1914,12 @@ const AddNewProject = () => {
                         value={subLocality}
                         onChange={(e) => setSubLocality(e.target.value)}
                         placeholder="Enter Sub Locality"
-                        className="w-full border rounded-md p-3 text-gray-700 focus:ring-2 focus:ring-rose-500 outline-none border-gray-300"
+                        className="zb-input w-full "
                       />
                     </div> */}
                     {/* Zip Code */}
                     <div>
-                      <label className="font-medium text-gray-700">
+                      <label className="zb-label">
                         Zip <span className="text-xl text-red-500">*</span>
                       </label>
                       <input
@@ -1734,13 +1932,10 @@ const AddNewProject = () => {
                             setZipCode(value);
                           }
                         }}
-                        className={`w-full border rounded-md p-3 text-gray-700 focus:ring-2 focus:ring-rose-500 outline-none ${formErrors.zipCode
-                          ? "border-red-600"
-                          : "border-gray-300"
-                          }`}
+                        className={`zb-input w-full ${formErrors.zipCode ? "zb-invalid" : "" }`}
                       />
                       {formErrors.zipCode && (
-                        <p className="flex items-center gap-1 mt-1 text-sm text-red-500">
+                        <p className="zb-err flex items-center gap-1 mt-1">
                           <MdErrorOutline className="text-lg" />
                           {formErrors.zipCode}
                         </p>
@@ -1754,7 +1949,7 @@ const AddNewProject = () => {
 
           {activeStep === 2 && (
             <>
-              <div className="p-3 mx-auto mb-3 bg-white border max-w-7xl rounded-xl">
+              <div className="zb-card mx-auto">
                 <div className="mb-6">
                   <h2 className="text-xl sm:text-2xl font-semibold text-gray-900">
                     Project Details
@@ -1789,7 +1984,7 @@ const AddNewProject = () => {
                       {/* <div className="col-span-6"> */}
                       <div className="col-span-1 sm:col-span-2 md:col-span-3 lg:col-span-4 xl:col-span-6">
                         <div className="mb-4">
-                          <label className="block mb-1 font-medium text-gray-700">
+                          <label className="zb-label block mb-1">
                             Project Type{" "}
                             <span className="text-xl font-bold text-red-500">*</span>
                           </label>
@@ -1805,15 +2000,8 @@ const AddNewProject = () => {
                                   onClick={() =>
                                     handleProjectPropertyChange(index, "project_type", type)
                                   }
-                                  // className={`px-4 py-2 rounded-full border ${projectProperty.project_type === type
-                                  //   ? "bg-rose-100 text-rose-700 border-rose-500"
-                                  //   : "border-gray-300 text-gray-600"
-                                  //   }`}
-                                  className={`px-3 py-2 sm:px-4 rounded-full border text-sm sm:text-base ${
-                                      projectProperty.project_type === type
-                                        ? "bg-rose-100 text-rose-700 border-rose-500"
-                                        : "border-gray-300 text-gray-600"
-                                    }`}
+                                  // className={`px-4 py-2 rounded-full border ${projectProperty.project_type === type // ? "bg-rose-100 text-rose-700 border-rose-500" // : " text-gray-600" // }`}
+                                  className={`px-3 py-2 sm:px-4 rounded-full border text-sm sm:text-base ${ projectProperty.project_type === type ? "bg-rose-100 text-rose-700 border-rose-500" : " text-gray-600" }`}
                                 >
                                   {type === "Plot/Land" ? "Land" : type}
                                 </button>
@@ -1823,7 +2011,7 @@ const AddNewProject = () => {
                         </div>
                         {projectProperty.project_type === "Hospitality" && (
                           <div className="mt-4">
-                            <label className="block mb-1 font-medium text-gray-700">
+                            <label className="zb-label block mb-1">
                               What kind of hospitality?
                             </label>
 
@@ -1832,15 +2020,8 @@ const AddNewProject = () => {
                                 <button
                                   key={type}
                                   type="button"
-                                  // className={`px-4 py-2 rounded-full border transition ${projectProperty.sub_project_type === type
-                                  //   ? "bg-rose-100 text-rose-700 border-rose-500"
-                                  //   : "border-gray-300 text-gray-600 hover:bg-gray-100"
-                                  //   }`}
-                                    className={`px-3 py-2 sm:px-4 rounded-full border text-sm sm:text-base transition ${
-                                      projectProperty.sub_project_type === type
-                                        ? "bg-rose-100 text-rose-700 border-rose-500"
-                                        : "border-gray-300 text-gray-600 hover:bg-gray-100"
-                                    }`}
+                                  // className={`px-4 py-2 rounded-full border transition ${projectProperty.sub_project_type === type // ? "bg-rose-100 text-rose-700 border-rose-500" // : " text-gray-600 hover:bg-gray-100" // }`}
+                                    className={`px-3 py-2 sm:px-4 rounded-full border text-sm sm:text-base transition ${ projectProperty.sub_project_type === type ? "bg-rose-100 text-rose-700 border-rose-500" : " text-gray-600 hover:bg-gray-100" }`}
                                   onClick={() => {
                                     handleProjectPropertyChange(index, "sub_project_type", type);
                                   }}
@@ -1853,7 +2034,7 @@ const AddNewProject = () => {
                         )}
                         {projectProperty.project_type === "Plot/Land" && (
                           <div className="mt-4">
-                            <label className="block mb-1 font-medium text-gray-700">
+                            <label className="zb-label block mb-1">
                               What kind of land?
                             </label>
 
@@ -1862,15 +2043,8 @@ const AddNewProject = () => {
                                 <button
                                   key={type}
                                   type="button"
-                                  // className={`px-4 py-2 rounded-full border transition ${projectProperty.sub_project_type === type
-                                  //   ? "bg-rose-100 text-rose-700 border-rose-500"
-                                  //   : "border-gray-300 text-gray-600 hover:bg-gray-100"
-                                  //   }`}
-                                  className={`px-3 py-2 sm:px-4 rounded-full border text-sm sm:text-base transition ${
-                                  projectProperty.sub_project_type === type
-                                    ? "bg-rose-100 text-rose-700 border-rose-500"
-                                    : "border-gray-300 text-gray-600 hover:bg-gray-100"
-                                }`}
+                                  // className={`px-4 py-2 rounded-full border transition ${projectProperty.sub_project_type === type // ? "bg-rose-100 text-rose-700 border-rose-500" // : " text-gray-600 hover:bg-gray-100" // }`}
+                                  className={`px-3 py-2 sm:px-4 rounded-full border text-sm sm:text-base transition ${ projectProperty.sub_project_type === type ? "bg-rose-100 text-rose-700 border-rose-500" : " text-gray-600 hover:bg-gray-100" }`}
                                   onClick={() => {
                                     handleProjectPropertyChange(index, "sub_project_type", type);
                                   }}
@@ -1883,7 +2057,7 @@ const AddNewProject = () => {
                         )}
                         {projectProperty.project_type === "Industry" && (
                           <div className="mt-4">
-                            <label className="block mb-1 font-medium text-gray-700">
+                            <label className="zb-label block mb-1">
                               What kind of industry?
                             </label>
 
@@ -1892,15 +2066,8 @@ const AddNewProject = () => {
                                 <button
                                   key={type}
                                   type="button"
-                                  // className={`px-4 py-2 rounded-full border transition ${projectProperty.sub_project_type === type
-                                  //   ? "bg-rose-100 text-rose-700 border-rose-500"
-                                  //   : "border-gray-300 text-gray-600 hover:bg-gray-100"
-                                  //   }`}
-                                      className={`px-3 py-2 sm:px-4 rounded-full border text-sm sm:text-base transition ${
-                                      projectProperty.sub_project_type === type
-                                        ? "bg-rose-100 text-rose-700 border-rose-500"
-                                        : "border-gray-300 text-gray-600 hover:bg-gray-100"
-                                    }`}
+                                  // className={`px-4 py-2 rounded-full border transition ${projectProperty.sub_project_type === type // ? "bg-rose-100 text-rose-700 border-rose-500" // : " text-gray-600 hover:bg-gray-100" // }`}
+                                      className={`px-3 py-2 sm:px-4 rounded-full border text-sm sm:text-base transition ${ projectProperty.sub_project_type === type ? "bg-rose-100 text-rose-700 border-rose-500" : " text-gray-600 hover:bg-gray-100" }`}
                                   onClick={() => {
                                     handleProjectPropertyChange(index, "sub_project_type", type);
                                   }}
@@ -1913,7 +2080,7 @@ const AddNewProject = () => {
                         )}
                         {projectProperty.project_type === "Storage" && (
                           <div className="mt-4">
-                            <label className="block mb-1 font-medium text-gray-700">
+                            <label className="zb-label block mb-1">
                               What kind of storage?
                             </label>
 
@@ -1922,15 +2089,8 @@ const AddNewProject = () => {
                                 <button
                                   key={type}
                                   type="button"
-                                  // className={`px-4 py-2 rounded-full border transition ${projectProperty.sub_project_type === type
-                                  //   ? "bg-rose-100 text-rose-700 border-rose-500"
-                                  //   : "border-gray-300 text-gray-600 hover:bg-gray-100"
-                                  //   }`}
-                                      className={`px-3 py-2 sm:px-4 rounded-full border text-sm sm:text-base transition ${
-                                        projectProperty.sub_project_type === type
-                                          ? "bg-rose-100 text-rose-700 border-rose-500"
-                                          : "border-gray-300 text-gray-600 hover:bg-gray-100"
-                                      }`}
+                                  // className={`px-4 py-2 rounded-full border transition ${projectProperty.sub_project_type === type // ? "bg-rose-100 text-rose-700 border-rose-500" // : " text-gray-600 hover:bg-gray-100" // }`}
+                                      className={`px-3 py-2 sm:px-4 rounded-full border text-sm sm:text-base transition ${ projectProperty.sub_project_type === type ? "bg-rose-100 text-rose-700 border-rose-500" : " text-gray-600 hover:bg-gray-100" }`}
                                   onClick={() => {
                                     handleProjectPropertyChange(index, "sub_project_type", type);
                                   }}
@@ -1943,7 +2103,7 @@ const AddNewProject = () => {
                         )}
                         {projectProperty.project_type === "Office" && (
                           <div className="mt-4">
-                            <label className="block mb-1 font-medium text-gray-700">
+                            <label className="zb-label block mb-1">
                               What kind of office?
                             </label>
 
@@ -1952,10 +2112,7 @@ const AddNewProject = () => {
                                 <button
                                   key={type}
                                   type="button"
-                                  className={`px-4 py-2 rounded-full border transition ${projectProperty.sub_project_type === type
-                                    ? "bg-rose-100 text-rose-700 border-rose-500"
-                                    : "border-gray-300 text-gray-600 hover:bg-gray-100"
-                                    }`}
+                                  className={`px-4 py-2 rounded-full border transition ${projectProperty.sub_project_type === type ? "bg-rose-100 text-rose-700 border-rose-500" : " text-gray-600 hover:bg-gray-100" }`}
                                   onClick={() => {
                                     handleProjectPropertyChange(index, "sub_project_type", type);
                                   }}
@@ -1968,7 +2125,7 @@ const AddNewProject = () => {
                         )}
                         {projectProperty.project_type === "Retail" && (
                           <div className="mt-4">
-                            <label className="block mb-1 font-medium text-gray-700">
+                            <label className="zb-label block mb-1">
                               What kind of retail?
                             </label>
 
@@ -1977,10 +2134,7 @@ const AddNewProject = () => {
                                 <button
                                   key={type}
                                   type="button"
-                                  className={`px-4 py-2 rounded-full border transition ${projectProperty.sub_project_type === type
-                                    ? "bg-rose-100 text-rose-700 border-rose-500"
-                                    : "border-gray-300 text-gray-600 hover:bg-gray-100"
-                                    }`}
+                                  className={`px-4 py-2 rounded-full border transition ${projectProperty.sub_project_type === type ? "bg-rose-100 text-rose-700 border-rose-500" : " text-gray-600 hover:bg-gray-100" }`}
                                   onClick={() => {
                                     handleProjectPropertyChange(index, "sub_project_type", type);
                                   }}
@@ -1994,7 +2148,7 @@ const AddNewProject = () => {
                         {projectProperty.project_type === "Retail" &&
                           projectProperty.sub_project_type && (
                             <div className="mt-4">
-                              <label className="block mb-1 font-medium text-gray-700">
+                              <label className="zb-label block mb-1">
                                 Your Retail located inside?
                               </label>
 
@@ -2003,10 +2157,7 @@ const AddNewProject = () => {
                                   <button
                                     key={type}
                                     type="button"
-                                    className={`px-4 py-2 rounded-full border transition ${projectProperty.retail_location === type
-                                      ? "bg-rose-100 text-rose-700 border-rose-500"
-                                      : "border-gray-300 text-gray-600 hover:bg-gray-100"
-                                      }`}
+                                    className={`px-4 py-2 rounded-full border transition ${projectProperty.retail_location === type ? "bg-rose-100 text-rose-700 border-rose-500" : " text-gray-600 hover:bg-gray-100" }`}
                                     onClick={() => {
                                       handleProjectPropertyChange(index, "retail_location", type);
                                     }}
@@ -2020,7 +2171,7 @@ const AddNewProject = () => {
                       </div>
                       {/* Property Price */}
                       <div className="w-full">
-                        <label className="block mb-0 text-sm font-medium text-gray-700">
+                        <label className="block mb-0 text-sm zb-label">
                           Price{" "}
                           <span className="text-xl font-bold text-red-500">*</span>
                         </label>
@@ -2039,7 +2190,7 @@ const AddNewProject = () => {
                             }
                           }}
                           placeholder="₹"
-                          className="w-full mt-1 p-3 border rounded-lg text-gray-700 outline-none focus:ring-2 focus:ring-rose-500"
+                          className="zb-input w-full mt-1"
                         />
                         {projectProperty.price && (
                           <p className="mt-2 text-sm font-medium text-gray-600">
@@ -2047,7 +2198,7 @@ const AddNewProject = () => {
                           </p>
                         )}
                         {errors[`price_${index}`] && (
-                          <p className="flex items-center gap-1 mt-1 text-sm text-red-500">
+                          <p className="zb-err flex items-center gap-1 mt-1">
                             <MdErrorOutline className="text-lg" />
                             {errors[`price_${index}`]}
                           </p>
@@ -2060,7 +2211,7 @@ const AddNewProject = () => {
                         propertyType.project_type === "Plot/Land"
                       ) && (
                           <div className="w-full">
-                            <label className="block mb-1 text-sm font-medium text-gray-700">
+                            <label className="block mb-1 text-sm zb-label">
                               BHK{" "}
                               <span className="text-xl font-bold text-red-500">
                                 *
@@ -2073,7 +2224,7 @@ const AddNewProject = () => {
                                 handleProjectPropertyChange(index, "bhk_type", e.target.value);
                                 setConfigurations(e.target.value);
                               }}
-                              className="w-full mt-1 p-3 border rounded-lg text-gray-700 outline-none focus:ring-2 focus:ring-rose-500"
+                              className="zb-input w-full mt-1"
                             >
                               <option value="">Select BHK Type</option>
 
@@ -2100,7 +2251,7 @@ const AddNewProject = () => {
                             </select>
 
                             {errors.bhk_type && (
-                              <p className="flex items-center gap-1 mt-1 text-sm text-red-500">
+                              <p className="zb-err flex items-center gap-1 mt-1">
                                 <MdErrorOutline className="text-lg" />
                                 {errors.bhk_type}
                               </p>
@@ -2110,7 +2261,7 @@ const AddNewProject = () => {
 
                       {/* Carpet Area */}
                       <div>
-                        <label className="font-medium text-gray-700">
+                        <label className="zb-label">
                           Carpet Area <span className="text-red-500">*</span>
                         </label>
                         <input
@@ -2122,18 +2273,18 @@ const AddNewProject = () => {
                               handleProjectPropertyChange(index, "carpet_area", value);
                             }
                           }}
-                          className="w-full mt-1 p-3 border rounded-lg"
+                          className="zb-input w-full mt-1"
                         />
                       </div>
 
                       <div>
-                        <label className="font-medium text-gray-700">Unit</label>
+                        <label className="zb-label">Unit</label>
                         <select
                           value={projectProperty.carpet_area_in || ""}
                           onChange={(e) =>
                             handleProjectPropertyChange(index, "carpet_area_in", e.target.value)
                           }
-                          className="w-full mt-1 p-3 border rounded-lg"
+                          className="zb-input w-full mt-1"
                         >
                           <option value="">Select</option>
                           <option value="sq.ft">sq.ft</option>
@@ -2159,7 +2310,7 @@ const AddNewProject = () => {
 
                       {/* Built-up Area */}
                       <div>
-                        <label className="font-medium text-gray-700">
+                        <label className="zb-label">
                           Built-up Area <span className="text-red-500">*</span>
                         </label>
                         <input
@@ -2171,18 +2322,18 @@ const AddNewProject = () => {
                               handleProjectPropertyChange(index, "area", value);
                             }
                           }}
-                          className="w-full mt-1 p-3 border rounded-lg"
+                          className="zb-input w-full mt-1"
                         />
                       </div>
 
                       <div>
-                        <label className="font-medium text-gray-700">Unit</label>
+                        <label className="zb-label">Unit</label>
                         <select
                           value={projectProperty.area_in || ""}
                           onChange={(e) =>
                             handleProjectPropertyChange(index, "area_in", e.target.value)
                           }
-                          className="w-full mt-1 p-3 border rounded-lg"
+                          className="zb-input w-full mt-1"
                         >
                           <option value="">Select</option>
                           <option value="sq.ft">sq.ft</option>
@@ -2221,12 +2372,12 @@ const AddNewProject = () => {
                           ].includes(projectProperty.project_type))
                       ) && (
                           <div>
-                            <label className="font-medium text-gray-700">
+                            <label className="zb-label">
                               Bathroom
                             </label>
 
                             <select
-                              className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                              className="zb-input w-full mt-1"
                               value={projectProperty.bathroom || ""}
                               onChange={(e) =>
                                 handleProjectPropertyChange(index, "bathroom", Number(e.target.value))
@@ -2245,7 +2396,7 @@ const AddNewProject = () => {
                       {/* {buildingType === "Commercial" &&
                         projectProperty.project_type === "Retail" && (
                           <div>
-                            <label className="font-medium text-gray-700">
+                            <label className="zb-label">
                               Washroom
                             </label>
 
@@ -2258,7 +2409,7 @@ const AddNewProject = () => {
                                   e.target.value
                                 )
                               }
-                              className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                              className="zb-input w-full mt-1"
                             >
                               <option value="">Select Washroom</option>
                               <option value="Private Washrooms">
@@ -2276,7 +2427,7 @@ const AddNewProject = () => {
                           projectProperty.project_type
                         ) && (
                           <div>
-                            <label className="font-medium text-gray-700">
+                            <label className="zb-label">
                               Washroom
                             </label>
 
@@ -2289,7 +2440,7 @@ const AddNewProject = () => {
                                   e.target.value
                                 )
                               }
-                              className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                              className="zb-input w-full mt-1"
                             >
                               <option value="">Select Washrooms</option>
                               <option value="None">None</option>
@@ -2315,7 +2466,7 @@ const AddNewProject = () => {
                           ].includes(projectProperty.project_type))
                       ) && (
                           <div>
-                            <label className="font-medium text-gray-700">
+                            <label className="zb-label">
                               Total Floor
                             </label>
 
@@ -2329,7 +2480,7 @@ const AddNewProject = () => {
                                   handleProjectPropertyChange(index, "total_floor", value);
                                 }
                               }}
-                              className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                              className="zb-input w-full mt-1"
                             />
                           </div>
                         )}
@@ -2346,7 +2497,7 @@ const AddNewProject = () => {
                           ].includes(projectProperty.project_type))
                       ) && (
                           <div>
-                            <label className="font-medium text-gray-700">
+                            <label className="zb-label">
                               Flat on the floor
                             </label>
 
@@ -2354,7 +2505,7 @@ const AddNewProject = () => {
                               name="project_floor"
                               value={projectProperty.project_floor || ""}
                               onChange={(e) => handleProjectPropertyChange(index, "project_floor", e.target.value)}
-                              className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                              className="zb-input w-full mt-1"
                             >
                               <option value="">Select Floor</option>
 
@@ -2381,7 +2532,7 @@ const AddNewProject = () => {
                       {/* {buildingType === "Commercial" &&
                         projectProperty.project_type === "Office" && (
                           <div>
-                            <label className="font-medium text-gray-700">
+                            <label className="zb-label">
                               No. of Cabines
                             </label>
 
@@ -2394,7 +2545,7 @@ const AddNewProject = () => {
                                   e.target.value
                                 )
                               }
-                              className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                              className="zb-input w-full mt-1"
                             >
                               <option value="">Select Cabines</option>
                               <option value="1">1</option>
@@ -2408,7 +2559,7 @@ const AddNewProject = () => {
                         )} */}
                       {/* {buildingType === "Commercial" && projectProperty.project_type === "Office" && (
                         <div>
-                          <label className="font-medium text-gray-700">
+                          <label className="zb-label">
                             No. of Meeting Rooms
                           </label>
 
@@ -2421,7 +2572,7 @@ const AddNewProject = () => {
                                 e.target.value
                               )
                             }
-                            className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                            className="zb-input w-full mt-1"
                           >
                             <option value="">Select Meeting Rooms</option>
                             <option value="1">1</option>
@@ -2435,7 +2586,7 @@ const AddNewProject = () => {
                       {/* {buildingType === "Commercial" &&
                         projectProperty.project_type === "Office" && (
                           <div>
-                            <label className="font-medium text-gray-700">
+                            <label className="zb-label">
                               No. of Conference Room
                             </label>
 
@@ -2448,7 +2599,7 @@ const AddNewProject = () => {
                                   e.target.value
                                 )
                               }
-                              className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                              className="zb-input w-full mt-1"
                             >
                               <option value="">Select Conference Room</option>
                               <option value="0">0</option>
@@ -2462,7 +2613,7 @@ const AddNewProject = () => {
                       {buildingType === "Commercial" &&
                         projectProperty.project_type === "Hospitality" && (
                           <div>
-                            <label className="font-medium text-gray-700">
+                            <label className="zb-label">
                               Total Number of Rooms
                             </label>
 
@@ -2480,7 +2631,7 @@ const AddNewProject = () => {
                                 }
                               }}
                               placeholder="Enter Total Rooms"
-                              className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                              className="zb-input w-full mt-1"
                             />
                           </div>
                         )}
@@ -2488,7 +2639,7 @@ const AddNewProject = () => {
                         (buildingType === "Commercial" &&
                           ["Land", "Plot/Land"].includes(projectProperty.project_type))) && (
                           <div>
-                            <label className="font-medium text-gray-700">Facing</label>
+                            <label className="zb-label">Facing</label>
 
                             <select
 
@@ -2496,7 +2647,7 @@ const AddNewProject = () => {
                               onChange={(e) =>
                                 handleProjectPropertyChange(index, "facing", e.target.value)
                               }
-                              className="w-full p-3 mt-1 border rounded-lg"
+                              className="zb-input w-full mt-1"
                             >
                               <option value="">Select Facing</option>
 
@@ -2517,7 +2668,7 @@ const AddNewProject = () => {
                           <>
                             {/* Length */}
                             <div>
-                              <label className="font-medium text-gray-700">
+                              <label className="zb-label">
                                 Length of Plot (ft){" "}
                                 <span className="text-red-500">*</span>
                               </label>
@@ -2536,14 +2687,11 @@ const AddNewProject = () => {
                                   }
                                 }}
                                 placeholder="Enter Length"
-                                className={`w-full p-3 mt-1 border rounded-lg focus:ring-2 focus:ring-rose-500 outline-none ${errors?.property_dimensions_length
-                                  ? "border-red-600"
-                                  : "border-gray-300"
-                                  }`}
+                                className={`zb-input w-full mt-1 focus:ring-2 focus:ring-rose-500 outline-none ${errors?.property_dimensions_length ? "zb-invalid" : "" }`}
                               />
 
                               {errors?.property_dimensions_length && (
-                                <p className="text-sm text-red-500 mt-1">
+                                <p className="zb-err mt-1">
                                   {errors.property_dimensions_length}
                                 </p>
                               )}
@@ -2551,7 +2699,7 @@ const AddNewProject = () => {
 
                             {/* Breadth */}
                             <div>
-                              <label className="font-medium text-gray-700">
+                              <label className="zb-label">
                                 Breadth of Plot (ft){" "}
                                 <span className="text-red-500">*</span>
                               </label>
@@ -2570,14 +2718,11 @@ const AddNewProject = () => {
                                   }
                                 }}
                                 placeholder="Enter Breadth"
-                                className={`w-full p-3 mt-1 border rounded-lg focus:ring-2 focus:ring-rose-500 outline-none ${errors?.property_dimensions_breadth
-                                  ? "border-red-600"
-                                  : "border-gray-300"
-                                  }`}
+                                className={`zb-input w-full mt-1 focus:ring-2 focus:ring-rose-500 outline-none ${errors?.property_dimensions_breadth ? "zb-invalid" : "" }`}
                               />
 
                               {errors?.property_dimensions_breadth && (
-                                <p className="text-sm text-red-500 mt-1">
+                                <p className="zb-err mt-1">
                                   {errors.property_dimensions_breadth}
                                 </p>
                               )}
@@ -2597,7 +2742,7 @@ const AddNewProject = () => {
                         formData.possession_status === "Under Construction"
                       ) && (
                           <div>
-                            <label className="font-medium text-gray-700">
+                            <label className="zb-label">
                               Age of Property
                             </label>
 
@@ -2610,7 +2755,7 @@ const AddNewProject = () => {
                                   e.target.value
                                 )
                               }
-                              className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                              className="zb-input w-full mt-1"
                             >
                               <option value="">Select Age of Property</option>
                               <option value="0-1">0-1</option>
@@ -2629,7 +2774,7 @@ const AddNewProject = () => {
                         )} */}
                       {/* {projectProperty.project_type !== "Plot/Land" && (
                         <div>
-                          <label className="font-medium text-gray-700">
+                          <label className="zb-label">
                             Furnishing Type{" "}
                             <span className="text-xl font-bold text-red-500">*</span>
                           </label>
@@ -2643,7 +2788,7 @@ const AddNewProject = () => {
                                 e.target.value
                               )
                             }
-                            className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                            className="zb-input w-full mt-1"
                           >
                             <option value="">Select Furnishing Type</option>
                             <option value="Furnished">Furnished</option>
@@ -2652,7 +2797,7 @@ const AddNewProject = () => {
                           </select>
 
                           {errors?.furnished_type && (
-                            <p className="flex items-center gap-1 mt-1 text-sm text-red-500">
+                            <p className="zb-err flex items-center gap-1 mt-1">
                               <MdErrorOutline className="text-lg" />
                               {errors.furnished_type}
                             </p>
@@ -2661,7 +2806,7 @@ const AddNewProject = () => {
                       )} */}
                       {buildingType === "Residential" && projectProperty.project_type !== "Plot" && (
                         <div>
-                          <label className="font-medium text-gray-700">Balcony</label>
+                          <label className="zb-label">Balcony</label>
 
                           <select
 
@@ -2673,7 +2818,7 @@ const AddNewProject = () => {
                                 e.target.value
                               )
                             }
-                            className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                            className="zb-input w-full mt-1"
                           >
                             <option value="">Select No. of Balconies</option>
                             <option value="0">0</option>
@@ -2691,7 +2836,7 @@ const AddNewProject = () => {
                           "Ready to move office space",
                         ].includes(projectProperty.sub_project_type) && (
                           <div>
-                            <label className="font-medium text-gray-700">
+                            <label className="zb-label">
                               Pantry
                             </label>
 
@@ -2704,7 +2849,7 @@ const AddNewProject = () => {
                                   e.target.value
                                 )
                               }
-                              className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                              className="zb-input w-full mt-1"
                             >
                               <option value="">Select Pantry</option>
                               <option value="Wet">Wet</option>
@@ -2717,7 +2862,7 @@ const AddNewProject = () => {
                       {/* {buildingType === "Commercial" &&
                         projectProperty.project_type === "Office" && (
                           <div>
-                            <label className="font-medium text-gray-700">
+                            <label className="zb-label">
                               Central AC
                             </label>
 
@@ -2730,7 +2875,7 @@ const AddNewProject = () => {
                                   e.target.value
                                 )
                               }
-                              className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                              className="zb-input w-full mt-1"
                             >
                               <option value="">Select Option</option>
 
@@ -2754,7 +2899,7 @@ const AddNewProject = () => {
                         )} */}
                       {/* {buildingType === "Commercial" && projectProperty.project_type === "Office" && (
                         <div>
-                          <label className="font-medium text-gray-700">
+                          <label className="zb-label">
                             Reception Area
                           </label>
 
@@ -2767,7 +2912,7 @@ const AddNewProject = () => {
                                 e.target.value
                               )
                             }
-                            className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                            className="zb-input w-full mt-1"
                           >
                             <option value="">Select Option</option>
                             <option value="Yes">Yes</option>
@@ -2778,7 +2923,7 @@ const AddNewProject = () => {
                       {/* {buildingType === "Commercial" &&
                         projectProperty.project_type === "Office" && (
                           <div>
-                            <label className="font-medium text-gray-700">
+                            <label className="zb-label">
                               Personal Washroom
                             </label>
 
@@ -2792,7 +2937,7 @@ const AddNewProject = () => {
                                   e.target.value
                                 )
                               }
-                              className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                              className="zb-input w-full mt-1"
                             >
                               <option value="">Select</option>
                               <option value="Yes">Yes</option>
@@ -2803,7 +2948,7 @@ const AddNewProject = () => {
                       {buildingType === "Commercial" &&
                         projectProperty.project_type === "Retail" && (
                           <div>
-                            <label className="font-medium text-gray-700">
+                            <label className="zb-label">
                               Parking Type
                             </label>
 
@@ -2906,7 +3051,7 @@ const AddNewProject = () => {
                         (buildingType === "Commercial" &&
                           projectProperty.project_type === "Plot/Land")) && (
                           <div>
-                            <label className="font-medium text-gray-700">
+                            <label className="zb-label">
                               No. of Open Sides
                             </label>
 
@@ -2919,7 +3064,7 @@ const AddNewProject = () => {
                                   e.target.value
                                 )
                               }
-                              className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                              className="zb-input w-full mt-1"
                             >
                               <option value="">Select Open Sides</option>
                               <option value="1">1</option>
@@ -2933,7 +3078,7 @@ const AddNewProject = () => {
                         (buildingType === "Residential" &&
                           projectProperty.project_type === "Other")) && (
                           <div>
-                            <label className="font-medium text-gray-700">
+                            <label className="zb-label">
                               Purchase Type
                             </label>
 
@@ -2946,7 +3091,7 @@ const AddNewProject = () => {
                                   e.target.value
                                 )
                               }
-                              className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                              className="zb-input w-full mt-1"
                             >
                               <option value="">Select Purchase Type</option>
                               <option value="Resale">Resale</option>
@@ -2956,7 +3101,7 @@ const AddNewProject = () => {
                         )} */}
                       {/* {buildingType === "Commercial" && projectProperty.project_type === "Office" && (
                         <div>
-                          <label className="font-medium text-gray-700">
+                          <label className="zb-label">
                             Number of Seats Available
                           </label>
 
@@ -2974,12 +3119,12 @@ const AddNewProject = () => {
                               }
                             }}
                             placeholder="Enter number of seats"
-                            className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                            className="zb-input w-full mt-1"
                           />
                         </div>
                       )} */}
                       {/* <div className="md:col-span-3 mt-2"> */}
-                      {/* <label className="font-medium text-gray-700">
+                      {/* <label className="zb-label">
                       Price Details
                     </label> */}
 
@@ -3068,7 +3213,7 @@ const AddNewProject = () => {
 
                 ))}
 
-                <div className="p-3 mx-auto mb-3 bg-white border max-w-7xl rounded-xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="zb-card mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   {/*  Header full width */}
                   <div className="mb-6 col-span-1 md:col-span-2 lg:col-span-4">
                     <h2 className="text-2xl font-semibold text-gray-900">
@@ -3080,7 +3225,7 @@ const AddNewProject = () => {
                     </p>
                   </div>
                   <div>
-                    <label className="font-medium text-gray-700">
+                    <label className="zb-label">
                       Price Range
                     </label>
 
@@ -3088,12 +3233,12 @@ const AddNewProject = () => {
                       type="text"
                       value={averagePrice}
                       readOnly
-                      className="w-full p-3 mt-1 border rounded-lg bg-gray-100"
+                      className="zb-input w-full mt-1 bg-gray-100"
                     />
                   </div>
                   {buildingType === "Residential" ? (
                     <div>
-                      <label className="block mb-2 font-medium text-gray-700">
+                      <label className="zb-label block mb-2">
                         Configurations
                       </label>
 
@@ -3101,12 +3246,12 @@ const AddNewProject = () => {
                         type="text"
                         value={configurations}
                         readOnly
-                        className="w-full p-3 text-gray-700 bg-gray-100 border rounded-md outline-none"
+                        className="zb-input w-full"
                       />
                     </div>
                   ) : (
                     <div>
-                      <label className="block mb-2 font-medium text-gray-700">
+                      <label className="zb-label block mb-2">
                         Available Property Types
                       </label>
 
@@ -3120,14 +3265,14 @@ const AddNewProject = () => {
                           ),
                         ].join(", ")}
                         readOnly
-                        className="w-full p-3 text-gray-700 bg-gray-100 border rounded-md outline-none"
+                        className="zb-input w-full"
                       />
                     </div>
                   )}
                   {/* {buildingType === "Commercial" &&
                   !["Land", "Plot/Land"].includes(propertyType) && (
                     <div>
-                      <label className="font-medium text-gray-700">
+                      <label className="zb-label">
                         Security Deposit Amount{" "}
                         <span className="text-xl font-bold text-red-500">
                           *
@@ -3146,11 +3291,11 @@ const AddNewProject = () => {
                           }
                         }}
                         placeholder="Enter Security Deposit Amount"
-                        className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                        className="zb-input w-full mt-1"
                       />
 
                       {errors?.custom_deposit_amount && (
-                        <p className="flex items-center gap-1 mt-1 text-sm text-red-500">
+                        <p className="zb-err flex items-center gap-1 mt-1">
                           <MdErrorOutline className="text-lg" />
                           {errors.custom_deposit_amount}
                         </p>
@@ -3158,12 +3303,12 @@ const AddNewProject = () => {
                     </div>
                   )} */}
                   <div>
-                    <label className="font-medium text-gray-700">
+                    <label className="zb-label">
                       Possession Status
                     </label>
 
                     <select
-                      className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                      className="zb-input w-full mt-1"
                       value={formData.possession_status || ""}
                       onChange={(e) =>
                         setFormData({
@@ -3182,7 +3327,7 @@ const AddNewProject = () => {
                     </select>
 
                     {errors?.possession_status && (
-                      <p className="flex items-center gap-1 mt-1 text-sm text-red-500">
+                      <p className="zb-err flex items-center gap-1 mt-1">
                         <MdErrorOutline className="text-lg" />
                         {errors.possession_status}
                       </p>
@@ -3190,7 +3335,7 @@ const AddNewProject = () => {
                   </div>
                   {formData.possession_status === "Under Construction" && (
                     <div>
-                      <label className="font-medium text-gray-700">
+                      <label className="zb-label">
                         Possession Date{" "}
                       </label>
 
@@ -3203,11 +3348,11 @@ const AddNewProject = () => {
                             possession_date: e.target.value,
                           })
                         }
-                        className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                        className="zb-input w-full mt-1"
                       />
 
                       {errors?.possession_date && (
-                        <p className="flex items-center gap-1 mt-1 text-sm text-red-500">
+                        <p className="zb-err flex items-center gap-1 mt-1">
                           <MdErrorOutline className="text-lg" />
                           {errors.possession_date}
                         </p>
@@ -3227,7 +3372,7 @@ const AddNewProject = () => {
                     ].includes(propertyType))
                 ) && (
                   <div>
-                    <label className="font-medium text-gray-700">
+                    <label className="zb-label">
                       Total Floor
                     </label>
 
@@ -3241,7 +3386,7 @@ const AddNewProject = () => {
                           handleInputChange(e);
                         }
                       }}
-                      className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                      className="zb-input w-full mt-1"
                     />
                   </div>
                 )} */}
@@ -3258,7 +3403,7 @@ const AddNewProject = () => {
                     ].includes(propertyType))
                 ) && (
                   <div>
-                    <label className="font-medium text-gray-700">
+                    <label className="zb-label">
                       Flat on the floor
                     </label>
 
@@ -3266,7 +3411,7 @@ const AddNewProject = () => {
                       name="project_floor"
                       value={formData.project_floor || ""}
                       onChange={handleInputChange}
-                      className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                      className="zb-input w-full mt-1"
                     >
                       <option value="">Select Floor</option>
 
@@ -3297,7 +3442,7 @@ const AddNewProject = () => {
                   "Office",
                 ].includes(propertyType) && (
                   <div>
-                    <label className="font-medium text-gray-700">
+                    <label className="zb-label">
                       Total Number of Parking
                     </label>
 
@@ -3310,14 +3455,14 @@ const AddNewProject = () => {
                           e.target.value,
                         )
                       }
-                      className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                      className="zb-input w-full mt-1"
                       placeholder="Enter total parking"
                     />
                   </div>
                 )} */}
                   {/* {buildingType === "Commercial" && propertyType === "Retail" && (
                   <div>
-                    <label className="font-medium text-gray-700">
+                    <label className="zb-label">
                       Parking Type
                     </label>
 
@@ -3446,7 +3591,7 @@ const AddNewProject = () => {
                 )} */}
                   {/* {buildingType === "Commercial" && propertyType === "Office" && (
                   <div>
-                    <label className="font-medium text-gray-700">
+                    <label className="zb-label">
                       No. of Cabines
                     </label>
 
@@ -3455,7 +3600,7 @@ const AddNewProject = () => {
                       onChange={(e) =>
                         handleInputChange("no_of_cabines", e.target.value)
                       }
-                      className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                      className="zb-input w-full mt-1"
                     >
                       <option value="">Select Cabines</option>
                       <option value="1">1</option>
@@ -3469,7 +3614,7 @@ const AddNewProject = () => {
                 )} */}
                   {/* {buildingType === "Commercial" && propertyType === "Office" && (
                   <div>
-                    <label className="font-medium text-gray-700">
+                    <label className="zb-label">
                       No. of Meeting Rooms
                     </label>
 
@@ -3478,7 +3623,7 @@ const AddNewProject = () => {
                       onChange={(e) =>
                         handleInputChange("no_of_meeting_Rooms", e.target.value)
                       }
-                      className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                      className="zb-input w-full mt-1"
                     >
                       <option value="">Select Meeting Rooms</option>
                       <option value="1">1</option>
@@ -3491,7 +3636,7 @@ const AddNewProject = () => {
                 )} */}
                   {/* {buildingType === "Commercial" && propertyType === "Office" && (
                   <div>
-                    <label className="font-medium text-gray-700">
+                    <label className="zb-label">
                       No. of Conference Room
                     </label>
 
@@ -3503,7 +3648,7 @@ const AddNewProject = () => {
                           e.target.value,
                         )
                       }
-                      className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                      className="zb-input w-full mt-1"
                     >
                       <option value="">Select Conference Room</option>
                       <option value="0">0</option>
@@ -3517,7 +3662,7 @@ const AddNewProject = () => {
                   {/* {buildingType === "Commercial" &&
                   propertyType === "Hospitality" && (
                     <div>
-                      <label className="font-medium text-gray-700">
+                      <label className="zb-label">
                         Total Number of Rooms
                       </label>
 
@@ -3531,12 +3676,12 @@ const AddNewProject = () => {
                           }
                         }}
                         placeholder="Enter Total Rooms"
-                        className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                        className="zb-input w-full mt-1"
                       />
                     </div>
                   )} */}
                   <div>
-                    <label className="block mb-2 font-medium text-gray-700">
+                    <label className="zb-label block mb-2">
                       RERA Number
                     </label>
 
@@ -3551,7 +3696,7 @@ const AddNewProject = () => {
                   {buildingType === "Commercial" &&
                     propertyType === "Hospitality" && (
                       <div>
-                        <label className="font-medium text-gray-700">
+                        <label className="zb-label">
                           Quality Rating
                         </label>
 
@@ -3560,7 +3705,7 @@ const AddNewProject = () => {
                           onChange={(e) =>
                             handleInputChange("quality_rating", e.target.value)
                           }
-                          className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                          className="zb-input w-full mt-1"
                         >
                           <option value="">Select Rating</option>
                           <option value="No Rating">No Rating</option>
@@ -3579,13 +3724,13 @@ const AddNewProject = () => {
                   (buildingType === "Commercial" &&
                     ["Land", "Plot/Land"].includes(propertyType))) && (
                   <div>
-                    <label className="font-medium text-gray-700">Facing</label>
+                    <label className="zb-label">Facing</label>
 
                     <select
                       name="facing"
                       value={formData.facing || ""}
                       onChange={handleInputChange}
-                      className="w-full p-3 mt-1 border rounded-lg"
+                      className="zb-input w-full mt-1"
                     >
                       <option value="">Select Facing</option>
 
@@ -3603,7 +3748,7 @@ const AddNewProject = () => {
                   {buildingType === "Residential" &&
                     propertyType === "Independent/Builder Floor" && (
                       <div>
-                        <label className="font-medium text-gray-700">
+                        <label className="zb-label">
                           Builder Floor Type{" "}
                           <span className="text-red-500">*</span>
                         </label>
@@ -3616,7 +3761,7 @@ const AddNewProject = () => {
                               e.target.value,
                             )
                           }
-                          className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                          className="zb-input w-full mt-1"
                         >
                           <option value="">Select Floor Type</option>
                           {builderFloorOptions.map((item) => (
@@ -3633,7 +3778,7 @@ const AddNewProject = () => {
                   <>
                     
                     <div>
-                      <label className="font-medium text-gray-700">
+                      <label className="zb-label">
                         Length of Plot (ft){" "}
                         <span className="text-red-500">*</span>
                       </label>
@@ -3651,15 +3796,11 @@ const AddNewProject = () => {
                           }
                         }}
                         placeholder="Enter Length"
-                        className={`w-full p-3 mt-1 border rounded-lg focus:ring-2 focus:ring-rose-500 outline-none ${
-                          errors?.property_dimensions_length
-                            ? "border-red-600"
-                            : "border-gray-300"
-                        }`}
+                        className={`zb-input w-full mt-1 focus:ring-2 focus:ring-rose-500 outline-none ${ errors?.property_dimensions_length ? "zb-invalid" : "" }`}
                       />
 
                       {errors?.property_dimensions_length && (
-                        <p className="text-sm text-red-500 mt-1">
+                        <p className="zb-err mt-1">
                           {errors.property_dimensions_length}
                         </p>
                       )}
@@ -3667,7 +3808,7 @@ const AddNewProject = () => {
 
                     
                     <div>
-                      <label className="font-medium text-gray-700">
+                      <label className="zb-label">
                         Breadth of Plot (ft){" "}
                         <span className="text-red-500">*</span>
                       </label>
@@ -3685,15 +3826,11 @@ const AddNewProject = () => {
                           }
                         }}
                         placeholder="Enter Breadth"
-                        className={`w-full p-3 mt-1 border rounded-lg focus:ring-2 focus:ring-rose-500 outline-none ${
-                          errors?.property_dimensions_breadth
-                            ? "border-red-600"
-                            : "border-gray-300"
-                        }`}
+                        className={`zb-input w-full mt-1 focus:ring-2 focus:ring-rose-500 outline-none ${ errors?.property_dimensions_breadth ? "zb-invalid" : "" }`}
                       />
 
                       {errors?.property_dimensions_breadth && (
-                        <p className="text-sm text-red-500 mt-1">
+                        <p className="zb-err mt-1">
                           {errors.property_dimensions_breadth}
                         </p>
                       )}
@@ -3705,7 +3842,7 @@ const AddNewProject = () => {
                     (buildingType === "Commercial" &&
                       propertyType === "Plot/Land")) && (
                       <div>
-                        <label className="block mb-2 font-medium text-gray-700">
+                        <label className="zb-label block mb-2">
                           Any Construction on Property
                         </label>
 
@@ -3713,7 +3850,7 @@ const AddNewProject = () => {
                           name="type_of_construction"
                           value={formData.type_of_construction || ""}
                           onChange={handleInputChange}
-                          className="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                          className="zb-input w-full"
                         >
                           <option value="">Select Construction Type</option>
                           {constructionOptions.map((item) => (
@@ -3728,7 +3865,7 @@ const AddNewProject = () => {
                   (buildingType === "Commercial" &&
                     propertyType === "Plot/Land")) && (
                   <div>
-                    <label className="font-medium text-gray-700">
+                    <label className="zb-label">
                       Possession By
                     </label>
 
@@ -3737,7 +3874,7 @@ const AddNewProject = () => {
                       onChange={(e) =>
                         handleInputChange("possession_by", e.target.value)
                       }
-                      className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                      className="zb-input w-full mt-1"
                     >
                       <option value="">Select Possession</option>
                       <option value="Immediate">Immediate</option>
@@ -3766,7 +3903,7 @@ const AddNewProject = () => {
                   formData.possession_status === "Under Construction"
                 ) && (
                   <div>
-                    <label className="font-medium text-gray-700">
+                    <label className="zb-label">
                       Age of Property
                     </label>
 
@@ -3775,7 +3912,7 @@ const AddNewProject = () => {
                       onChange={(e) =>
                         handleInputChange("age_of_property", e.target.value)
                       }
-                      className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                      className="zb-input w-full mt-1"
                     >
                       <option value="">Select Age of Property</option>
                       <option value="0-1">0-1</option>
@@ -3794,7 +3931,7 @@ const AddNewProject = () => {
                 )} */}
                   {/* {propertyType !== "Plot/Land" && (
                   <div>
-                    <label className="font-medium text-gray-700">
+                    <label className="zb-label">
                       Furnishing Type{" "}
                       <span className="text-xl font-bold text-red-500">*</span>
                     </label>
@@ -3807,7 +3944,7 @@ const AddNewProject = () => {
                           furnished_type: e.target.value,
                         }))
                       }
-                      className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                      className="zb-input w-full mt-1"
                     >
                       <option value="">Select Furnishing Type</option>
                       <option value="Furnished">Furnished</option>
@@ -3816,7 +3953,7 @@ const AddNewProject = () => {
                     </select>
 
                     {errors?.furnished_type && (
-                      <p className="flex items-center gap-1 mt-1 text-sm text-red-500">
+                      <p className="zb-err flex items-center gap-1 mt-1">
                         <MdErrorOutline className="text-lg" />
                         {errors.furnished_type}
                       </p>
@@ -3825,13 +3962,13 @@ const AddNewProject = () => {
                 )} */}
                   {/* {buildingType === "Residential" && propertyType !== "Plot" && (
                   <div>
-                    <label className="font-medium text-gray-700">Balcony</label>
+                    <label className="zb-label">Balcony</label>
 
                     <select
                       name="balcony"
                       value={formData.balcony || ""}
                       onChange={handleInputChange}
-                      className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                      className="zb-input w-full mt-1"
                     >
                       <option value="">Select No. of Balconies</option>
                       <option value="0">0</option>
@@ -3856,13 +3993,13 @@ const AddNewProject = () => {
                     ].includes(propertyType))
                 ) && (
                   <div>
-                    <label className="font-medium text-gray-700">Balcony</label>
+                    <label className="zb-label">Balcony</label>
 
                     <select
                       name="balcony"
                       value={formData.balcony || ""}
                       onChange={handleInputChange}
-                      className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                      className="zb-input w-full mt-1"
                     >
                       <option value="">Select No. of Balconies</option>
                       <option value="0">0</option>
@@ -3886,7 +4023,7 @@ const AddNewProject = () => {
                       ].includes(propertyType))
                   ) && (
                       <div>
-                        <label className="font-medium text-gray-700">
+                        <label className="zb-label">
                           Lift Availability
                         </label>
 
@@ -3895,7 +4032,7 @@ const AddNewProject = () => {
                           onChange={(e) =>
                             handleInputChange("lift_availability", e.target.value)
                           }
-                          className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                          className="zb-input w-full mt-1"
                         >
                           <option value="">Select Lift Availability</option>
                           <option value="Yes">Yes</option>
@@ -3910,7 +4047,7 @@ const AddNewProject = () => {
                     "Ready to move office space",
                   ].includes(officeSubType) && (
                     <div>
-                      <label className="font-medium text-gray-700">
+                      <label className="zb-label">
                         Pantry
                       </label>
 
@@ -3919,7 +4056,7 @@ const AddNewProject = () => {
                         onChange={(e) =>
                           handleInputChange("pantry_option", e.target.value)
                         }
-                        className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                        className="zb-input w-full mt-1"
                       >
                         <option value="">Select Pantry</option>
                         <option value="Wet">Wet</option>
@@ -3931,7 +4068,7 @@ const AddNewProject = () => {
 
                 {buildingType === "Commercial" && propertyType === "Office" && (
                   <div>
-                    <label className="font-medium text-gray-700">
+                    <label className="zb-label">
                       Central AC
                     </label>
 
@@ -3940,7 +4077,7 @@ const AddNewProject = () => {
                       onChange={(e) =>
                         handleInputChange("central_AC", e.target.value)
                       }
-                      className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                      className="zb-input w-full mt-1"
                     >
                       <option value="">Select Option</option>
 
@@ -3964,7 +4101,7 @@ const AddNewProject = () => {
                 )}
                 {buildingType === "Commercial" && propertyType === "Office" && (
                   <div>
-                    <label className="font-medium text-gray-700">
+                    <label className="zb-label">
                       Reception Area
                     </label>
 
@@ -3973,7 +4110,7 @@ const AddNewProject = () => {
                       onChange={(e) =>
                         handleInputChange("reception_area", e.target.value)
                       }
-                      className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                      className="zb-input w-full mt-1"
                     >
                       <option value="">Select Option</option>
                       <option value="Yes">Yes</option>
@@ -3992,7 +4129,7 @@ const AddNewProject = () => {
                     "Other",
                   ].includes(propertyType) && (
                     <div>
-                      <label className="font-medium text-gray-700">
+                      <label className="zb-label">
                         Investment Option
                       </label>
 
@@ -4000,7 +4137,7 @@ const AddNewProject = () => {
                         name="investment_options"
                         value={formData.investment_options || ""}
                         onChange={handleInputChange}
-                        className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                        className="zb-input w-full mt-1"
                       >
                         <option value="">Select Investment Option</option>
                         <option value="Pre-Leased Spaces">
@@ -4027,7 +4164,7 @@ const AddNewProject = () => {
                   (buildingType === "Residential" &&
                     propertyType === "Other")) && (
                   <div>
-                    <label className="font-medium text-gray-700">
+                    <label className="zb-label">
                       Purchase Type
                     </label>
 
@@ -4035,7 +4172,7 @@ const AddNewProject = () => {
                       name="purchase_type"
                       value={formData.purchase_type || ""}
                       onChange={handleInputChange}
-                      className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                      className="zb-input w-full mt-1"
                     >
                       <option value="">Select Purchase Type</option>
                       <option value="Resale">Resale</option>
@@ -4046,7 +4183,7 @@ const AddNewProject = () => {
                   {/* {buildingType === "Commercial" &&
                   ["Office Space"].includes(propertyType) && (
                     <div>
-                      <label className="font-medium text-gray-700">
+                      <label className="zb-label">
                         Personal Washroom
                       </label>
 
@@ -4054,7 +4191,7 @@ const AddNewProject = () => {
                         name="personal_washroom"
                         value={formData.personal_washroom || ""}
                         onChange={handleInputChange}
-                        className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                        className="zb-input w-full mt-1"
                       >
                         <option value="">Select</option>
                         <option value="Yes">Yes</option>
@@ -4065,7 +4202,7 @@ const AddNewProject = () => {
 
                   {buildingType === "Residential" && propertyType === "PG" && (
                     <div>
-                      <label className="font-medium text-gray-700">
+                      <label className="zb-label">
                         Available For{" "}
                         <span className="text-xl font-bold text-red-500">*</span>
                       </label>
@@ -4075,7 +4212,7 @@ const AddNewProject = () => {
                         onChange={(e) =>
                           handleInputChange("available_for", e.target.value)
                         }
-                        className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                        className="zb-input w-full mt-1"
                       >
                         <option value="">Select Availability</option>
                         <option value="Girls">Girls</option>
@@ -4086,7 +4223,7 @@ const AddNewProject = () => {
                       </select>
 
                       {errors?.available_for && (
-                        <p className="flex items-center gap-1 mt-1 text-sm text-red-500">
+                        <p className="zb-err flex items-center gap-1 mt-1">
                           <MdErrorOutline className="text-lg" />
                           {errors.available_for}
                         </p>
@@ -4095,7 +4232,7 @@ const AddNewProject = () => {
                   )}
                   {buildingType === "Residential" && propertyType === "PG" && (
                     <div>
-                      <label className="font-medium text-gray-700">
+                      <label className="zb-label">
                         Room Type <span className="text-red-500">*</span>
                       </label>
 
@@ -4104,7 +4241,7 @@ const AddNewProject = () => {
                         onChange={(e) =>
                           handleInputChange("room_type", e.target.value)
                         }
-                        className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                        className="zb-input w-full mt-1"
                       >
                         <option value="">Select Room Type</option>
                         <option value="Private">Private</option>
@@ -4112,7 +4249,7 @@ const AddNewProject = () => {
                       </select>
 
                       {errors?.room_type && (
-                        <p className="text-sm text-red-500 mt-1">
+                        <p className="zb-err mt-1">
                           {errors.room_type}
                         </p>
                       )}
@@ -4122,7 +4259,7 @@ const AddNewProject = () => {
                     propertyType === "PG" &&
                     formData.room_type === "Sharing" && (
                       <div>
-                        <label className="block mb-1 font-medium text-gray-700">
+                        <label className="zb-label block mb-1">
                           How many people can share this room?
                         </label>
 
@@ -4131,7 +4268,7 @@ const AddNewProject = () => {
                           onChange={(e) =>
                             handleInputChange("no_of_peoples", e.target.value)
                           }
-                          className="w-full p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                          className="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
                         >
                           <option value="">Select</option>
                           <option value="2">2</option>
@@ -4143,7 +4280,7 @@ const AddNewProject = () => {
                     )}
                   {buildingType === "Residential" && propertyType === "PG" && (
                     <div>
-                      <label className="font-medium text-gray-700">
+                      <label className="zb-label">
                         Total Beds
                       </label>
 
@@ -4156,13 +4293,13 @@ const AddNewProject = () => {
                             handleInputChange("total_beds", value);
                           }
                         }}
-                        className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                        className="zb-input w-full mt-1"
                       />
                     </div>
                   )}
                   {buildingType === "Residential" && propertyType === "PG" && (
                     <div>
-                      <label className="block mb-1 font-medium text-gray-700">
+                      <label className="zb-label block mb-1">
                         Available Beds
                       </label>
 
@@ -4177,7 +4314,7 @@ const AddNewProject = () => {
                             handleInputChange("available_beds", value);
                           }
                         }}
-                        className="w-full p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                        className="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
                       />
                     </div>
                   )}
@@ -4229,7 +4366,7 @@ const AddNewProject = () => {
                       ].includes(propertyType))
                   ) && (
                       <div>
-                        <label className="font-medium text-gray-700">
+                        <label className="zb-label">
                           Parking Availability
                         </label>
 
@@ -4241,7 +4378,7 @@ const AddNewProject = () => {
                               e.target.value,
                             )
                           }
-                          className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                          className="zb-input w-full mt-1"
                         >
                           <option value="">Select Option</option>
                           <option value="Yes">Yes</option>
@@ -4262,7 +4399,7 @@ const AddNewProject = () => {
                   ) &&
                     formData.parking_availability === "Yes" && (
                       <div>
-                        <label className="font-medium text-gray-700">
+                        <label className="zb-label">
                           Covered Car Parking
                         </label>
 
@@ -4271,7 +4408,7 @@ const AddNewProject = () => {
                           onChange={(e) =>
                             handleInputChange("covered_parking", e.target.value)
                           }
-                          className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                          className="zb-input w-full mt-1"
                         >
                           <option value="">Select Covered Car Parking</option>
                           <option value="1">1</option>
@@ -4298,7 +4435,7 @@ const AddNewProject = () => {
                   ) &&
                     formData.parking_availability === "Yes" && (
                       <div>
-                        <label className="font-medium text-gray-700">
+                        <label className="zb-label">
                           Open Car Parking
                         </label>
 
@@ -4307,7 +4444,7 @@ const AddNewProject = () => {
                           onChange={(e) =>
                             handleInputChange("uncovered_parking", e.target.value)
                           }
-                          className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+                          className="zb-input w-full mt-1"
                         >
                           <option value="">Select Open Car Parking</option>
                           <option value="1">1</option>
@@ -4322,7 +4459,7 @@ const AddNewProject = () => {
                       </div>
                     )}
                   <div className="md:col-span-3 mt-2">
-                    {/* <label className="font-medium text-gray-700">
+                    {/* <label className="zb-label">
                       Price Details
                     </label> */}
 
@@ -4410,7 +4547,7 @@ const AddNewProject = () => {
                     {/* About Project */}
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <label className="font-medium text-gray-700">
+                        <label className="zb-label">
                           About Project
                         </label>
                         <button
@@ -4434,7 +4571,7 @@ const AddNewProject = () => {
                             setDescription(value);
                           }}
                           placeholder="Enter Project Description"
-                          className="w-full h-40 p-3 pb-7 pr-16 text-gray-700 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-rose-500 resize-none block"
+                          className="w-full h-40 p-3 pb-7 pr-16 text-gray-700 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500 resize-none block"
                         />
                         <span className="absolute bottom-2 right-3 text-xs text-gray-400 pointer-events-none select-none z-10">
                           {(description || "").length}/800
@@ -4449,7 +4586,7 @@ const AddNewProject = () => {
 
           {activeStep === 3 && (
             <>
-              <div className="max-w-4xl p-6 mx-auto mb-24 bg-white border border-gray-300 shadow-sm rounded-xl">
+              <div className="max-w-4xl p-6 mx-auto mb-24 bg-white border shadow-sm rounded-xl">
                 {/* Title & Subtitle */}
                 <div className="mb-6">
                   <h2 className="text-2xl font-semibold text-gray-900">
@@ -4481,7 +4618,7 @@ const AddNewProject = () => {
                         type="checkbox"
                         checked={selectedAmenities.includes(amenity._id)}
                         onChange={() => toggleAmenity(amenity._id)}
-                        className="w-5 h-5 my-text border-gray-300 form-checkbox focus:ring-rose-500"
+                        className="w-5 h-5 my-text form-checkbox focus:ring-rose-500"
                       />
                       <span
                         className={`text-gray-700 ${selectedAmenities.includes(amenity._id) ? "my-text font-semibold" : ""}`}
@@ -4499,13 +4636,13 @@ const AddNewProject = () => {
           {activeStep === 4 && (
             <div className="max-w-5xl p-6 pt-0 mx-auto">
               {/* Company Logo Upload */}
-              <div className="p-6 bg-white border border-gray-200 rounded-xl">
+              <div className="zb-card">
                 <h2 className="text-xl text-gray-900">Upload Company Logo</h2>
                 <p className="mt-1 text-gray-500">
                   Upload your project's or company's logo here.
                 </p>
                 <div
-                  className="relative flex flex-col items-center p-6 mt-4 border-2 border-gray-300 border-dashed rounded-lg"
+                  className="relative flex flex-col items-center p-6 mt-4 border-2 border-dashed rounded-lg"
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={(e) => {
                     e.preventDefault();
@@ -4567,7 +4704,7 @@ const AddNewProject = () => {
               <div className="grid grid-cols-1 gap-6 my-6 md:grid-cols-2">
                 {/* Cover Image Upload */}
                 <div
-                  className="p-6 bg-white border border-gray-200 rounded-xl"
+                  className="zb-card"
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={(e) => {
                     e.preventDefault();
@@ -4582,7 +4719,7 @@ const AddNewProject = () => {
                   <p className="mt-1 text-gray-500">
                     This step allows users to upload cover photo.
                   </p>
-                  <div className="relative flex flex-col items-center p-6 mt-4 border-2 border-gray-300 border-dashed rounded-lg">
+                  <div className="relative flex flex-col items-center p-6 mt-4 border-2 border-dashed rounded-lg">
                     {coverImage ? (
                       <div className="relative w-full">
                         <img
@@ -4634,7 +4771,7 @@ const AddNewProject = () => {
                 {/* Video Upload */}
                 <div className="flex flex-col gap-6">
                   <div
-                    className="p-6 bg-white border border-gray-200 rounded-xl"
+                    className="zb-card"
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={(e) => {
                       e.preventDefault();
@@ -4681,7 +4818,7 @@ const AddNewProject = () => {
                   </div>
 
                   {/* Video URL Option */}
-                  <div className="p-6 bg-white border border-gray-200 rounded-xl">
+                  <div className="zb-card">
                     <h2 className="text-xl text-gray-900">Video Option</h2>
                     <div className="flex gap-4 mt-4">
                       <div className="w-1/2">
@@ -4691,7 +4828,7 @@ const AddNewProject = () => {
                         <select
                           value={videoSource}
                           onChange={(e) => setVideoSource(e.target.value)}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                          className="w-full px-4 py-2 border rounded-lg"
                         >
                           <option value="">Select</option>
                           <option value="YouTube">YouTube</option>
@@ -4707,7 +4844,7 @@ const AddNewProject = () => {
                           type="text"
                           value={videoURL}
                           onChange={(e) => setVideoURL(e.target.value)}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                          className="w-full px-4 py-2 border rounded-lg"
                         />
                       </div>
                     </div>
@@ -4718,7 +4855,7 @@ const AddNewProject = () => {
               {/* Images and Virtual Tour */}
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 {/* Property Images */}
-                <div className="p-6 bg-white border border-gray-200 rounded-xl">
+                <div className="zb-card">
                   <h2 className="text-xl text-gray-900">
                     Upload Project Images
                   </h2>
@@ -4726,7 +4863,7 @@ const AddNewProject = () => {
                     Add multiple images to showcase the Project.
                   </p>
                   <div
-                    className="flex flex-col items-center p-8 mt-4 border-2 border-gray-300 border-dashed rounded-lg"
+                    className="flex flex-col items-center p-8 mt-4 border-2 border-dashed rounded-lg"
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={(e) => {
                       e.preventDefault();
@@ -4777,7 +4914,7 @@ const AddNewProject = () => {
 
                 {/* Virtual Tour + Brochure */}
                 <div className="flex flex-col gap-6">
-                  <div className="p-6 bg-white border border-gray-200 rounded-xl">
+                  <div className="zb-card">
                     <h2 className="text-xl font-semibold text-gray-900">
                       Virtual Tour
                     </h2>
@@ -4787,7 +4924,7 @@ const AddNewProject = () => {
                     <select
                       value={virtualTourLink}
                       onChange={(e) => setVirtualTourLink(e.target.value)}
-                      className="w-full px-4 py-2 mt-2 border border-gray-300 rounded-lg"
+                      className="w-full px-4 py-2 mt-2 border rounded-lg"
                     >
                       {/* <option value="">Select Virtual Tour Available?</option> */}
                       <option value="No">No</option>
@@ -4797,7 +4934,7 @@ const AddNewProject = () => {
 
                   {/* Brochure Upload */}
                   <div
-                    className="flex flex-col items-center p-8 border-2 border-gray-300 border-dashed rounded-lg"
+                    className="flex flex-col items-center p-8 border-2 border-dashed rounded-lg"
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={(e) => {
                       e.preventDefault();
@@ -4866,8 +5003,7 @@ const AddNewProject = () => {
 
           {/* Navigation Buttons - Fixed at Bottom
           <div
-            className={`fixed bottom-0 left-0 right-0 bg-white p-4 shadow-md flex mx-32 ${activeStep === 0 ? "justify-end" : "justify-between"
-              }`}
+            className={`fixed bottom-0 left-0 right-0 bg-white p-4 shadow-md flex mx-32 ${activeStep === 0 ? "justify-end" : "justify-between" }`}
           >
             {" "}
             {activeStep > 0 && (
@@ -4903,14 +5039,12 @@ const AddNewProject = () => {
           </div> */}
           {/* Navigation Buttons - Fixed at Bottom */}
           <div
-            className={`fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-md px-3 py-3 sm:px-6 sm:py-4 md:px-10 lg:px-16 xl:px-32 flex items-center gap-3 ${
-              activeStep === 0 ? "justify-end" : "justify-between"
-            }`}
+            className="zb-footer"
           >
             {activeStep > 0 && (
               <button
                 onClick={prevStep}
-                className="w-full sm:w-auto min-w-[120px] px-5 py-2.5 text-gray-700 bg-gray-300 rounded-lg hover:bg-gray-400"
+                className="zb-btn zb-btn-outline"
               >
                 Back
               </button>
@@ -4925,7 +5059,7 @@ const AddNewProject = () => {
                     handleNext();
                   }
                 }}
-                className="w-full sm:w-auto min-w-[120px] px-5 py-2.5 text-white my-bg rounded-lg hover:my-bg"
+                className="zb-btn zb-btn-primary"
               >
                 Continue
               </button>
@@ -4933,11 +5067,7 @@ const AddNewProject = () => {
               <button
                 onClick={handleSubmit}
                 disabled={isSubmitting}
-                className={`w-full sm:w-auto min-w-[120px] px-5 py-2.5 rounded ${
-                  isSubmitting
-                    ? "bg-gray-400"
-                    : "bg-green-600 hover:my-bg"
-                } text-white`}
+                className="zb-btn zb-btn-primary"
               >
                 {isSubmitting ? "Submitting..." : "Submit"}
               </button>

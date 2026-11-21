@@ -1,93 +1,62 @@
-import React, { useEffect, useState } from "react";
-import { FaSearch, FaSort } from "react-icons/fa";
-import { FiSmartphone } from "react-icons/fi";
-import { User } from "@phosphor-icons/react";
-import axios from "axios";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { IoMdClose } from "react-icons/io";
-import { FaRupeeSign } from "react-icons/fa";
+import axios from "axios";
+import { Search, X, ArrowDownUp, Phone, ChevronLeft, ChevronRight } from "lucide-react";
+
+const PAGE_SIZE = 10;
+
+// 1500000 -> "15 L", 10000000 -> "1 Cr", 2000 -> "2 K"
+const formatPrice = (value) => {
+  if (!value) return "";
+  const n = Number(value);
+  const trim = (x) => x.toFixed(2).replace(/\.?0+$/, "");
+  if (n >= 10000000) return `${trim(n / 10000000)} Cr`;
+  if (n >= 100000) return `${trim(n / 100000)} L`;
+  if (n >= 1000) return `${trim(n / 1000)} K`;
+  return n.toString();
+};
+
+const tagFor = (status) => {
+  if (status === "Buy") return { text: "For Buy", cls: "bg-green-600" };
+  if (status === "Rent") return { text: "For Rent", cls: "bg-blue-600" };
+  if (status === "Residential") return { text: "Residential", cls: "bg-[#700c28]" };
+  return { text: "Commercial", cls: "bg-yellow-600" };
+};
 
 const MyLeads = () => {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalCount, setTotalCount] = useState(0);
-  const [search, setSearch] = useState("");
-  const [sortBy, setSortBy] = useState("latest");
+  const userId = sessionStorage.getItem("accessToken");
+  const userType = (sessionStorage.getItem("user_type") || "").toLowerCase();
+  const canSeeProjects = !["buyer", "owner"].includes(userType);
+
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("property");
-  const user_id = sessionStorage.getItem("accessToken");
-  const itemsPerPage = 10;
-  const totalPages = Math.ceil(totalCount / itemsPerPage);
-
-  const formatPrice = (price) => {
-  if (!price) return "";
-
-  price = Number(price);
-
-  if (price >= 10000000) {
-    return `${(price / 10000000).toFixed(2).replace(/\.?0+$/, "")} Cr`;
-  } else if (price >= 100000) {
-    return `${(price / 100000).toFixed(2).replace(/\.?0+$/, "")} L`;
-  } else if (price >= 1000) {
-    return `${(price / 1000).toFixed(2).replace(/\.?0+$/, "")} K`;
-  } else {
-    return price.toString();
-  }
-};
-
-  const formatAverageProjectPrice = (price) => {
-    if (!price) return "";
-
-    const formatValue = (val) => {
-  if (val === null || val === undefined) return "";
-  return formatPrice(Number(val));
-};
-    let values;
-    if (typeof price === "string" && /[-–—]/.test(price)) {
-      values = price
-        .split(/[-–—]/)
-        .map((p) => p.trim())
-        .filter(Boolean);
-    } else {
-      values = [price];
-    }
-
-    return (
-      <>
-        {values.map((v, idx) => (
-          <span key={idx} className="inline-flex items-center">
-            <FaRupeeSign className="inline-block mr-1" />
-            {formatValue(v)}
-            {idx === 0 && values.length > 1 && " - "}
-          </span>
-        ))}
-      </>
-    );
-  };
+  const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState("latest");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   useEffect(() => {
     const fetchLeads = async () => {
       setLoading(true);
       const formData = new FormData();
-      formData.append("user_id", user_id);
+      formData.append("user_id", userId);
       formData.append("page", currentPage);
-      formData.append("page_size", itemsPerPage);
+      formData.append("page_size", PAGE_SIZE);
       formData.append("search", search);
       formData.append("sortby", sortBy);
-
       const endpoint =
         activeTab === "property"
           ? "/cust_api/get_property_enquiry"
           : "/cust_api/get_project_enquiry";
-
       try {
-        const response = await axios.post(
+        const { data } = await axios.post(
           `${process.env.REACT_APP_API_URL}${endpoint}`,
           formData,
         );
-
-        if (response.data.status === 1) {
-          const formattedLeads = response.data.data.map((item, index) => {
+        if (data.status === 1) {
+          const formatted = data.data.map((item, index) => {
             const isProperty =
               !!item.enquiry_property_name ||
               !!item.enquiry_property_price ||
@@ -96,9 +65,11 @@ const MyLeads = () => {
               !!item.enquiry_average_project_price ||
               !!item.enquiry_project_name ||
               !!item.project_id;
-
+            let price = "N/A";
+            if (isProperty) price = `₹ ${formatPrice(item.enquiry_property_price)}`;
+            else if (isProject) price = `₹ ${formatPrice(item.enquiry_average_project_price)}`;
             return {
-              id: index + 1,
+              id: item._id || index,
               property_id: isProperty ? item.property_id : null,
               project_id: isProject ? item.project_id : null,
               name: item.name,
@@ -106,42 +77,31 @@ const MyLeads = () => {
               phone: item.contact_number,
               status: item.enquiry_property_category_type,
               title: item.enquiry_property_name || item.project_name,
-              // location: item.enquiry_address || "Not provided",
               location:
                 item?.property_details?.address_area ||
                 item?.project_details?.address_area ||
                 "Not provided",
-              price: isProperty
-  ? `₹ ${formatPrice(item.enquiry_property_price)}`
-  : isProject
-    ? `₹ ${formatPrice(item.enquiry_average_project_price)}`
-    : "N/A",
+              price,
               rent: item.rent,
               rent_duration: item.rent_duration,
-              receivedOn: new Date(item.created_at).toLocaleDateString(
-                "en-GB",
-                {
-                  day: "2-digit",
-                  month: "short",
-                  year: "numeric",
-                },
-              ),
+              receivedOn: new Date(item.created_at).toLocaleDateString("en-GB", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              }),
               message: item.message || "",
               image: item.enquiry_cover_image,
-              profile_image:
-                item.property_owner_image || item.project_owner_image || null,
             };
           });
-          setLeads(formattedLeads);
-          setTotalCount(response.data.total_count);
+          setLeads(formatted);
+          setTotalCount(data.total_count || 0);
         }
       } catch (error) {
         console.error("Error fetching leads:", error);
-      }finally {
-      setLoading(false);
-    }
+      } finally {
+        setLoading(false);
+      }
     };
-
     fetchLeads();
   }, [currentPage, search, sortBy, activeTab]);
 
@@ -149,286 +109,182 @@ const MyLeads = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [currentPage]);
 
+  const switchTab = (tab) => {
+    setActiveTab(tab);
+    setCurrentPage(1);
+  };
+
+  const detailLink = (lead) =>
+    activeTab === "property"
+      ? `/propertydetails/${lead.property_id}`
+      : `/projectdetail/${lead.project_id}`;
+
   return (
-    <>
-      <div className="p-6 max-w-6xl mx-auto">
-        {/* Tabs */}
-        <div className="flex gap-4 mb-6 border-b">
-          <button
-            className={`px-4 py-2 font-semibold border-b-2 ${
-              activeTab === "property"
-                ? "border-rose-600 my-text"
-                : "border-transparent text-gray-500"
-            }`}
-            onClick={() => {
-              setActiveTab("property");
-              setCurrentPage(1);
-            }}
-          >
-            Leads on Property
-          </button>
-          {!["buyer", "owner"].includes(
-            (sessionStorage.getItem("user_type") || "").toLowerCase(),
-          ) && (
-            <button
-              className={`px-4 py-2 font-semibold border-b-2 ${
-                activeTab === "project"
-                  ? "border-rose-600 my-text"
-                  : "border-transparent text-gray-500"
-              }`}
-              onClick={() => {
-                setActiveTab("project");
-                setCurrentPage(1);
-              }}
-            >
-              Leads on Project
-            </button>
-          )}
-        </div>
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
-          <h2 className="text-2xl font-semibold">View Leads</h2>
-          <div className="flex flex-col md:flex-row items-center gap-4 mt-3 md:mt-0">
-            <div className="relative">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search listing"
-                  className="border rounded-lg pl-10 pr-10 py-2 w-72 outline-none"
-                  value={search}
-                  onChange={(e) => {
-                    setSearch(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                />
+    <div className="max-w-4xl space-y-3">
+      <p className="-mt-1 text-xs text-[#1e2a44]/60">People who enquired about your listings.</p>
 
-                {/* Clear (cross) button */}
-                {search && (
-                  <button
-                    onClick={() => {
-                      setSearch("");
-                      setCurrentPage(1);
-                    }}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-900 text-lg"
-                  >
-                    <IoMdClose />
-                  </button>
-                )}
-              </div>
-
-              <FaSearch className="absolute left-3 top-3 text-gray-500" />
-            </div>
-            <button
-              className="flex items-center gap-2 border rounded-lg px-4 py-2 text-gray-600"
-              onClick={() => {
-                setSortBy((prev) => (prev === "latest" ? "oldest" : "latest"));
-                setCurrentPage(1);
-              }}
-            >
-              <FaSort /> Sort by:{" "}
-              <span className="font-semibold">{sortBy}</span>
-            </button>
-          </div>
-        </div>
-
-        {loading ? (
-  <div className="flex items-center justify-center py-20">
-    <div className="w-10 h-10 border-4 border-gray-300 rounded-full border-t-[#8B1E3F] animate-spin"></div>
-  </div>
-) : leads.length === 0 ? (
-  <p className="text-center text-gray-500 mt-10">
-    {search.trim() !== ""
-      ? "No results found for your search."
-      : "No Data Found"}
-  </p>
-) : (
-          leads.map((lead) => (
-            <div key={lead.id} className="bg-white rounded-lg p-3 mb-4 border">
-              {/* <div className="flex justify-between items-center">
-                <div className="flex items-center gap-4">
-                  <div className="bg-rose-100  rounded-full">
-                    {console.log(lead)}
-                    {lead?.profile_image ? (
-                      <img
-                        src={`${process.env.REACT_APP_API_URL}/media/${lead.profile_image}`}
-                        alt={sessionStorage.getItem("user_type") || "User"}
-                        className="w-10 h-10 rounded-full object-cover"
-                      />
-                    ) : (
-                      <User className="my-text text-4xl" />
-                    )}
-                  </div>
-
-                  <div className="mt-3">
-                    <p className="font-semibold mb-0">{lead.name}</p>
-                    <p className="text-gray-500 text-sm">{lead.type}</p>
-                  </div>
-                </div>
-                <a
-                  href={`tel:${lead.phone}`}
-                  className="flex items-center gap-1 mr-20 my-text"
-                >
-                  <FiSmartphone /> {lead.phone}
-                </a>
-              </div>
-
-              <hr className="my-4" /> */}
-              <div className="flex items-center justify-between gap-2">
-                {/* Profile */}
-                <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
-                  <div className="bg-rose-100 rounded-full flex-shrink-0">
-                    {console.log(lead)}
-
-                    {lead?.profile_image ? (
-                      <img
-                        src={`${process.env.REACT_APP_API_URL}/media/${lead.profile_image}`}
-                        alt={sessionStorage.getItem("user_type") || "User"}
-                        className="w-10 h-10 rounded-full object-cover"
-                      />
-                    ) : (
-                      <User className="my-text text-4xl" />
-                    )}
-                  </div>
-
-                  <div className="mt-3 min-w-0">
-                    <p className="font-semibold mb-0 truncate">
-                      {lead.name}
-                    </p>
-                    <p className="text-gray-500 text-sm">
-                      {lead.type}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Phone */}
-                <a
-                  href={`tel:${lead.phone}`}
-                  className="flex items-center gap-1 ml-2 my-text flex-shrink-0 whitespace-nowrap text-xs sm:text-sm sm:ml-0 sm:mr-20"
-                >
-                  <FiSmartphone className="flex-shrink-0" />
-                  <span>{lead.phone}</span>
-                </a>
-              </div>
-
-              <hr className="my-4" />
-
-              <div className="flex gap-4 relative">
-                <div className="relative w-36 h-24">
-                  <Link
-                    to={
-                      activeTab === "property"
-                        ? `/propertydetails/${lead.property_id}`
-                        : activeTab === "project"
-                          ? `/projectdetail/${lead.project_id}`
-                          : "#"
-                    }
-                  >
-                    <img
-                      src={
-                        lead?.image
-                          ? `${process.env.REACT_APP_API_URL}/media/${lead.image}`
-                          : "https://via.placeholder.com/400x300?text=No+Image"
-                      }
-                      alt={lead?.title || "Image"}
-                      className="w-full h-full object-cover rounded-md cursor-pointer"
-                    />
-                  </Link>
-                  {activeTab === "property" && (
-                    <span
-                      className={`absolute top-0 left-0 text-white text-xs font-semibold px-2 py-1 rounded-md ${
-                        lead.status === "Buy"
-                          ? "bg-green-600"
-                          : lead.status === "Rent"
-                            ? "bg-blue-600"
-                            : lead.status === "Residential"
-                              ? "my-bg"
-                              : "bg-yellow-600"
-                      }`}
-                    >
-                      {lead.status === "Buy"
-                        ? "For Buy"
-                        : lead.status === "Rent"
-                          ? "For Rent"
-                          : lead.status === "Residential"
-                            ? "Residential"
-                            : "Commercial"}
-                    </span>
-                  )}
-                </div>
-                <div className="flex-1">
-                  <p className="font-semibold mb-0">{lead.title}</p>
-                  <p className="text-gray-500 text-sm">{lead.location}</p>
-                  {lead.status === "Rent" ? (
-                    <p className="text-black font-semibold">
-                      {formatPrice(lead.rent)} / {lead.rent_duration}
-                    </p>
-                  ) : (
-                    <p className="text-black font-semibold">
-                      {/* {lead.price} */}
-                      {formatAverageProjectPrice(lead.price)}
-                    </p>
-                  )}
-                </div>
-                <div className="text-right text-gray-500">
-                  <p className="text-sm">Received On</p>
-                  <p className="font-semibold">{lead.receivedOn}</p>
-                </div>
-              </div>
-
-              <div className="mt-3">
-                <p className="text-gray-500 text-sm">Message</p>
-                <p className="text-gray-700">{lead.message}</p>
-              </div>
-            </div>
-          ))
-        )}
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex justify-center items-center space-x-3 mt-6">
-            <button
-              className={`px-3 py-2 border rounded-full ${
-                currentPage === 1
-                  ? "text-gray-400 cursor-not-allowed"
-                  : "hover:bg-gray-100"
-              }`}
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-            >
-              &lt;
-            </button>
-
-            {[...Array(totalPages)].map((_, index) => (
+      {/* Tabs and filters */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex gap-1 border-b border-[#ece6e1]">
+          {[
+            { key: "property", label: "Properties", show: true },
+            { key: "project", label: "Projects", show: canSeeProjects },
+          ]
+            .filter((t) => t.show)
+            .map((t) => (
               <button
-                key={index}
-                className={`w-10 h-10 flex items-center justify-center rounded-full text-lg font-medium ${
-                  currentPage === index + 1
-                    ? "my-border my-text"
-                    : "text-gray-500 hover:bg-gray-100"
+                key={t.key}
+                onClick={() => switchTab(t.key)}
+                className={`px-3 py-2 text-sm border-b-2 -mb-px ${
+                  activeTab === t.key
+                    ? "border-[#700c28] text-[#700c28] font-medium"
+                    : "border-transparent text-[#1e2a44]/60 hover:text-[#1e2a44]"
                 }`}
-                onClick={() => setCurrentPage(index + 1)}
               >
-                {index + 1}
+                {t.label}
               </button>
             ))}
+        </div>
 
-            <button
-              className={`px-3 py-2 border rounded-full ${
-                currentPage === totalPages
-                  ? "text-gray-400 cursor-not-allowed"
-                  : "hover:bg-gray-100"
-              }`}
-              onClick={() =>
-                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-              }
-              disabled={currentPage === totalPages}
-            >
-              &gt;
-            </button>
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#1e2a44]/40" />
+            <input
+              type="text"
+              placeholder="Search listing"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="h-9 w-56 pl-8 pr-8 border border-[#d6cfc9] rounded-md text-sm bg-white outline-none focus:border-[#700c28]"
+            />
+            {search && (
+              <button
+                onClick={() => {
+                  setSearch("");
+                  setCurrentPage(1);
+                }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-[#1e2a44]/50"
+                aria-label="Clear search"
+              >
+                <X size={14} />
+              </button>
+            )}
           </div>
-        )}
+          <button
+            onClick={() => {
+              setSortBy((prev) => (prev === "latest" ? "oldest" : "latest"));
+              setCurrentPage(1);
+            }}
+            className="h-9 flex items-center gap-1.5 px-3 border border-[#d6cfc9] rounded-md text-xs bg-white hover:border-[#700c28]"
+          >
+            <ArrowDownUp size={13} />
+            <span className="capitalize">{sortBy}</span>
+          </button>
+        </div>
       </div>
-    </>
+
+      {/* List */}
+      {loading ? (
+        <div className="flex justify-center py-16">
+          <div className="w-7 h-7 border-[3px] border-[#ece6e1] border-t-[#700c28] rounded-full animate-spin" />
+        </div>
+      ) : leads.length === 0 ? (
+        <div className="bg-white border border-[#ece6e1] rounded-lg py-10 text-center text-sm text-[#1e2a44]/60">
+          {search.trim() ? "No results found for your search." : "No leads yet."}
+        </div>
+      ) : (
+        <ul className="grid gap-2 md:grid-cols-2">
+          {leads.map((lead) => {
+            const tag = tagFor(lead.status);
+            return (
+              <li key={lead.id} className="bg-white border border-[#ece6e1] rounded-lg p-2.5 flex gap-3 transition-all duration-150 hover:shadow-md hover:border-[#700c28]/30">
+                {/* Image */}
+                <Link to={detailLink(lead)} className="relative w-24 h-20 shrink-0">
+                  <img
+                    src={
+                      lead.image
+                        ? `${process.env.REACT_APP_API_URL}/media/${lead.image}`
+                        : "https://via.placeholder.com/200x150?text=No+Image"
+                    }
+                    alt={lead.title || "Listing"}
+                    className="w-full h-full object-cover rounded-md"
+                  />
+                  {activeTab === "property" && (
+                    <span className={`absolute top-1 left-1 text-[10px] font-medium text-white px-1.5 py-0.5 rounded ${tag.cls}`}>
+                      {tag.text}
+                    </span>
+                  )}
+                </Link>
+
+                {/* Details */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{lead.title}</p>
+                  <p className="text-xs text-[#1e2a44]/60 truncate">{lead.location}</p>
+                  <p className="text-xs font-semibold mt-0.5">
+                    {lead.status === "Rent"
+                      ? `₹ ${formatPrice(lead.rent)}${lead.rent_duration ? ` / ${lead.rent_duration}` : ""}`
+                      : lead.price}
+                  </p>
+
+                  {/* Enquirer */}
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-xs">
+                    <span className="font-medium text-[#1e2a44]">{lead.name}</span>
+                    <span className="text-[#1e2a44]/50">{lead.type}</span>
+                    {lead.phone && (
+                      <a href={`tel:${lead.phone}`} className="flex items-center gap-1 text-[#700c28] hover:underline">
+                        <Phone size={12} /> {lead.phone}
+                      </a>
+                    )}
+                    <span className="text-[#1e2a44]/50 ml-auto">{lead.receivedOn}</span>
+                  </div>
+
+                  {lead.message && (
+                    <p className="text-xs text-[#1e2a44]/70 mt-1.5 bg-[#fdf9f6] rounded px-2 py-1.5">
+                      {lead.message}
+                    </p>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-1">
+          <button
+            onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+            disabled={currentPage === 1}
+            className="w-8 h-8 flex items-center justify-center rounded-md border border-[#ece6e1] disabled:opacity-40 hover:bg-white"
+            aria-label="Previous page"
+          >
+            <ChevronLeft size={14} />
+          </button>
+          {[...Array(totalPages)].map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrentPage(i + 1)}
+              className={`w-8 h-8 rounded-md text-xs ${
+                currentPage === i + 1 ? "bg-[#700c28] text-white" : "hover:bg-white border border-transparent hover:border-[#ece6e1]"
+              }`}
+            >
+              {i + 1}
+            </button>
+          ))}
+          <button
+            onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            className="w-8 h-8 flex items-center justify-center rounded-md border border-[#ece6e1] disabled:opacity-40 hover:bg-white"
+            aria-label="Next page"
+          >
+            <ChevronRight size={14} />
+          </button>
+        </div>
+      )}
+    </div>
   );
 };
 

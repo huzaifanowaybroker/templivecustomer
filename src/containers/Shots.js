@@ -92,7 +92,7 @@ const Shots = () => {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pt-3 mb-3 px-4">
           <div className="flex flex-col">
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2 tracking-wide">
-              NoWayBroker Shorts
+              Zerobriks Shorts
             </h2>
             <p className="text-gray-500">Go from browsing to buying</p>
           </div>

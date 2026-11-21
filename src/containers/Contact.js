@@ -1,525 +1,11 @@
-// import React, { useState, useEffect } from "react";
-// import { Helmet } from "react-helmet";
-// import axios from "axios";
-// import { connect } from "react-redux";
-// import setAlert from "../store/actions/alert";
-// import Loader from "react-loader-spinner";
-// import Email from "@mui/icons-material/Email";
-// import LocationOn from "@mui/icons-material/LocationOn";
-// import Phone from "@mui/icons-material/Phone";
-// import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-// import { faStar } from "@fortawesome/free-solid-svg-icons";
-
-// const Contact = ({ setAlert }) => {
-//   useEffect(() => {
-//     window.scrollTo(0, 0);
-//     fetchContactInfo(); // Fetch contact info on mount
-//   }, []);
-
-//   const [formData, setFormData] = useState({
-//     name: "",
-//     contact_number: "",
-//     email: "",
-//     rating: 1,
-//     feedback_msg: "",
-//   });
-
-//   const { name, contact_number, email, rating, feedback_msg } = formData;
-
-//   const [loading, setLoading] = useState(false);
-//   const [alert, setLocalAlert] = useState(null);
-
-//   // State for contact information
-//   const [contactInfo, setContactInfo] = useState({
-//     address: "",
-//     email: "",
-//     phone: "",
-//     latitude: "",
-//     longitude: "",
-//   });
-
-//   const fetchContactInfo = async () => {
-//     try {
-//       const response = await axios.get(
-//         `${process.env.REACT_APP_API_URL}/cust_api/get_setting`,
-//       );
-//       const { data } = response.data; // Accessing the "data" array from the response
-//       if (data && data.length > 0) {
-//         const { address, emaild_id, contact, latitude } = data[0]; // Extracting required fields from the first object
-//         setContactInfo({ address, email: emaild_id, phone: contact });
-//       }
-//     } catch (error) {
-//       setAlert("Error fetching contact information", "error");
-//       setLocalAlert({
-//         msg: "Error fetching contact information",
-//         type: "danger",
-//       });
-//     }
-//   };
-
-//   const onChange = (e) =>
-//     setFormData({ ...formData, [e.target.name]: e.target.value });
-
-//   const handleStarClick = (newRating) => {
-//     setFormData({ ...formData, rating: newRating });
-//   };
-
-//   const onSubmit = (e) => {
-//     e.preventDefault();
-
-//     const config = {
-//       headers: {
-//         "Content-Type": "application/json",
-//       },
-//     };
-
-//     setLoading(true);
-//     axios
-//       .post(
-//         `${process.env.REACT_APP_API_URL}/cust_api/give_us_feedback`,
-//         { name, contact_number, email, rating, feedback_msg },
-//         config,
-//       )
-//       .then((res) => {
-//         setAlert("Feedback Submitted", "success");
-//         setLocalAlert({
-//           msg: "Feedback Submitted Successfully!",
-//           type: "success",
-//         });
-//         setLoading(false);
-//         setFormData({
-//           name: "",
-//           contact_number: "",
-//           email: "",
-//           rating: 1,
-//           feedback_msg: "",
-//         });
-//         window.scrollTo(0, 0);
-//         setTimeout(() => {
-//           setLocalAlert(null);
-//         }, 3000);
-//       })
-//       .catch((err) => {
-//         setAlert("Error Submitting Feedback", "error");
-//         setLocalAlert({ msg: "Error Submitting Feedback", type: "danger" });
-//         setLoading(false);
-//         window.scrollTo(0, 0);
-//         setTimeout(() => {
-//           setLocalAlert(null);
-//         }, 3000);
-//       });
-//   };
-
-//   const renderStars = () => {
-//     return [...Array(5)].map((_, index) => {
-//       const starValue = index + 1;
-//       return (
-//         <FontAwesomeIcon
-//           key={index}
-//           icon={faStar}
-//           className={`cursor-pointer ${starValue <= rating ? "text-yellow-500" : "text-gray-300"}`}
-//           onClick={() => handleStarClick(starValue)}
-//         />
-//       );
-//     });
-//   };
-
-//   return (
-//     <div className="min-h-screen px-4 bg-gray-100 feedback">
-//       <Helmet>
-//         <title>Real Estate - Feedback</title>
-//         <meta name="description" content="Feedback form" />
-//       </Helmet>
-
-//       <div className="container max-w-6xl p-8 mx-auto bg-white rounded-lg shadow-lg">
-//         <h2 className="mb-3 text-3xl font-bold text-center text-black-500">
-//           Feedback Form
-//         </h2>
-
-//         {alert && (
-//           <div
-//             className={`mb-4 p-4 text-white rounded ${alert.type === "success" ? "bg-green-500" : "bg-red-500"}`}
-//           >
-//             {alert.msg}
-//           </div>
-//         )}
-//         <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-//           <div>
-//             <div className="flex items-start mb-6 address">
-//               <LocationOn className="my-text" style={{ fontSize: 40 }} />
-//               <div className="ml-4">
-//                 <h4 className="text-xl font-semibold">Location:</h4>
-//                 <p className="text-gray-600">{contactInfo.address}</p>{" "}
-//                 {/* Address is now updated from geocoding */}
-//               </div>
-//             </div>
-//             <div className="flex items-start mb-6 email">
-//               <Email className="my-text" style={{ fontSize: 40 }} />
-//               <div className="ml-4">
-//                 <h4 className="text-xl font-semibold">Email:</h4>
-//                 <p className="text-gray-600">{contactInfo.email}</p>
-//               </div>
-//             </div>
-//             <div className="flex items-start mb-6 phone">
-//               <Phone className="my-text" style={{ fontSize: 40 }} />
-//               <div className="ml-4">
-//                 <h4 className="text-xl font-semibold">Phone:</h4>
-//                 <p className="text-gray-600">{contactInfo.phone}</p>
-//               </div>
-//             </div>
-
-//             <div>
-//               <iframe
-//                 width="100%"
-//                 height="250"
-//                 title="Contact map"
-//                 frameBorder="0"
-//                 scrolling="no"
-//                 marginHeight="0"
-//                 marginWidth="0"
-//                 src={`https://maps.google.com/maps?q=${contactInfo.latitude},${contactInfo.address},${contactInfo.longitude}&t=&z=13&ie=UTF8&iwloc=&output=embed`} // Use latitude and longitude from contactInfo
-//                 className="rounded-lg"
-//               ></iframe>
-//             </div>
-//           </div>
-//           <div>
-//             <form className="form" onSubmit={(e) => onSubmit(e)}>
-//               <div className="mb-4 form-group">
-//                 <label
-//                   className="block mb-2 text-sm font-bold text-gray-700"
-//                   htmlFor="name"
-//                 >
-//                   Name <span className="text-red-500"> *</span>
-//                 </label>
-//                 <input
-//                   className="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline"
-//                   name="name"
-//                   type="text"
-//                   placeholder="Full Name"
-//                   onChange={(e) => onChange(e)}
-//                   value={name}
-//                   required
-//                 />
-//               </div>
-//               <div className="mb-4 form-group">
-//                 <label
-//                   className="block mb-2 text-sm font-bold text-gray-700"
-//                   htmlFor="phone"
-//                 >
-//                   Phone Number <span className="text-red-500"> *</span>
-//                 </label>
-//                 <input
-//                   className="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline"
-//                   name="contact_number"
-//                   type="tel"
-//                   placeholder="+91 1234567890"
-//                   onChange={(e) => {
-//                     const currentValue = e.target.value.replace(/\D/g, ""); // Remove non-numeric characters (digits only)
-//                     if (currentValue.length < 7 || currentValue.length > 15) {
-//                       e.target.setCustomValidity(
-//                         "Phone number must be between 7 and 15 digits",
-//                       );
-//                     } else {
-//                       e.target.setCustomValidity(""); // Clear the message if valid
-//                     }
-//                     onChange(e); // Call your original onChange handler
-//                   }}
-//                   value={contact_number}
-//                   required
-//                   onKeyPress={(e) => {
-//                     const currentValue = e.target.value.replace(/\D/g, ""); // Get only digits from current value
-//                     const key = e.key;
-//                     if (!/[0-9\s+]/.test(key)) {
-//                       e.preventDefault();
-//                     }
-//                     if (currentValue.length >= 15 && /[0-9]/.test(key)) {
-//                       e.preventDefault();
-//                     }
-//                   }}
-//                   title="Please enter a valid phone number"
-//                 />
-//               </div>
-
-//               <div className="mb-4 form-group">
-//                 <label
-//                   className="block mb-2 text-sm font-bold text-gray-700"
-//                   htmlFor="email"
-//                 >
-//                   Email <span className="text-red-500"> *</span>
-//                 </label>
-//                 <input
-//                   className="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline"
-//                   name="email"
-//                   type="email"
-//                   placeholder="example@gmail.com"
-//                   onChange={(e) => onChange(e)}
-//                   value={email}
-//                   required
-//                 />
-//               </div>
-
-//               <div className="mb-4 form-group">
-//                 <label
-//                   className="block mb-2 text-sm font-bold text-gray-700"
-//                   htmlFor="feedback_msg"
-//                 >
-//                   Feedback <span className="text-red-500"> *</span>
-//                 </label>
-//                 <textarea
-//                   className="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline"
-//                   name="feedback_msg"
-//                   placeholder="Your feedback here..."
-//                   onChange={(e) => onChange(e)}
-//                   value={feedback_msg}
-//                   required
-//                 ></textarea>
-//               </div>
-
-//               <div className="mb-4 form-group">
-//                 <label
-//                   className="block mb-2 text-sm font-bold text-gray-700"
-//                   htmlFor="rating"
-//                 >
-//                   Rating <span className="text-red-500"> *</span>
-//                 </label>
-//                 <div className="flex mb-4">{renderStars()}</div>
-//               </div>
-
-//               <button
-//                 className={`my-bg hover:my-bg text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${
-//                   loading ? "opacity-50 cursor-not-allowed" : ""
-//                 }`}
-//                 type="submit"
-//                 disabled={loading}
-//               >
-//                 {loading ? (
-//                   <Loader
-//                     type="ThreeDots"
-//                     color="#fff"
-//                     height={15}
-//                     width={15}
-//                   />
-//                 ) : (
-//                   "Submit"
-//                 )}
-//               </button>
-//             </form>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default connect(null, { setAlert })(Contact);
-
-// import React, { useState, useEffect } from "react";
-// import { Helmet } from "react-helmet";
-// import axios from "axios";
-// import { connect } from "react-redux";
-// import setAlert from "../store/actions/alert";
-// import Loader from "react-loader-spinner";
-// import { Email, LocationOn, Phone } from "@material-ui/icons";
-
-// const Contact = ({ setAlert }) => {
-//   useEffect(() => {
-//     window.scrollTo(0, 0);
-//   }, []);
-
-//   const [formData, setFormData] = useState({
-//     name: "",
-//     email: "",
-//     subject: "",
-//     message: "",
-//   });
-
-//   const { name, email, subject, message } = formData;
-
-//   const [loading, setLoading] = useState(false);
-
-//   const onChange = (e) =>
-//     setFormData({ ...formData, [e.target.name]: e.target.value });
-
-//   const onSubmit = (e) => {
-//     e.preventDefault();
-
-//     const config = {
-//       headers: {
-//         "Content-Type": "application/json",
-//       },
-//     };
-
-//     setLoading(true);
-//     axios
-//       .post(
-//         `${process.env.REACT_APP_API_URL}/api/contacts/`,
-//         { name, email, subject, message },
-//         config
-//       )
-//       .then((res) => {
-//         setAlert("Message Sent", "success");
-//         setLoading(false);
-//         setFormData({ name: "", email: "", subject: "", message: "" });
-//         window.scrollTo(0, 0);
-//       })
-//       .catch((err) => {
-//         setAlert("Error with Sending Message", "error");
-//         setLoading(false);
-//         window.scrollTo(0, 0);
-//       });
-//     setFormData({
-//       name: "",
-//       email: "",
-//       subject: "",
-//       message: "",
-//     });
-//   };
-
-//   return (
-//     <div className="min-h-screen px-4 bg-gray-100 contact">
-//       <Helmet>
-//         <title>Real Estate - Contact</title>
-//         <meta name="description" content="Contact us" />
-//       </Helmet>
-
-//       <div className="container max-w-6xl p-8 mx-auto bg-white rounded-lg shadow-lg">
-//       <h2 className="mb-3 text-3xl font-bold text-center text-black-500">Contact Us</h2>
-//         <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-//           <div>
-//             <div className="flex items-start mb-6 address">
-//               <LocationOn className="my-text" style={{ fontSize: 40 }} />
-//               <div className="ml-4">
-//                 <h4 className="text-xl font-semibold">Location:</h4>
-//                 <p className="text-gray-600">B2-710, Balewadi High Street, PN, Pune, 123456, Maharashtra</p>
-//               </div>
-//             </div>
-//             <div className="flex items-start mb-6 email">
-//               <Email className="my-text" style={{ fontSize: 40 }} />
-//               <div className="ml-4">
-//                 <h4 className="text-xl font-semibold">Email:</h4>
-//                 <p className="text-gray-600">example@gmail.com</p>
-//               </div>
-//             </div>
-//             <div className="flex items-start mb-6 phone">
-//               <Phone className="my-text" style={{ fontSize: 40 }} />
-//               <div className="ml-4">
-//                 <h4 className="text-xl font-semibold">Phone:</h4>
-//                 <p className="text-gray-600">+91 1234567890</p>
-//               </div>
-//             </div>
-//             <div>
-//               <iframe
-//                 width="100%"
-//                 height="250"
-//                 frameBorder="0"
-//                 scrolling="no"
-//                 marginHeight="0"
-//                 marginWidth="0"
-//                 src="https://maps.google.com/maps?q=Mumbai&t=&z=13&ie=UTF8&iwloc=&output=embed"
-//                 className="rounded-lg"
-//               ></iframe>
-//             </div>
-//           </div>
-//           <div>
-//             <form className="form" onSubmit={(e) => onSubmit(e)}>
-//               <div className="mb-4 form-group">
-//                 <label className="block mb-2 text-sm font-bold text-gray-700" htmlFor="name">
-//                   Name <span className="text-red-500"> *</span>
-//                 </label>
-//                 <input
-//                   className="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline"
-//                   name="name"
-//                   type="text"
-//                   placeholder="Full Name"
-//                   onChange={(e) => onChange(e)}
-//                   value={name}
-//                   required
-//                 />
-//               </div>
-//               <div className="mb-4 form-group">
-//                 <label className="block mb-2 text-sm font-bold text-gray-700" htmlFor="email">
-//                   Email <span className="text-red-500"> *</span>
-//                 </label>
-//                 <input
-//                   className="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline"
-//                   name="email"
-//                   type="email"
-//                   placeholder="example@gmail.com"
-//                   onChange={(e) => onChange(e)}
-//                   value={email}
-//                   required
-//                 />
-//               </div>
-//               <div className="mb-4 form-group">
-//                 <label className="block mb-2 text-sm font-bold text-gray-700" htmlFor="subject">
-//                   Subject <span className="text-red-500"> *</span>
-//                 </label>
-//                 <input
-//                   className="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline"
-//                   name="subject"
-//                   type="text"
-//                   placeholder="Buying Home"
-//                   onChange={(e) => onChange(e)}
-//                   value={subject}
-//                   required
-//                 />
-//               </div>
-//               <div className="mb-4 form-group">
-//                 <label className="block mb-2 text-sm font-bold text-gray-700" htmlFor="message">
-//                   Message <span className="text-red-500"> *</span>
-//                 </label>
-//                 <textarea
-//                   className="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline"
-//                   name="message"
-//                   cols="30"
-//                   rows="5"
-//                   placeholder="Message"
-//                   style={{ resize: "none" }}
-//                   onChange={(e) => onChange(e)}
-//                   value={message}
-//                 />
-//               </div>
-//               {loading ? (
-//                 <div className="flex justify-center my-3">
-//                   <Loader type="Oval" color="#424242" height={50} width={50} />
-//                 </div>
-//               ) : (
-//                 <div className="flex justify-center send-btn">
-//                   <button
-//                     className="px-4 py-2 font-bold text-white my-bg rounded hover:my-bg focus:outline-none focus:shadow-outline"
-//                     type="submit"
-//                   >
-//                     Send
-//                   </button>
-//                 </div>
-//               )}
-//             </form>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default connect(null, { setAlert })(Contact);
-
-
-
-
-
-
-////////////////////////////////////////ADD NEW CODE//////////////
 import React, { useState, useEffect } from "react";
 import { Helmet } from "react-helmet";
 import axios from "axios";
 import { connect } from "react-redux";
 import setAlert from "../store/actions/alert";
 import Loader from "react-loader-spinner";
-import Email from "@mui/icons-material/Email";
-import LocationOn from "@mui/icons-material/LocationOn";
-import Phone from "@mui/icons-material/Phone";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faStar } from "@fortawesome/free-solid-svg-icons";
+import { FiMapPin, FiPhone, FiMail, FiClock } from "react-icons/fi";
+import { FaStar } from "react-icons/fa";
 import {
   NAME_MIN,
   EMAIL_MAX,
@@ -535,12 +21,51 @@ import {
   PROPERTY_NAME_MAX,
 } from "../utils/Signupvalidation";
 
-const Contact = ({ setAlert }) => {
-  useEffect(() => {
-    window.scrollTo(0, 0);
-    fetchContactInfo(); // Fetch contact info on mount
-  }, []);
+/* Company details (shown on the page) */
+const COMPANY = {
+  legalName: "NOWAYBROKER (OPC) PRIVATE LIMITED",
+  brand: "Zerobriks",
+  addressLines: [
+    "FL 2, Square No 14 SP, INNOV8 SKCL Tech Square",
+    "Guindy Industrial Estate",
+    "Chennai, Tamil Nadu 600032",
+    "India",
+  ],
+  state: "Tamil Nadu, India",
+  phone: "+91 9890911818",
+  email: "support@zerobriks.com",
+};
 
+const SERIF = { fontFamily: '"Newsreader", Georgia, serif' };
+
+const inputCls =
+  "w-full rounded-lg border border-[#EADFE2] bg-white px-3 py-2.5 text-sm text-[#1B1113] outline-none transition placeholder:text-[#9A8F94] focus:border-[#7A1230] focus:ring-2 focus:ring-[#7A1230]/15";
+
+const Field = ({ label, required, error, children }) => (
+  <div>
+    <label className="mb-1.5 block text-sm font-semibold text-[#1B1113]">
+      {label} {required && <span className="text-[#7A1230]">*</span>}
+    </label>
+    {children}
+    {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+  </div>
+);
+
+const InfoRow = ({ icon: Icon, label, children }) => (
+  <div className="flex items-start gap-3">
+    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#7A1230] text-white">
+      <Icon size={15} />
+    </span>
+    <div>
+      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#B9770E]">
+        {label}
+      </p>
+      <div className="mt-0.5 text-sm leading-snug text-[#6B5A60]">{children}</div>
+    </div>
+  </div>
+);
+
+const Contact = ({ setAlert }) => {
   const [formData, setFormData] = useState({
     name: "",
     contact_number: "",
@@ -555,7 +80,6 @@ const Contact = ({ setAlert }) => {
   const [loading, setLoading] = useState(false);
   const [alert, setLocalAlert] = useState(null);
 
-  // field-level validation messages (NWB-BUG-029 to 038)
   const emptyErrors = {
     name: "",
     contact_number: "",
@@ -565,45 +89,17 @@ const Contact = ({ setAlert }) => {
   };
   const [errors, setErrors] = useState(emptyErrors);
 
-  // State for contact information
-  const [contactInfo, setContactInfo] = useState({
-    address: "",
-    email: "",
-    phone: "",
-    latitude: "",
-    longitude: "",
-  });
-
-  const fetchContactInfo = async () => {
-    try {
-      const response = await axios.get(
-        `${process.env.REACT_APP_API_URL}/cust_api/get_setting`,
-      );
-      const { data } = response.data; // Accessing the "data" array from the response
-      if (data && data.length > 0) {
-        const { address, emaild_id, contact, latitude } = data[0]; // Extracting required fields from the first object
-        setContactInfo({
-  address,
-  email: emaild_id,
-  phone: contact ? `+91 ${contact}` : "",
-});
-      }
-    } catch (error) {
-      setAlert("Error fetching contact information", "error");
-      setLocalAlert({
-        msg: "Error fetching contact information",
-        type: "danger",
-      });
-    }
-  };
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const onChange = (e) => {
     const { name: field, value } = e.target;
     let next = value;
-    if (field === "name") next = sanitizeNameInput(value); // letters + single spaces, max length (029, 030, 031)
-    if (field === "contact_number") next = sanitizeTenDigitPhone(value); // digits only, max 10 (032, 033)
-    if (field === "email") next = value.replace(/\s/g, "").slice(0, EMAIL_MAX); // no spaces, max length (034)
-    if (field === "property_name") next = sanitizePropertyNameInput(value); // no unsupported symbols, max length (035, 036)
+    if (field === "name") next = sanitizeNameInput(value);
+    if (field === "contact_number") next = sanitizeTenDigitPhone(value);
+    if (field === "email") next = value.replace(/\s/g, "").slice(0, EMAIL_MAX);
+    if (field === "property_name") next = sanitizePropertyNameInput(value);
 
     setFormData({ ...formData, [field]: next });
     if (errors[field]) setErrors({ ...errors, [field]: "" });
@@ -616,7 +112,6 @@ const Contact = ({ setAlert }) => {
   const onSubmit = (e) => {
     e.preventDefault();
 
-    // clean spaces, then validate every field before anything is sent (NWB-BUG-038)
     const cleanName = cleanSpaces(name);
     const cleanPhone = contact_number.trim();
     const cleanEmail = email.trim();
@@ -644,14 +139,7 @@ const Contact = ({ setAlert }) => {
     };
 
     setErrors(newErrors);
-
-    if (Object.values(newErrors).some(Boolean)) return; // block submission
-
-    const config = {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    };
+    if (Object.values(newErrors).some(Boolean)) return;
 
     setLoading(true);
     axios
@@ -665,14 +153,11 @@ const Contact = ({ setAlert }) => {
           rating,
           feedback_msg: cleanFeedback,
         },
-        config,
+        { headers: { "Content-Type": "application/json" } },
       )
-      .then((res) => {
+      .then(() => {
         setAlert("Feedback Submitted", "success");
-        setLocalAlert({
-          msg: "Feedback Submitted Successfully!",
-          type: "success",
-        });
+        setLocalAlert({ msg: "Thank you! Your feedback has been submitted.", type: "success" });
         setLoading(false);
         setFormData({
           name: "",
@@ -684,238 +169,232 @@ const Contact = ({ setAlert }) => {
         });
         setErrors(emptyErrors);
         window.scrollTo(0, 0);
-        setTimeout(() => {
-          setLocalAlert(null);
-        }, 3000);
+        setTimeout(() => setLocalAlert(null), 3000);
       })
       .catch((err) => {
         const serverMessage = err?.response?.data?.message;
         setAlert("Error Submitting Feedback", "error");
         setLocalAlert({
-          msg: serverMessage || "Error Submitting Feedback",
+          msg: serverMessage || "Error submitting feedback. Please try again.",
           type: "danger",
         });
         setLoading(false);
         window.scrollTo(0, 0);
-        setTimeout(() => {
-          setLocalAlert(null);
-        }, 3000);
+        setTimeout(() => setLocalAlert(null), 3000);
       });
   };
 
-  const renderStars = () => {
-    return [...Array(5)].map((_, index) => {
-      const starValue = index + 1;
-      return (
-        <FontAwesomeIcon
-          key={index}
-          icon={faStar}
-          className={`cursor-pointer ${starValue <= rating ? "text-yellow-500" : "text-gray-300"}`}
-          onClick={() => handleStarClick(starValue)}
-        />
-      );
-    });
-  };
+  const mapSrc = `https://maps.google.com/maps?q=${encodeURIComponent(
+    COMPANY.addressLines.join(", "),
+  )}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
 
   return (
-    <div className="min-h-screen px-4 bg-gray-100 feedback">
+    <div className="min-h-screen bg-[#FBF6F3] px-4 py-12 text-[#1B1113] sm:px-6">
       <Helmet>
-        <title>Real Estate - Feedback</title>
-        <meta name="description" content="Feedback form" />
+        <title>Contact Us | Zerobriks</title>
+        <meta
+          name="description"
+          content="Contact Zerobriks for help with listings, your account, or to share feedback. Call +91 9890911818 or email support@zerobriks.com."
+        />
       </Helmet>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Newsreader:wght@500;600;700&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap');`}</style>
 
-      <div className="container max-w-6xl p-8 mx-auto bg-white rounded-lg shadow-lg">
-        <h2 className="mb-3 text-3xl font-bold text-center text-black-500">
-          Rate Us & Share Your Feedback
-        </h2>
+      <div className="mx-auto max-w-6xl">
+        {/* Header */}
+        <div className="mb-10 text-center">
+          <h1 className="mt-3 text-3xl font-semibold text-[#7A1230] sm:text-4xl" style={SERIF}>
+            Contact &amp; Feedback
+          </h1>
+          <p className="mx-auto mt-3 max-w-2xl text-[15px] leading-relaxed text-[#6B5A60]">
+            Questions about a listing, your account, or the platform? Reach out, or rate your experience below.
+          </p>
+        </div>
 
         {alert && (
           <div
-            className={`mb-4 p-4 text-white rounded ${alert.type === "success" ? "bg-green-500" : "bg-red-500"}`}
+            role="status"
+            className={`mx-auto mb-6 max-w-3xl rounded-lg px-4 py-3 text-sm font-semibold text-white ${
+              alert.type === "success" ? "bg-green-600" : "bg-[#7A1230]"
+            }`}
           >
             {alert.msg}
           </div>
         )}
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-          <div>
-            <div className="flex items-start mb-6 address">
-              <LocationOn className="my-text" style={{ fontSize: 40 }} />
-              <div className="ml-4">
-                <h4 className="text-xl font-semibold">Location:</h4>
-                <p className="text-gray-600">{contactInfo.address}</p>{" "}
-                {/* Address is now updated from geocoding */}
+
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
+          {/* LEFT: contact details + map */}
+          <div className="space-y-5 lg:col-span-2 lg:self-start">
+            <div className="rounded-2xl border border-[#EADFE2] bg-white p-6 shadow-[0_24px_50px_-30px_rgba(78,12,34,.45)]">
+              <h2 className="text-xl font-semibold text-[#1B1113]" style={SERIF}>
+                Contact details
+              </h2>
+              <div className="mt-4 space-y-4">
+                <InfoRow icon={FiMapPin} label="Head office">
+                  <p>{COMPANY.addressLines.join(", ")}</p>
+                </InfoRow>
+                <InfoRow icon={FiPhone} label="Call (toll free)">
+                  <a
+                    href={`tel:${COMPANY.phone.replace(/\s/g, "")}`}
+                    className="font-semibold text-[#7A1230] hover:underline"
+                  >
+                    {COMPANY.phone}
+                  </a>
+                </InfoRow>
+                <InfoRow icon={FiMail} label="Email">
+                  <a
+                    href={`mailto:${COMPANY.email}`}
+                    className="font-semibold text-[#7A1230] hover:underline"
+                  >
+                    {COMPANY.email}
+                  </a>
+                </InfoRow>
+                <InfoRow icon={FiClock} label="Response time">
+                  <p>We usually reply within 24 hours.</p>
+                </InfoRow>
               </div>
-            </div>
-            <div className="flex items-start mb-6 email">
-              <Email className="my-text" style={{ fontSize: 40 }} />
-              <div className="ml-4">
-                <h4 className="text-xl font-semibold">Email:</h4>
-                <p className="text-gray-600">{contactInfo.email}</p>
-              </div>
-            </div>
-            <div className="flex items-start mb-6 phone">
-              <Phone className="my-text" style={{ fontSize: 40 }} />
-              <div className="ml-4">
-                <h4 className="text-xl font-semibold">Phone:</h4>
-                <p className="text-gray-600">{contactInfo.phone}</p>
+
+              <div className="mt-5 space-y-1 border-t border-[#EADFE2] pt-4 text-xs leading-snug text-[#6B5A60]">
+                <p>
+                  <span className="font-semibold text-[#1B1113]">Company:</span> {COMPANY.legalName}
+                </p>
+                <p>
+                  <span className="font-semibold text-[#1B1113]">Brand:</span> {COMPANY.brand}
+                </p>
+                <p>
+                  <span className="font-semibold text-[#1B1113]">Registered state:</span> {COMPANY.state}
+                </p>
               </div>
             </div>
 
-            <div>
+            <div className="overflow-hidden rounded-2xl border border-[#EADFE2] bg-white">
               <iframe
+                title="Zerobriks head office location"
+                src={mapSrc}
                 width="100%"
-                height="250"
-                title="Contact map"
-                frameBorder="0"
-                scrolling="no"
-                marginHeight="0"
-                marginWidth="0"
-                src={`https://maps.google.com/maps?q=${contactInfo.latitude},${contactInfo.address},${contactInfo.longitude}&t=&z=13&ie=UTF8&iwloc=&output=embed`} // Use latitude and longitude from contactInfo
-                className="rounded-lg"
-              ></iframe>
+                height="240"
+                loading="lazy"
+                style={{ border: 0 }}
+                allowFullScreen
+              />
             </div>
           </div>
-          <div>
-            <form className="form" onSubmit={(e) => onSubmit(e)} noValidate>
-              <div className="mb-4 form-group">
-                <label
-                  className="block mb-2 text-sm font-bold text-gray-700"
-                  htmlFor="name"
-                >
-                  Name <span className="text-red-500"> *</span>
-                </label>
-                <input
-                  className="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline"
-                  name="name"
-                  type="text"
-                  placeholder="Full Name"
-                  onChange={(e) => onChange(e)}
-                  value={name}
-                  maxLength={50}
-                  required
-                />
-                {errors.name && (
-                  <p className="mt-1 text-xs text-red-500">{errors.name}</p>
-                )}
-              </div>
-              <div className="mb-4 form-group">
-                <label
-                  className="block mb-2 text-sm font-bold text-gray-700"
-                  htmlFor="phone"
-                >
-                  Phone Number <span className="text-red-500"> *</span>
-                </label>
-                <input
-                  className="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline"
-                  name="contact_number"
-                  type="tel"
-                  inputMode="numeric"
-                  placeholder="10-digit mobile number"
-                  onChange={(e) => onChange(e)}
-                  value={contact_number}
-                  maxLength={10}
-                  required
-                />
-                {errors.contact_number && (
-                  <p className="mt-1 text-xs text-red-500">{errors.contact_number}</p>
-                )}
-              </div>
 
-              <div className="mb-4 form-group">
-                <label
-                  className="block mb-2 text-sm font-bold text-gray-700"
-                  htmlFor="email"
-                >
-                  Email <span className="text-red-500"> *</span>
-                </label>
-                <input
-                  className="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline"
-                  name="email"
-                  type="email"
-                  placeholder="example@gmail.com"
-                  onChange={(e) => onChange(e)}
-                  value={email}
-                  maxLength={EMAIL_MAX}
-                  required
-                />
-                {errors.email && (
-                  <p className="mt-1 text-xs text-red-500">{errors.email}</p>
-                )}
-              </div>
+          {/* RIGHT: feedback form */}
+          <div className="rounded-2xl border border-[#EADFE2] bg-white p-6 shadow-[0_24px_50px_-30px_rgba(78,12,34,.45)] sm:p-8 lg:col-span-3">
+            <h2 className="text-xl font-semibold text-[#1B1113]" style={SERIF}>
+              Rate us &amp; share your feedback
+            </h2>
+            <p className="mt-1 text-sm text-[#6B5A60]">Fields marked * are required.</p>
 
-              <div className="mb-4 form-group">
-                <label
-                  className="block mb-2 text-sm font-bold text-gray-700"
-                  htmlFor="property_name"
-                >
-                  Property/Project Name <span className="text-red-500"> *</span>
-                </label>
-                <input
-                  className="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline"
-                  name="property_name"
-                  type="text"
-                  placeholder="Property Name"
-                  onChange={(e) => onChange(e)}
-                  value={property_name}
-                  maxLength={PROPERTY_NAME_MAX}
-                  required
-                />
-                {errors.property_name && (
-                  <p className="mt-1 text-xs text-red-500">{errors.property_name}</p>
-                )}
-              </div>
-
-              <div className="mb-4 form-group">
-                <label
-                  className="block mb-2 text-sm font-bold text-gray-700"
-                  htmlFor="feedback_msg"
-                >
-                  Feedback <span className="text-red-500"> *</span>
-                </label>
-                <div className="relative w-full mt-1">
-                  <textarea
-                    name="feedback_msg"
-                    placeholder="Your feedback helps us improve NoWayBroker and deliver a better property-search experience..."
-                    value={feedback_msg}
-                    maxLength={555}
-                    onChange={(e) => onChange(e)}
-                    className="w-full h-32 p-3 pb-7 pr-16 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-rose-500 resize-none block"
+            <form className="mt-6 space-y-4" onSubmit={onSubmit} noValidate>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <Field label="Full name" required error={errors.name}>
+                  <input
+                    className={inputCls}
+                    name="name"
+                    type="text"
+                    placeholder="Full name"
+                    onChange={onChange}
+                    value={name}
+                    maxLength={50}
                     required
                   />
-                  <span className="absolute bottom-2 right-3 text-xs text-gray-400 pointer-events-none select-none z-10">
+                </Field>
+                <Field label="Phone number" required error={errors.contact_number}>
+                  <input
+                    className={inputCls}
+                    name="contact_number"
+                    type="tel"
+                    inputMode="numeric"
+                    placeholder="10-digit mobile number"
+                    onChange={onChange}
+                    value={contact_number}
+                    maxLength={10}
+                    required
+                  />
+                </Field>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <Field label="Email" required error={errors.email}>
+                  <input
+                    className={inputCls}
+                    name="email"
+                    type="email"
+                    placeholder="you@example.com"
+                    onChange={onChange}
+                    value={email}
+                    maxLength={EMAIL_MAX}
+                    required
+                  />
+                </Field>
+                <Field label="Property / project name" required error={errors.property_name}>
+                  <input
+                    className={inputCls}
+                    name="property_name"
+                    type="text"
+                    placeholder="Property name"
+                    onChange={onChange}
+                    value={property_name}
+                    maxLength={PROPERTY_NAME_MAX}
+                    required
+                  />
+                </Field>
+              </div>
+
+              <Field label="Feedback" required error={errors.feedback_msg}>
+                <div className="relative">
+                  <textarea
+                    name="feedback_msg"
+                    placeholder="Tell us what worked and what could be better..."
+                    value={feedback_msg}
+                    maxLength={555}
+                    onChange={onChange}
+                    rows={5}
+                    className={`${inputCls} resize-none pb-7`}
+                    required
+                  />
+                  <span className="pointer-events-none absolute bottom-2.5 right-3 text-xs text-[#9A8F94]">
                     {(feedback_msg || "").length}/555
                   </span>
                 </div>
-                {errors.feedback_msg && (
-                  <p className="mt-1 text-xs text-red-500">{errors.feedback_msg}</p>
-                )}
-              </div>
+              </Field>
 
-              <div className="mb-4 form-group">
-                <label
-                  className="block mb-2 text-sm font-bold text-gray-700"
-                  htmlFor="rating"
-                >
-                  Rating <span className="text-red-500"> *</span>
-                </label>
-                <div className="flex mb-4">{renderStars()}</div>
+              <div>
+                <p className="mb-1.5 text-sm font-semibold text-[#1B1113]">
+                  Rating <span className="text-[#7A1230]">*</span>
+                </p>
+                <div className="flex items-center gap-1.5" role="radiogroup" aria-label="Rating">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      role="radio"
+                      aria-checked={rating === star}
+                      aria-label={`${star} star${star > 1 ? "s" : ""}`}
+                      onClick={() => handleStarClick(star)}
+                      className="rounded p-0.5 transition hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#7A1230]/40"
+                    >
+                      <FaStar
+                        size={22}
+                        className={star <= rating ? "text-[#C8962A]" : "text-[#EADFE2]"}
+                      />
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <button
-                className={`my-bg hover:my-bg text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${loading ? "opacity-50 cursor-not-allowed" : ""
-                  }`}
                 type="submit"
                 disabled={loading}
+                className={`flex h-11 w-full items-center justify-center rounded-lg bg-[#7A1230] text-sm font-bold text-white transition hover:bg-[#5A0017] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#7A1230]/40 ${
+                  loading ? "cursor-not-allowed opacity-60" : ""
+                }`}
               >
                 {loading ? (
-                  <Loader
-                    type="ThreeDots"
-                    color="#fff"
-                    height={15}
-                    width={15}
-                  />
+                  <Loader type="ThreeDots" color="#fff" height={15} width={15} />
                 ) : (
-                  "Submit"
+                  "Submit feedback"
                 )}
               </button>
             </form>

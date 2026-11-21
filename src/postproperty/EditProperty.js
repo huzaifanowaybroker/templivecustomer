@@ -27,6 +27,14 @@ import {
 import { IoIosInformationCircle } from "react-icons/io";
 import { ToWords } from "to-words";
 import { Trash } from "lucide-react"; // Using Lucide Icons for delete button
+import {
+  Check, Handshake, ShieldCheck, TrendingUp, LayoutDashboard, Zap, Users, Home, ArrowLeft, ArrowRight,
+  Smartphone, CircleUser, Bell, Tag, KeyRound, BedDouble, Building2, Building, MapPin, Globe, IndianRupee,
+  Ruler, Calendar, Clock, FileText, Video, Upload, CloudUpload, Images, Plus, Sparkles, Sofa, Layers, Bath,
+  Award, CalendarCheck, PanelsTopLeft, CircleParking, LocateFixed, Mail, Youtube, Link as LinkIcon, Glasses,
+  Droplets, Flame, Cctv, Waves, Dumbbell, Trees, Baby, BatteryCharging, Siren, Car, ArrowUpDown,
+  Image as ImageIcon,
+} from "lucide-react";
 import { MdOutlineDriveFolderUpload } from "react-icons/md";
 import axios from "axios";
 import {
@@ -47,6 +55,418 @@ import Select, { components } from "react-select";
 import { Country, State } from "country-state-city";
 import { useParams } from "react-router-dom";
 
+/* ------------------------------------------------------------------ */
+/* Layout helpers (presentation only, no logic)                        */
+/* ------------------------------------------------------------------ */
+
+const ZB_STYLES = `
+.zb-root{min-height:100vh;background:radial-gradient(1200px 500px at 80% -10%,#F8E3E7 0%,transparent 60%),#FDF9F6;color:#1f2937;font-size:13px;padding-bottom:84px;}
+.zb-topbar{background:#fff;border-bottom:1px solid #f1f1f1;}
+.zb-topbar-inner{max-width:1152px;margin:0 auto;padding:0 16px;height:42px;display:flex;align-items:center;gap:12px;}
+.zb-brand{display:flex;align-items:center;gap:7.5px;flex-shrink:0;}
+.zb-logo{font-size:22px;font-weight:900;letter-spacing:-.02em;line-height:1;}
+.zb-logo-zero{color:#700C28;}
+.zb-logo-briks{color:#D4A017;}
+.zb-brand-sub{font-size:10px;color:#6b7280;line-height:1.2;border-left:1px solid #e5e7eb;padding-left:10px;}
+.zb-links{display:none;gap:12px;font-size:12.5px;font-weight:600;color:#374151;}
+@media (min-width:1024px){.zb-links{display:flex;}}
+.zb-links a{color:inherit;text-decoration:none;}
+.zb-links a:hover{color:#700C28;}
+.zb-top-actions{margin-left:auto;display:flex;align-items:center;gap:6px;}
+.zb-btn-ghost{display:none;align-items:center;gap:4.5px;height:28px;padding:0 12px;border:1px solid #700C28;border-radius:8px;color:#700C28;background:#fff;font-size:12px;font-weight:600;cursor:pointer;}
+@media (min-width:768px){.zb-btn-ghost{display:inline-flex;}}
+.zb-btn-post{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 12px;border:0;border-radius:8px;background:#700C28;color:#fff;font-size:12px;font-weight:600;cursor:pointer;}
+.zb-free{background:#D4A017;color:#111827;font-size:10px;font-weight:700;border-radius:4px;padding:1.5px 6px;}
+.zb-icon-btn{width:30px;height:30px;border-radius:50%;background:#f3f4f6;color:#4b5563;display:flex;align-items:center;justify-content:center;}
+.zb-banner{position:relative;overflow:hidden;background:linear-gradient(90deg,rgba(63,6,22,.92) 0%,rgba(112,12,40,.82) 60%,rgba(112,12,40,.7) 100%),url('/images/property-hero.jpg') center/cover no-repeat,#700C28;}
+.zb-banner-inner{max-width:1152px;margin:0 auto;padding:8px 16px 6px;display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:3px;position:relative;}
+.zb-banner-text{text-align:left;max-width:680px;}
+.zb-banner-text h1{font-size:22px;font-weight:800;color:#fff;line-height:1.2;letter-spacing:-.01em;margin:0 0;}
+.zb-banner-text p{font-size:12px;line-height:1.3;color:rgba(255,255,255,.9);margin:2px 0 0;}
+.zb-banner-line{height:3px;background:linear-gradient(90deg,#D4A017,#F3D27A,#D4A017);}
+.zb-stepper{max-width:1152px;margin:18px auto 0;padding:0 16px;}
+.zb-stepper ol{display:flex;align-items:center;gap:9px;list-style:none;margin:0 0;padding:0 0;flex-wrap:wrap;}
+.zb-step-item{display:flex;align-items:center;gap:9px;}
+.zb-step{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 14px 0 5px;border-radius:999px;border:0;background:#fff;color:#9ca3af;font-size:13px;font-weight:600;box-shadow:inset 0 0 0 1px #e5e7eb;cursor:pointer;white-space:nowrap;}
+.zb-step:disabled{cursor:default;}
+.zb-step.is-active{background:#700C28;color:#fff;box-shadow:0 4px 10px rgba(112,12,40,.25);}
+.zb-step.is-done{background:#ecfdf5;color:#047857;box-shadow:none;}
+.zb-num{width:26px;height:26px;border-radius:50%;background:#f3f4f6;color:#6b7280;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;}
+.zb-step.is-active .zb-num{background:#fff;color:#700C28;}
+.zb-step.is-done .zb-num{background:#059669;color:#fff;}
+.zb-line{flex:1;height:2px;min-width:24px;background:#d1d5db;}
+.zb-line.is-done{background:#10b981;}
+.zb-main{max-width:1152px;margin:18px auto 0;padding:0 16px;display:grid;gap:18px;}
+.zb-main.zb-with-promo{grid-template-columns:minmax(0,1fr) 340px;}
+@media (max-width:1023px){.zb-main.zb-with-promo{grid-template-columns:minmax(0,1fr);}.zb-promo{display:none;}}
+.zb-card{background:#fff;border-radius:14px;border:1px solid #ebe7e7;box-shadow:0 1px 2px rgba(0,0,0,.04),0 12px 28px -18px rgba(112,12,40,.25);padding:16.5px 22px;min-width:0;}
+.zb-promo{background:#fff;border-radius:16px;border:1px solid #ebe7e7;box-shadow:0 12px 28px -18px rgba(112,12,40,.3);overflow:hidden;position:sticky;top:16px;align-self:start;}
+.zb-promo-art{background:#F9E2CB;}
+.zb-skyline{display:block;width:100%;height:auto;}
+.zb-promo-body{padding:13.5px 18px;}
+.zb-promo-logo{font-size:20px;font-weight:900;line-height:1;}
+.zb-promo h3{font-size:17px;font-weight:700;color:#700C28;margin:7.5px 0 0;}
+.zb-promo-tag{font-size:12px;color:#6b7280;margin:1.5px 0 0;}
+.zb-points{list-style:none;margin:10.5px 0 0;padding:0 0;display:flex;flex-direction:column;gap:9px;}
+.zb-points li{display:flex;gap:7.5px;align-items:flex-start;}
+.zb-point-ico{width:28px;height:28px;border-radius:10px;background:#F8EEF1;color:#700C28;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.zb-point-t{font-size:13px;font-weight:700;color:#700C28;margin:0 0;line-height:1.25;}
+.zb-point-s{font-size:12px;color:#6b7280;margin:0 0;line-height:1.35;}
+.zb-stats{margin-top:12px;display:grid;grid-template-columns:repeat(3,1fr);background:#F8EEF1;border-radius:12px;padding:9px 4px;text-align:center;}
+.zb-stats div{display:flex;flex-direction:column;}
+.zb-stats div+div{border-left:1px solid #efd3d9;}
+.zb-stats b{font-size:18px;font-weight:900;color:#700C28;}
+.zb-stats span{font-size:10.5px;color:#4b5563;}
+.zb-root input:not([type=checkbox]):not([type=radio]):not([type=file]),.zb-root select,.zb-root textarea{border:1px solid #d1d5db !important;border-radius:8px !important;font-size:13px !important;outline:none !important;background-color:#fff;}
+.zb-root input:not([type=checkbox]):not([type=radio]):not([type=file]):focus,.zb-root select:focus,.zb-root textarea:focus{border-color:#700C28 !important;box-shadow:0 0 0 3px rgba(112,12,40,.12) !important;}
+.zb-root input:not([type=checkbox]):not([type=radio]):not([type=file]):hover,.zb-root select:hover,.zb-root textarea:hover{border-color:#b9a3a8 !important;}
+.zb-root h2{color:#700C28;font-weight:700;}
+.zb-root .max-w-3xl,.zb-root .max-w-5xl,.zb-root .max-w-7xl{max-width:100% !important;}
+.zb-root .mb-32,.zb-root .mb-20{margin-bottom:12px !important;}
+.zb-footer{position:fixed;left:0;right:0;bottom:0;z-index:40;background:rgba(255,255,255,.97);border-top:1px solid #e5e7eb;box-shadow:0 -4px 12px rgba(0,0,0,.04);}
+.zb-footer-inner{max-width:1152px;margin:0 auto;padding:9px 16px;display:flex;align-items:center;justify-content:space-between;gap:9px;}
+.zb-step-count{font-size:12px;color:#6b7280;}
+.zb-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:38px;min-width:150px;padding:0 22px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:0;transition:background .15s, transform .15s;}
+.zb-btn:disabled{opacity:.6;cursor:not-allowed;}
+.zb-btn-primary{background:#700C28;color:#fff;box-shadow:0 4px 12px rgba(112,12,40,.25);}
+.zb-btn-primary:hover:not(:disabled){background:#580920;transform:translateY(-1px);}
+.zb-btn-outline{background:#fff;color:#700C28;box-shadow:inset 0 0 0 1.5px #700C28;}
+.zb-btn-outline:hover{background:#FBF3F5;}
+@media (max-width:640px){.zb-step-count{display:none;}.zb-brand-sub{display:none;}.zb-banner-inner{padding:8px 16px 6px;}}
+.zb-screen{display:flex;flex-direction:column;gap:10.5px;}
+.zb-summary{background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;border-radius:10px;padding:7.5px 14px;font-size:12.5px;font-weight:600;}
+.zb-head{display:flex;gap:9px;align-items:center;margin-bottom:3px;}
+.zb-head-ico{width:34px;height:34px;border-radius:12px;background:#700C28;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 10px rgba(112,12,40,.25);flex-shrink:0;}
+.zb-head h2{font-size:18px;margin:0 0;line-height:1.2;}
+.zb-head p{font-size:12.5px;color:#6b7280;margin:1.5px 0 0;}
+.zb-sub{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:700;color:#111827;margin-top:7.5px;padding-top:12px;border-top:1px solid #f0eded;}
+.zb-sub svg{color:#700C28;}
+.zb-note{font-size:12px;color:#6b7280;margin:-4.5px 0 0;}
+.zb-field{display:flex;flex-direction:column;gap:4.5px;min-width:0;}
+.zb-label{font-size:12px;font-weight:600;color:#1f2937;}
+.zb-label b{color:#dc2626;margin-left:2px;}
+.zb-err{font-size:11.5px;color:#dc2626;margin:0 0;}
+.zb-hint{font-size:11px;color:#6b7280;margin:0 0;}
+.zb-right{text-align:right;}
+.zb-rel{position:relative;}
+.zb-ico{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#700C28;pointer-events:none;z-index:1;}
+.zb-input{width:100%;height:32px;padding:0 12px;font-size:13px;color:#111827;background:#fff;border:1px solid #d1d5db;border-radius:8px;outline:none;box-sizing:border-box;}
+.zb-input:focus{border-color:#700C28;box-shadow:0 0 0 3px rgba(112,12,40,.12);}
+.zb-input:disabled{background:#f3f4f6;color:#9ca3af;}
+.zb-has-icon{padding-left:36px;}
+.zb-select{appearance:none;padding-right:32px;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;}
+.zb-textarea{height:auto;padding:7.5px 12px;resize:vertical;}
+.zb-grid-2{display:grid;grid-template-columns:1fr;gap:10.5px;}
+.zb-grid-3{display:grid;grid-template-columns:1fr;gap:10.5px;}
+@media (min-width:768px){.zb-grid-2{grid-template-columns:1fr 1fr;}.zb-grid-3{grid-template-columns:1fr 1fr 1fr;}}
+.zb-choices{display:grid;gap:7.5px;grid-template-columns:repeat(3,1fr);}
+.zb-cols-2{grid-template-columns:repeat(2,1fr);}
+.zb-choice{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4.5px;min-height:48px;padding:7.5px 8px;border:1.5px solid #e5e7eb;border-radius:10px;background:#fff;color:#374151;font-size:12.5px;font-weight:600;cursor:pointer;transition:all .15s;}
+.zb-choice:hover:not(:disabled){border-color:rgba(112,12,40,.45);transform:translateY(-1px);}
+.zb-choice:disabled{opacity:.4;cursor:not-allowed;}
+.zb-choice.is-on{border-color:#700C28;background:#FBF3F5;color:#700C28;box-shadow:0 1px 4px rgba(112,12,40,.12);}
+.zb-choice.is-on::after{content:"✓";position:absolute;top:6px;right:7px;width:17px;height:17px;border-radius:50%;background:#700C28;color:#fff;font-size:10px;line-height:17px;text-align:center;font-weight:700;}
+.zb-check{display:flex;align-items:center;gap:6.75px;padding:7.5px 12px;border:1px solid #e5e7eb;border-radius:9px;font-size:12.5px;font-weight:500;color:#374151;cursor:pointer;background:#fff;}
+.zb-check.is-on{border-color:#700C28;background:#FBF3F5;color:#700C28;}
+.zb-check input{accent-color:#700C28;width:16px;height:16px;}
+.zb-checks{display:grid;gap:7.5px;grid-template-columns:1fr;}
+@media (min-width:768px){.zb-checks{grid-template-columns:repeat(3,1fr);}}
+.zb-area{display:flex;height:32px;border:1px solid #d1d5db;border-radius:8px;background:#fff;overflow:hidden;}
+.zb-area:focus-within{border-color:#700C28;box-shadow:0 0 0 3px rgba(112,12,40,.12);}
+.zb-area.is-err{border-color:#f87171;}
+.zb-area input{flex:1;min-width:0;border:0;padding:0 12px;font-size:13px;outline:none;background:transparent;}
+.zb-area select{border:0;border-left:1px solid #e5e7eb;background:#f9fafb;font-size:12px;padding:0 8px;outline:none;color:#374151;max-width:130px;}
+.zb-mt{margin-top:3px;}
+.zb-row-between{display:flex;align-items:center;justify-content:space-between;margin-top:4.5px;}
+.zb-ai-btn{display:inline-flex;align-items:center;gap:4.5px;height:26px;padding:0 12px;border-radius:8px;background:#fffbeb;color:#8a6400;border:1px solid rgba(212,160,23,.55);font-size:12px;font-weight:600;cursor:pointer;}
+.zb-ai-btn:disabled{opacity:.6;cursor:not-allowed;}
+.zb-count{font-size:13px;color:#4b5563;margin:0 0;}
+.zb-count b{color:#700C28;}
+.zb-amen-grid{display:grid;gap:7.5px;grid-template-columns:1fr;}
+@media (min-width:768px){.zb-amen-grid{grid-template-columns:repeat(3,1fr);}}
+.zb-amen{display:flex;align-items:center;gap:7.5px;padding:6.75px 11px;border:1.5px solid #e5e7eb;border-radius:10px;background:#fff;text-align:left;font-size:13px;font-weight:600;color:#1f2937;cursor:pointer;transition:all .15s;}
+.zb-amen:hover{border-color:rgba(112,12,40,.45);transform:translateY(-1px);}
+.zb-amen.is-on{border-color:#700C28;background:#FBF3F5;}
+.zb-amen-ico{width:28px;height:28px;border-radius:8px;background:#F8EEF1;color:#700C28;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.zb-amen.is-on .zb-amen-ico{background:#700C28;color:#fff;}
+.zb-amen-name{flex:1;min-width:0;}
+.zb-amen-box{width:16px;height:16px;border:1.5px solid #d1d5db;border-radius:5px;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;}
+.zb-amen.is-on .zb-amen-box{background:#700C28;border-color:#700C28;}
+.zb-mini{border:1px solid #e5e7eb;border-radius:12px;padding:12px 16px;background:#fff;display:flex;flex-direction:column;gap:9px;}
+.zb-mini-head{display:flex;gap:7.5px;align-items:flex-start;}
+.zb-mini-ico{width:28px;height:28px;border-radius:10px;background:#F8EEF1;color:#700C28;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.zb-mini h3{font-size:14px;font-weight:700;color:#111827;margin:0 0;}
+.zb-mini p{font-size:12px;color:#6b7280;margin:1.5px 0 0;}
+.zb-media{align-items:start;}
+.zb-col{display:flex;flex-direction:column;gap:10.5px;min-width:0;}
+.zb-drop{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4.5px;padding:16.5px 12px;border:1.5px dashed rgba(112,12,40,.4);border-radius:12px;background:#fdf7f8;text-align:center;}
+.zb-drop-sm{padding:12px 12px;}
+.zb-drop p{font-size:13px;color:#374151;margin:0 0;}
+.zb-drop-ico{color:#700C28;}
+.zb-link{background:none;border:0;padding:0 0;color:#700C28;font-weight:600;text-decoration:underline;cursor:pointer;font-size:13px;}
+.zb-btn-pill{display:inline-flex;align-items:center;gap:4.5px;height:28px;padding:0 14px;border-radius:8px;background:#700C28;color:#fff;font-size:12px;font-weight:600;border:0;cursor:pointer;}
+.zb-hidden{display:none;}
+.zb-preview{position:relative;border-radius:10px;overflow:hidden;}
+.zb-preview img,.zb-preview video{width:100%;display:block;max-height:195px;object-fit:cover;}
+.zb-preview-x{position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.zb-thumbs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+.zb-thumb{position:relative;aspect-ratio:1/1;border-radius:8px;overflow:hidden;background:#f3f4f6;}
+.zb-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+.zb-thumb button{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.zb-or{display:flex;align-items:center;gap:9px;color:#6b7280;font-size:12px;font-weight:700;}
+.zb-or::before,.zb-or::after{content:"";flex:1;height:1px;background:#d1d5db;}
+.zb-or span{background:#fff;border:1px solid #e5e7eb;border-radius:999px;padding:2.25px 12px;}
+.zb-divider{height:1px;background:#f0eded;margin:4.5px 0;}
+.zb-root{background:#FDF9F6;color:#1E2A3B;}
+.zb-topbar{background:#fff;border-bottom:1px solid #EFE7DC;}
+.zb-card{background:#fff;border-color:#EFE7DC;box-shadow:0 1px 2px rgba(30,42,59,.04),0 10px 24px -16px rgba(112,12,40,.22);transition:box-shadow .2s ease;}
+.zb-card:hover{box-shadow:0 16px 32px -18px rgba(112,12,40,.34);}
+.zb-main{max-width:1120px;padding:0 12px;}
+.zb-stepper{max-width:1120px;padding:0 12px;}
+.zb-promo{border-color:#EFE7DC;background:#fff;}
+.zb-promo-art{background:#F9ECD9;}
+.zb-promo-photo{height:142.5px;background:url('/images/property-hero.jpg') center/cover no-repeat,#F9E2CB;}
+.zb-point-t{color:#700C28;}
+.zb-point-s{color:#5B6472;}
+.zb-point-ico{transition:transform .2s ease;}
+.zb-points li:hover .zb-point-ico{transform:scale(1.08);}
+.zb-stats{background:#FBF4F1;}
+.zb-stats b{color:#700C28;}
+.zb-stats span{color:#5B6472;}
+.zb-step{background:#fff;color:#7B8494;transition:background .2s ease,color .2s ease,transform .2s ease;}
+.zb-step:hover:not(:disabled){transform:translateY(-1px);}
+.zb-step.is-active{background:#700C28;color:#fff;}
+.zb-step.is-done{background:#F3F8F1;color:#2F6B45;}
+.zb-num{background:#F1ECE4;color:#5B6472;}
+.zb-line{background:#E2D9CB;}
+.zb-label{color:#1E2A3B;}
+.zb-head p,.zb-mini p,.zb-hint,.zb-note,.zb-count{color:#5B6472;}
+.zb-sub{color:#1E2A3B;border-top-color:#EFE7DC;}
+.zb-input{background:#FFFDFA;border-color:#E2D9CB;color:#1E2A3B;transition:border-color .15s ease,box-shadow .15s ease,background .15s ease;}
+.zb-input:hover:not(:disabled){border-color:#B9A3A8;background:#fff;}
+.zb-input:focus{background:#fff;}
+.zb-choice{background:#fff;border-color:#E2D9CB;color:#1E2A3B;}
+.zb-choice:hover:not(:disabled){box-shadow:0 10px 20px -14px rgba(112,12,40,.5);}
+.zb-check{background:#fff;border-color:#E2D9CB;color:#1E2A3B;transition:background .15s ease,border-color .15s ease;}
+.zb-check:hover{border-color:#B9A3A8;background:#FFFDFA;}
+.zb-amen{background:#fff;border-color:#E2D9CB;color:#1E2A3B;}
+.zb-amen:hover{box-shadow:0 10px 20px -14px rgba(112,12,40,.5);}
+.zb-drop{background:#FDF8F1;transition:background .15s ease,border-color .15s ease;}
+.zb-drop:hover{border-color:#700C28;background:#F9EEEF;}
+.zb-mini{background:#fff;border-color:#EFE7DC;transition:box-shadow .2s ease;}
+.zb-mini:hover{box-shadow:0 12px 24px -16px rgba(112,12,40,.3);}
+.zb-mini h3{color:#1E2A3B;}
+.zb-ai-btn{background:#FFF7E0;color:#7A5A00;border-color:#E9C768;transition:background .15s ease,box-shadow .15s ease;}
+.zb-ai-btn:hover:not(:disabled){background:#FFEFC2;box-shadow:0 6px 14px -10px rgba(212,160,23,.8);}
+.zb-thumb img{transition:transform .25s ease;}
+.zb-thumb:hover img{transform:scale(1.05);}
+.zb-link:hover{opacity:.8;}
+.zb-footer{background:rgba(255,255,255,.97);border-top:1px solid #EFE7DC;}
+.zb-step-count{color:#5B6472;}
+.zb-btn-primary:hover:not(:disabled){box-shadow:0 10px 20px -10px rgba(112,12,40,.7);}
+.zb-btn-outline:hover{box-shadow:inset 0 0 0 1.5px #700C28,0 8px 16px -12px rgba(112,12,40,.6);}
+.zb-notice{background:#FFF7E0;border:1px solid #F0D27A;color:#7A5A00;border-radius:10px;padding:7.5px 14px;font-size:12.5px;line-height:1.45;}
+.zb-progress{max-width:1120px;margin:10.5px auto 0;padding:0 12px;}
+.zb-progress-top{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#5B6472;margin-bottom:4.5px;}
+.zb-progress-top b{color:#700C28;font-size:13px;}
+.zb-progress-track{height:8px;border-radius:999px;background:#F1E3E6;overflow:hidden;}
+.zb-progress-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,#700C28,#700C28);transition:width .35s ease;}
+@keyframes zbEnter{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+.zb-enter{animation:zbEnter .2s ease-out both;will-change:opacity,transform;}
+@media (prefers-reduced-motion: reduce){.zb-enter{animation:none;}.zb-card,.zb-choice,.zb-amen,.zb-btn,.zb-step,.zb-input,.zb-progress-fill{transition:none;}}
+`;
+
+const PROMO_POINTS = [
+  { icon: Handshake, title: "Zero Brokerage", text: "Direct deals, no middlemen" },
+  { icon: Users, title: "Genuine Interest", text: "Connect with verified buyers & tenants" },
+  { icon: ShieldCheck, title: "Verified Leads", text: "Only genuine enquiries reach you" },
+  { icon: TrendingUp, title: "Greater Visibility", text: "High exposure across multiple cities" },
+  { icon: LayoutDashboard, title: "Track & Manage", text: "Easily manage your listing and enquiries" },
+  { icon: Zap, title: "Quick & Easy Listing", text: "List your property in just a few steps" },
+];
+
+const ZbPromo = () => (
+  <aside className="zb-promo">
+    <div className="zb-promo-art zb-promo-photo" role="img" aria-label="Modern apartment building" />
+    <div className="zb-promo-body">
+      <div className="zb-promo-logo"><span className="zb-logo-zero">ZERO</span><span className="zb-logo-briks">BRIKS</span></div>
+      <h3>List on ZEROBRIKS</h3>
+      <p className="zb-promo-tag">Your digital agent. Zero brokerage.</p>
+      <ul className="zb-points">
+        {PROMO_POINTS.map((p) => {
+          const Icon = p.icon;
+          return (
+            <li key={p.title}>
+              <span className="zb-point-ico"><Icon size={16} /></span>
+              <div>
+                <p className="zb-point-t">{p.title}</p>
+                <p className="zb-point-s">{p.text}</p>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+      <div className="zb-stats">
+        <div><b>30K+</b><span>Active Users</span></div>
+        <div><b>7K+</b><span>Properties Listed</span></div>
+        <div><b>8+</b><span>Cities</span></div>
+      </div>
+    </div>
+  </aside>
+);
+
+const LISTING_ICONS = { Buy: Tag, Rent: KeyRound, "Paying Guest": BedDouble };
+const RENT_DURATION_OPTIONS = ["Per Month", "Per Year"];
+const YES_NO = ["Yes", "No"];
+const BHK_OPTIONS = ["Studio/Single Room", "1 RK", "1 BHK", "1.5 BHK", "2 BHK", "2.5 BHK", "3 BHK", "3.5 BHK", "4 BHK", "5 BHK", "6 BHK", "6+ BHK"];
+const BATHROOM_OPTIONS = [
+  { value: "1", label: "1" }, { value: "2", label: "2" }, { value: "3", label: "3" }, { value: "4", label: "4+" },
+];
+const OWNERSHIP_OPTIONS = ["Freehold", "Leasehold", "Co-operative Society", "Power of Attorney"];
+const POSSESSION_OPTIONS = ["Expected Possession", "Ready To Move", "Under Construction", "New Launch", "Resale"];
+const FURNISHING_OPTIONS = ["Furnished", "Unfurnished", "Semi-Furnished"];
+const AGE_OPTIONS = [
+  { value: "0-1", label: "0-1" }, { value: "2-4", label: "2-4" }, { value: "5-7", label: "5-7" },
+  { value: "8-10", label: "8-10" }, { value: "10+", label: "10+" },
+];
+const COUNT_OPTIONS = ["0", "1", "2", "3", "4"];
+const BALCONY_OPTIONS = [
+  { value: "0", label: "0" }, { value: "1", label: "1" }, { value: "2", label: "2" }, { value: "3", label: "3" },
+  { value: "more than 3", label: "More than 3" },
+];
+const AREA_UNITS = [
+  "sq.ft", "sq.yards", "sq.m", "acre", "marla", "cents", "bigha", "kottah", "kanal", "grounds",
+  "ares", "biswa", "guntha", "aankadam", "hectares", "rood", "chataks", "perch",
+];
+
+const formatAmount = (value) => (value ? Number(value).toLocaleString("en-IN") : "");
+
+const amenityIconFor = (name = "") => {
+  const n = name.toLowerCase();
+  if (n.includes("visitor")) return CircleParking;
+  if (n.includes("water")) return Droplets;
+  if (n.includes("fire")) return Siren;
+  if (n.includes("security")) return ShieldCheck;
+  if (n.includes("cctv") || n.includes("camera")) return Cctv;
+  if (n.includes("gas")) return Flame;
+  if (n.includes("club")) return Users;
+  if (n.includes("power") || n.includes("backup")) return BatteryCharging;
+  if (n.includes("pool") || n.includes("swim")) return Waves;
+  if (n.includes("gym")) return Dumbbell;
+  if (n.includes("garden") || n.includes("park")) return Trees;
+  if (n.includes("parking")) return Car;
+  if (n.includes("play") || n.includes("child")) return Baby;
+  if (n.includes("lift")) return ArrowUpDown;
+  return Check;
+};
+
+const ZbHeader = ({ icon: Icon, title, subtitle }) => (
+  <div className="zb-head">
+    <span className="zb-head-ico"><Icon size={16} /></span>
+    <div>
+      <h2>{title}</h2>
+      <p>{subtitle}</p>
+    </div>
+  </div>
+);
+
+const ZbSub = ({ icon: Icon, title }) => (
+  <div className="zb-sub">
+    {Icon && <Icon size={16} />}
+    <span>{title}</span>
+  </div>
+);
+
+const ZbField = ({ label, required, error, hint, className = "", children }) => (
+  <div className={`zb-field ${className}`}>
+    <label className="zb-label">
+      {label}
+      {required && <b>*</b>}
+    </label>
+    {children}
+    {error ? <p className="zb-err">{error}</p> : hint ? <p className="zb-hint">{hint}</p> : null}
+  </div>
+);
+
+const ZbInput = ({ icon: Icon, className = "", ...props }) => (
+  <div className="zb-rel">
+    {Icon && <Icon className="zb-ico" size={16} />}
+    <input className={`zb-input ${Icon ? "zb-has-icon" : ""} ${className}`} {...props} />
+  </div>
+);
+
+const ZbSelect = ({ icon: Icon, placeholder, options = [], className = "", ...props }) => (
+  <div className="zb-rel">
+    {Icon && <Icon className="zb-ico" size={16} />}
+    <select className={`zb-input zb-select ${Icon ? "zb-has-icon" : ""} ${className}`} {...props}>
+      <option value="">{placeholder}</option>
+      {options.map((o) => {
+        const value = typeof o === "string" ? o : o.value;
+        const label = typeof o === "string" ? o : o.label;
+        return (
+          <option key={value} value={value}>
+            {label}
+          </option>
+        );
+      })}
+    </select>
+  </div>
+);
+
+const ZbAreaInput = ({ value, unit, onValue, onUnit, onBlur, placeholder, error }) => (
+  <div className={`zb-area ${error ? "is-err" : ""}`}>
+    <input
+      type="text"
+      inputMode="decimal"
+      value={value || ""}
+      onChange={(e) => onValue(e.target.value)}
+      onBlur={onBlur}
+      placeholder={placeholder}
+    />
+    <select value={unit || ""} onChange={(e) => onUnit(e.target.value)}>
+      <option value="">Unit</option>
+      {AREA_UNITS.map((u) => (
+        <option key={u} value={u}>
+          {u}
+        </option>
+      ))}
+    </select>
+  </div>
+);
+
+const ZbChoice = ({ icon: Icon, label, selected, disabled, onClick }) => (
+  <button
+    type="button"
+    className={`zb-choice ${selected ? "is-on" : ""}`}
+    aria-pressed={selected}
+    disabled={disabled}
+    onClick={onClick}
+  >
+    {Icon && <Icon size={18} />}
+    <span>{label}</span>
+  </button>
+);
+
+const ZbCheck = ({ checked, label, onChange }) => (
+  <label className={`zb-check ${checked ? "is-on" : ""}`}>
+    <input type="checkbox" checked={!!checked} onChange={(e) => onChange(e.target.checked)} />
+    <span>{label}</span>
+  </label>
+);
+
+const ZbCard = ({ icon: Icon, title, subtitle, children }) => (
+  <div className="zb-mini">
+    <div className="zb-mini-head">
+      <span className="zb-mini-ico"><Icon size={16} /></span>
+      <div>
+        <h3>{title}</h3>
+        <p>{subtitle}</p>
+      </div>
+    </div>
+    {children}
+  </div>
+);
+
 const EditProperty = () => {
   const [mapCenter, setMapCenter] = useState({ lat: 18.5204, lng: 73.8567 });
   const [allCountries, setAllCountries] = useState([]);
@@ -64,6 +484,17 @@ const EditProperty = () => {
   const autoCompleteRef = useRef(null);
   const GOOGLE_MAPS_API_KEY = "AIzaSyAUCNwxnNo52kFWJNGhRVj-AnkoffmzYe0";
   const GOOGLE_MAPS_LIBRARIES = ["places"];
+
+const CITY_OPTIONS = [
+  "Ahmedabad",
+  "Bengaluru",
+  "Chennai",
+  "Delhi",
+  "Hyderabad",
+  "Kolkata",
+  "Mumbai",
+  "Pune",
+];
   const { isLoaded } = useJsApiLoader({
   googleMapsApiKey: GOOGLE_MAPS_API_KEY,
   libraries: GOOGLE_MAPS_LIBRARIES,
@@ -330,7 +761,7 @@ const EditProperty = () => {
       setVirtualTourLink(data.virtual_tour_availability || "");
       setAddress(data.address || "");
       setAddressArea(data.address_area || "");
-      setCity(data.city_name || "");
+      setCity(CITY_OPTIONS.includes(data.city_name) ? data.city_name : "");
       setState(data.state || "");
       setCountry(data.country || "");
       setZipCode(data.zip_code || "");
@@ -590,24 +1021,24 @@ setCentralAC(data.central_AC || "");
     };
   }, [showModal]);
 
-  const steps = [
-    "Basic Info",
-    "Address",
-    "Property Details",
-    "Amenities",
-    "Photos / Videos",
-  ];
+  // Three visible steps. Each groups the original step numbers, so the
+  // field logic, validation and submit stay exactly as they were.
+  const steps = ["Basic Info & Address", "Property Details & Amenities", "Photos & Videos"];
+  const UI_STEP_LOGICAL = [[0, 1], [2, 3], [4]];
   const [activeStep, setActiveStep] = useState(0);
+  const uiStep = activeStep <= 1 ? 0 : activeStep <= 3 ? 1 : 2;
 
   const prevStep = () => {
-    setActiveStep((prev) => Math.max(prev - 1, 0));
+    if (uiStep === 0) return;
+    setActiveStep(UI_STEP_LOGICAL[uiStep - 1][0]);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const nextStep = () => {
-    if (!completedSteps.includes(activeStep)) {
-      setCompletedSteps((prev) => [...prev, activeStep]);
-    }
-    setActiveStep((prev) => Math.min(prev + 1, steps.length - 1));
+    const finished = UI_STEP_LOGICAL[uiStep];
+    setCompletedSteps((prev) => Array.from(new Set([...prev, ...finished])));
+    setActiveStep(UI_STEP_LOGICAL[Math.min(uiStep + 1, steps.length - 1)][0]);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const [propertyCategory, setPropertyCategory] = useState("Buy");
@@ -936,7 +1367,7 @@ setCentralAC(data.central_AC || "");
     });
 
     // Set address fields
-    setCity(extractedCity);
+    setCity(CITY_OPTIONS.includes(extractedCity) ? extractedCity : "");
     setZipCode(extractedZip);
     setLocality(extractedLocality);
     setSubLocality(extractedSubLocality);
@@ -1434,10 +1865,10 @@ form.append("property_dimensions_breadth", breadthOfLand);
   }, [showModal, showFeaturePopup]);
 
   // Inline Error -
-  const validateStepFields = () => {
+  const validateStepFields = (stepIdxs = [activeStep]) => {
     const errors = {};
 
-    if (activeStep === 0) {
+    if (stepIdxs.includes(0)) {
       const nameError = validateBuildingName(formData.property_name);
       if (nameError) {
         errors.property_name = nameError;
@@ -1451,7 +1882,7 @@ form.append("property_dimensions_breadth", breadthOfLand);
       }
     }
 
-    if (activeStep === 1) {
+    if (stepIdxs.includes(1)) {
       const addressError = validateAddress(address);
       if (addressError) {
         errors.address = addressError;
@@ -1466,7 +1897,9 @@ form.append("property_dimensions_breadth", breadthOfLand);
       if (zipError) {
         errors.zipCode = zipError;
       }
-      const cityError = validateCity(city);
+      const cityError = CITY_OPTIONS.includes(city)
+        ? ""
+        : "Please select a city from the list";
       if (cityError) {
         errors.city = cityError;
       }
@@ -1483,7 +1916,7 @@ form.append("property_dimensions_breadth", breadthOfLand);
       }
     }
 
-    if (activeStep === 2) {
+    if (stepIdxs.includes(2)) {
       if (propertyCategory === "Buy") {
         if (!String(formData.property_price || "").trim()) {
           errors.property_price = "Property Price is required";
@@ -1786,7 +2219,7 @@ form.append("property_dimensions_breadth", breadthOfLand);
       }
     }
 
-    if (activeStep === 2) {
+    if (stepIdxs.includes(2)) {
       // Area details: required, greater than 0, not unrealistically small, units required
       const carpetValueError = validateAreaValue("Carpet area", carpetArea, carpetAreaUnit);
       if (carpetValueError) errors.carpetArea = carpetValueError;
@@ -1826,17 +2259,17 @@ form.append("property_dimensions_breadth", breadthOfLand);
       }
 
       // Possession / available date must be a real date with a sensible year
-      const possessionDateError = validatePossessionDate(formData.possession_date);
+      const possessionDateError = formData.possession_date ? validatePossessionDate(formData.possession_date) : "";
       if (possessionDateError) errors.possession_date = possessionDateError;
 
       // Flat / House No: special characters alone are not accepted
-      const flatNoError = validateFlatNo(formData.block);
+      const flatNoError = formData.block ? validateFlatNo(formData.block) : "";
       if (flatNoError) errors.block = flatNoError;
     }
 
     // Amenities are optional (NWB-BUG-079): nothing to validate on this step.
 
-    if (activeStep === 4) {
+    if (stepIdxs.includes(4)) {
       if (!coverImage) {
         errors.cover_image = "Please upload a cover image";
       }
@@ -1864,6 +2297,39 @@ form.append("property_dimensions_breadth", breadthOfLand);
     return Object.keys(errors).length === 0;
   };
 
+  // Scrolls to the first highlighted field that is still empty or invalid,
+  // with room for the header, and puts the cursor in it.
+  const scrollToFirstError = () => {
+    setTimeout(() => {
+      const target = document.querySelector(".zb-root .zb-err, .zb-root .is-err");
+      if (!target) return;
+      const field = target.closest(".zb-field") || target.closest(".zb-rel") || target;
+      const top = field.getBoundingClientRect().top + window.scrollY - 120;
+      window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+      const input = field.querySelector("input, select, textarea");
+      if (input && typeof input.focus === "function") {
+        setTimeout(() => input.focus({ preventScroll: true }), 400);
+      }
+    }, 60);
+  };
+
+  // Runs the step validation; any exception is reported instead of failing silently
+  const runStepValidation = (indexes) => {
+    let ok = false;
+    try {
+      ok = validateStepFields(indexes);
+    } catch (err) {
+      console.error("Step validation failed:", err);
+      toast.error("This step could not be checked. Please re-check the fields and try again.");
+      return false;
+    }
+    if (!ok) {
+      toast.error("Please complete the highlighted fields before continuing.");
+      scrollToFirstError();
+    }
+    return ok;
+  };
+
   const categoryLabelMap = {
     Buy: "Sell",
     Rent: "Rent/Lease",
@@ -1884,8273 +2350,1081 @@ form.append("property_dimensions_breadth", breadthOfLand);
   if (!isLoaded) {
   return <div>Loading Maps...</div>;
 }
+  const isPlot = propertyType === "Plot" || propertyType === "Land";
+  const isHome = buildingType === "Residential" && !isPlot;
+  const requiredChecks = [
+    !!propertyCategory,
+    !!buildingType,
+    !!propertyType,
+    !!String(formData.property_name || "").trim(),
+    propertyCategory === "Buy" ? !!formData.property_price : !!formData.rent,
+    propertyCategory === "Buy" || !!formData.rent_duration,
+    !!String(address || "").trim(),
+    !!country,
+    !!state,
+    !!String(city || "").trim(),
+    !!String(zipCode || "").trim(),
+    !isHome || !!formData.bhk_type,
+    !!carpetArea,
+    !!builtUpArea,
+    propertyCategory !== "Buy" || !!formData.ownership,
+    propertyCategory !== "Buy" || !!formData.possession_status,
+    isPlot || !!formData.furnished_type,
+    !!coverImage,
+  ];
+  const completion = Math.round((requiredChecks.filter(Boolean).length / requiredChecks.length) * 100);
+
   return (
     <>
-      {/* <LoadScript googleMapsApiKey={GOOGLE_MAPS_API_KEY} libraries={libraries}> */}
-        <div className="flex flex-col items-center min-h-screen bg-white">
-          {/* Navbar */}
-          <nav className="flex items-center justify-center w-full p-4 text-black bg-gray-200">
-            <h1 className="text-xl">Edit Your Property</h1>
-          </nav>
+      <div className="zb-root">
+        <style>{ZB_STYLES}</style>
 
-          {/* Stepper Navigation */}
-          <div className="flex flex-wrap justify-center w-full gap-2 p-3 bg-white">
-            {steps.map((step, index) => (
-              <button
-                key={index}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition ${activeStep === index
-                  ? "bg-gray-200 my-text"
-                  : completedSteps.includes(index)
-                    ? "text-green-600"
-                    : "text-gray-600"
-                  }`}
-                onClick={() => {
-                  if (completedSteps.includes(index)) {
-                    setActiveStep(index);
-                  }
-                }}
-              >
-                {index + 1}. {step}
-              </button>
-            ))}
+        {/* Top bar */}
+   
+
+        {/* Banner */}
+        <header className="zb-banner">
+          <div className="zb-banner-inner">
+            <div className="zb-banner-text">
+              <h1>Edit Property</h1>
+              <p>Update your listing details. Changes are saved when you submit.</p>
+            </div>
           </div>
+          <div className="zb-banner-line" />
+        </header>
 
-          {/* Form Card */}
-          <div className="w-full p-6 bg-white max-w-7xl">
+        {/* Stepper: any step can be revisited while editing */}
+        <nav className="zb-stepper" aria-label="Progress">
+          <ol>
+            {steps.map((label, index) => {
+              const isActive = uiStep === index;
+              const isDone = index < uiStep;
+              return (
+                <li key={label} className="zb-step-item">
+                  <button
+                    type="button"
+                    aria-current={isActive ? "step" : undefined}
+                    className={`zb-step ${isActive ? "is-active" : isDone ? "is-done" : ""}`}
+                    onClick={() => setActiveStep(UI_STEP_LOGICAL[index][0])}
+                  >
+                    <span className="zb-num">{isDone ? <Check size={14} /> : index + 1}</span>
+                    <span>{label}</span>
+                  </button>
+                  {index < steps.length - 1 && <span className={`zb-line ${isDone ? "is-done" : ""}`} />}
+                </li>
+              );
+            })}
+          </ol>
+        </nav>
+
+        {/* Completion */}
+        <div className="zb-progress">
+          <div className="zb-progress-top">
+            <span>Listing completeness</span>
+            <b>{completion}%</b>
+          </div>
+          <div className="zb-progress-track">
+            <div className="zb-progress-fill" style={{ width: `${completion}%` }} />
+          </div>
+        </div>
+
+        {/* Form + promo */}
+        <main className={`zb-main ${uiStep === 0 ? "zb-with-promo" : ""}`}>
+          <section className="zb-card">
             {/* Render Step Content */}
-            {activeStep === 0 && (
-              <div className="max-w-3xl p-3 mx-auto mb-20 border border-gray-300 rounded-xl">
-                <h2 className="mb-4 text-xl font-semibold text-gray-800">
-                  Basic Details
-                </h2>
+            {Object.values(formErrors).some(Boolean) && (
+              <div className="zb-summary">Please fix the highlighted fields before continuing.</div>
+            )}
 
-                {/* Property Name */}
-                <div className="mb-4">
-                  <label className="block mb-1 font-medium text-gray-700">
-                    Building/Society/Project Name{" "}
-                    <span className="text-xl font-bold text-red-500">*</span>
-                  </label>
+            {/* ============ SCREEN 1: Basic Info + Address ============ */}
+            {uiStep === 0 && (
+              <div className="zb-screen zb-enter">
+                <ZbHeader
+                  icon={Home}
+                  title="Basic Information"
+                  subtitle="Tell buyers and tenants what kind of property you are listing."
+                />
 
-                  <input
-                    type="text"
-                    placeholder="Enter Name"
-                    name="property_name"
-                    className={`w-full p-3 rounded-lg outline-none focus:ring-2 focus:ring-rose-500 ${formErrors.property_name
-                      ? "border border-red-600"
-                      : "border border-gray-300"
-                      }`}
-                    value={formData.property_name}
-                    onChange={handleInputChange}
-                  />
+                <ZbField label="Listing Type" required>
+                  <div className="zb-choices">
+                    {propertyCategories.map((category) => (
+                      <ZbChoice
+                        key={category}
+                        icon={LISTING_ICONS[category]}
+                        label={categoryLabelMap[category]}
+                        selected={propertyCategory === category}
+                        onClick={() => {
+                          setPropertyCategory(category);
+                          setFormErrors((prev) => ({ ...prev, building_type: "", property_type: "" }));
+                          setFormData({ ...formData, property_category_type: category });
+                        }}
+                      />
+                    ))}
+                  </div>
+                </ZbField>
 
-                  {formErrors.property_name && (
-                    <p className="flex items-center gap-1 mt-1 text-sm text-red-500">
-                      <MdErrorOutline className="text-lg" />
-                      {formErrors.property_name}
-                    </p>
+                <ZbField label="Property Category" required error={formErrors.building_type}>
+                  <div className="zb-choices zb-cols-2">
+                    {buildingTypes.map((type) => (
+                      <ZbChoice
+                        key={type}
+                        icon={type === "Commercial" ? Building2 : Home}
+                        label={type}
+                        selected={buildingType === type}
+                        disabled={propertyCategory === "Paying Guest" && type !== "Residential"}
+                        onClick={() => handleBuildingTypeChange(type)}
+                      />
+                    ))}
+                  </div>
+                </ZbField>
+
+                {buildingType === "Commercial" && (
+                  <div className="zb-notice">
+                    Commercial listings need the sub-type and security deposit fields, which are not in this layout yet.
+                    Submission will be blocked for commercial sale listings until they are added.
+                  </div>
+                )}
+
+                <div className="zb-grid-2">
+                  <ZbField label="Property Name" required error={formErrors.property_name}>
+                    <ZbInput
+                      icon={Building}
+                      name="property_name"
+                      value={formData.property_name || ""}
+                      onChange={handleInputChange}
+                      placeholder="Enter Property Name"
+                    />
+                  </ZbField>
+
+                  <ZbField label="Property Type" required error={formErrors.property_type}>
+                    <ZbSelect
+                      icon={Building2}
+                      value={propertyType || ""}
+                      onChange={(e) => {
+                        const type = e.target.value;
+                        setPropertyType(type);
+                        setFormData({ ...formData, property_type: type });
+                        setFormErrors((prev) => ({ ...prev, property_type: "" }));
+                      }}
+                      placeholder="Select Property Type"
+                      options={propertyTypes.map((t) => ({ value: t, label: getPropertyTypeLabel(t) }))}
+                    />
+                  </ZbField>
+
+                  {isHome && (
+                    <ZbField label="BHK / Configuration" required error={formErrors.bhk_type}>
+                      <ZbSelect
+                        icon={BedDouble}
+                        name="bhk_type"
+                        value={formData.bhk_type || ""}
+                        onChange={handleInputChange}
+                        placeholder="Select Configuration"
+                        options={BHK_OPTIONS}
+                      />
+                    </ZbField>
+                  )}
+
+                  {propertyCategory === "Buy" ? (
+                    <ZbField
+                      label={isPlot ? "Plot Price" : "Expected Price"}
+                      required
+                      error={formErrors.property_price}
+                      hint={formData.property_price ? `₹ ${toWords.convert(Number(formData.property_price))}` : ""}
+                    >
+                      <ZbInput
+                        icon={IndianRupee}
+                        name="property_price"
+                        placeholder="Enter Price"
+                        value={formatAmount(formData.property_price)}
+                        onChange={(e) => {
+                          const raw = e.target.value.replace(/,/g, "");
+                          if (/^\d*$/.test(raw) && raw.length <= PRICE_MAX_DIGITS) {
+                            handleInputChange({ target: { name: "property_price", value: raw } });
+                          }
+                        }}
+                      />
+                    </ZbField>
+                  ) : (
+                    <ZbField
+                      label="Rent Amount"
+                      required
+                      error={formErrors.rent}
+                      hint={formData.rent ? `₹ ${toWords.convert(Number(formData.rent))}` : ""}
+                    >
+                      <ZbInput
+                        icon={IndianRupee}
+                        name="rent"
+                        placeholder="Enter Rent"
+                        value={formatAmount(formData.rent)}
+                        onChange={(e) => {
+                          const raw = e.target.value.replace(/,/g, "");
+                          if (/^\d*$/.test(raw)) {
+                            handleInputChange({ target: { name: "rent", value: raw } });
+                          }
+                        }}
+                      />
+                    </ZbField>
+                  )}
+
+                  {propertyCategory !== "Buy" && (
+                    <ZbField label="Rent Duration" required error={formErrors.rent_duration}>
+                      <ZbSelect
+                        icon={Calendar}
+                        name="rent_duration"
+                        value={formData.rent_duration || ""}
+                        onChange={handleInputChange}
+                        placeholder="Select Rent Duration"
+                        options={RENT_DURATION_OPTIONS}
+                      />
+                    </ZbField>
+                  )}
+
+                  {propertyCategory !== "Buy" && (
+                    <ZbField
+                      label="Deposit Amount (One Time)"
+                      hint={
+                        formData.security_deposit_amount
+                          ? `₹ ${toWords.convert(Number(formData.security_deposit_amount))}`
+                          : "Paid once at the start of the tenancy"
+                      }
+                    >
+                      <ZbInput
+                        icon={IndianRupee}
+                        name="security_deposit_amount"
+                        placeholder="Enter deposit amount"
+                        value={formatAmount(formData.security_deposit_amount)}
+                        onChange={(e) => {
+                          const raw = e.target.value.replace(/,/g, "");
+                          if (/^\d*$/.test(raw)) {
+                            handleInputChange({ target: { name: "security_deposit_amount", value: raw } });
+                          }
+                        }}
+                      />
+                    </ZbField>
                   )}
                 </div>
 
-                {/* Featured Checkbox */}
-                {/* <div className="flex items-center mb-4">
-                <input
-                  type="checkbox"
-                  id="featured"
-                  name="mark_as_featured"
-                  className="mb-2 mr-2"
+                <ZbCheck
                   checked={formData.mark_as_featured === "Yes"}
-                  onChange={(e) => {
-                    if (e.target.checked && featureCount <= 0) {
+                  label="Showcase your property as a featured listing"
+                  onChange={(checked) => {
+                    if (checked && featureCount <= 0) {
                       setShowFeaturePopup(true);
                       return;
                     }
-
-                    setFormData({
-                      ...formData,
-                      mark_as_featured: e.target.checked ? "Yes" : "No",
-                    });
+                    setFormData({ ...formData, mark_as_featured: checked ? "Yes" : "No" });
                   }}
                 />
-                <label
-                  htmlFor="featured"
-                  className="flex items-center text-gray-700"
-                >
-                  Showcase Your Featured Property{" "}
-                  <IoIosInformationCircle className="ml-1 text-lg text-yellow-500 cursor-pointer" />
-                </label>
-              </div> */}
 
-                {/* Property Category */}
-                <div className="mb-4">
-                  <label className="block mb-1 font-medium text-gray-700">
-                    Property Category Type{" "}
-                    <span className="text-xl font-bold text-red-500">*</span>
-                  </label>
-                  <div className="flex flex-wrap gap-3">
-                    {propertyCategories.map((category) => (
-                      <button
-                        key={category}
-                        className={`px-4 py-2 rounded-full border transition ${propertyCategory === category
-                          ? "bg-rose-100 text-rose-700 border-rose-500"
-                          : "border-gray-300 text-gray-600 hover:bg-gray-100"
-                          }`}
-                        onClick={() => {
-                          setPropertyCategory(category);
-                        setFormErrors((prev) => ({ ...prev, building_type: "", property_type: "" })); // old prompts are re-evaluated for the new category
-                          setFormData({
-                            ...formData,
-                            property_category_type: category,
-                          });
-                          typesTouchedByUser.current = true;
-                          if (category === "Paying Guest" && buildingType === "Commercial") {
-                            // Commercial is not valid for Paying Guest: clear it and prompt
-                            setBuildingType("");
-                            setPropertyType("");
-                            setPropertyTypes(PG_PROPERTY_TYPES);
-                            setFormData((prev) => ({ ...prev, building_type: "", property_type: "" }));
-                            setFormErrors((prev) => ({ ...prev, building_type: PG_COMMERCIAL_MSG }));
-                          }
-                        }}
+                <ZbSub icon={MapPin} title="Project Address" />
+                <p className="zb-note">
+                  Place the listing pin on the map to help buyers and tenants find your property easily.
+                </p>
+
+                <ZbField label="Address" required error={formErrors.address}>
+                  <div className="zb-rel">
+                    <MapPin className="zb-ico" size={16} />
+                    {isLoaded ? (
+                      <Autocomplete
+                        onLoad={(ac) => (autoCompleteRef.current = ac)}
+                        onPlaceChanged={handlePlaceChanged}
                       >
-                        {categoryLabelMap[category]}
-                      </button>
-                    ))}
+                        <input
+                          type="text"
+                          autoComplete="off"
+                          value={address}
+                          placeholder="Enter complete address (Building, Street, Area, Landmark)"
+                          className={`zb-input zb-has-icon ${formErrors.address ? "is-err" : ""}`}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/^\s+/, "");
+                            const isValid = /^[a-zA-Z0-9\s]*$/.test(value) && value.length <= ADDRESS_MAX;
+                            if (isValid) setAddress(value);
+                            clearFormError("address");
+                          }}
+                        />
+                      </Autocomplete>
+                    ) : (
+                      <input
+                        type="text"
+                        autoComplete="off"
+                        value={address}
+                        placeholder="Enter complete address (Building, Street, Area, Landmark)"
+                        className="zb-input zb-has-icon"
+                        onChange={(e) => setAddress(e.target.value)}
+                      />
+                    )}
                   </div>
-                </div>
+                </ZbField>
 
-                {/* Building Type */}
-                <div className="mb-4">
-                  <label className="block mb-1 font-medium text-gray-700">
-                    Building Type{" "}
-                    <span className="text-xl font-bold text-red-500">*</span>
-                  </label>
-                  <div className="flex flex-wrap gap-3">
-                    {buildingTypes
-                      .filter((type) =>
-                        propertyCategory === "Paying Guest"
-                          ? type === "Residential"
-                          : true,
-                      )
-                      .map((type) => (
-                        <button
-                          key={type}
-                          className={`px-4 py-2 rounded-full border transition ${buildingType === type
-                            ? "bg-rose-100 text-rose-700 border-rose-500"
-                            : "border-gray-300 text-gray-600 hover:bg-gray-100"
-                            }`}
-                          onClick={() => handleBuildingTypeChange(type)}
-                        >
-                          {type}
-                        </button>
-                      ))}
-                  </div>
-                  {formErrors.building_type && (
-                    <p className="flex items-center gap-1 mt-1 text-sm text-red-500">
-                      <MdErrorOutline className="text-lg" />
-                      {formErrors.building_type}
-                    </p>
-                  )}
-                </div>
+                <div className="zb-grid-2">
+                  <ZbField label="Country" required error={formErrors.country}>
+                    <ZbSelect
+                      icon={Globe}
+                      value={country || ""}
+                      onChange={(e) => {
+                        setCountry(e.target.value);
+                        setState("");
+                        clearFormError("country");
+                      }}
+                      placeholder="Select Country"
+                      options={allCountries.map((c) => ({ value: c.isoCode, label: c.name }))}
+                    />
+                  </ZbField>
 
-                {/* Property Type */}
-                <div className="mb-4">
-                  <label className="block mb-1 font-medium text-gray-700">
-                    Property Type{" "}
-                    <span className="text-xl font-bold text-red-500">*</span>
-                  </label>
-                  <div className="flex flex-wrap gap-1">
-                    {propertyTypes.map((type) => (
-                      <button
-                        key={type}
-                        className={`px-4 py-2 rounded-full border transition ${propertyType === type
-                          ? "bg-rose-100 text-rose-700 border-rose-500"
-                          : "border-gray-300 text-gray-600 hover:bg-gray-100"
-                          }`}
-                        onClick={() => {
-                          setPropertyType(type);
-                          setFormData({ ...formData, property_type: type });
-                          setFormErrors((prev) => ({ ...prev, property_type: "" }));
-                        }}
-                      >
-                        {getPropertyTypeLabel(type)} {/*  shows Plot/Land */}
-                      </button>
-                    ))}
-                  </div>
-                  {formErrors.property_type && (
-                    <p className="flex items-center gap-1 mt-1 text-sm text-red-500">
-                      <MdErrorOutline className="text-lg" />
-                      {formErrors.property_type}
-                    </p>
-                  )}
-                  {propertyType === "Hospitality" && (
-                    <div className="mt-4">
-                      <label className="block mb-1 font-medium text-gray-700">
-                        What kind of hospitality?
-                      </label>
+                  <ZbField label="State" required error={formErrors.state}>
+                    <ZbSelect
+                      icon={MapPin}
+                      value={state || ""}
+                      onChange={(e) => {
+                        setState(e.target.value);
+                        clearFormError("state");
+                      }}
+                      placeholder="Select State"
+                      options={allStates.map((s) => ({ value: s.name, label: s.name }))}
+                    />
+                  </ZbField>
 
-                      <div className="flex flex-wrap gap-2">
-                        {hospitalityOptions.map((type) => (
-                          <button
-                            key={type}
-                            type="button"
-                            className={`px-4 py-2 rounded-full border transition ${hospitalityType === type
-                              ? "bg-rose-100 text-rose-700 border-rose-500"
-                              : "border-gray-300 text-gray-600 hover:bg-gray-100"
-                              }`}
-                            onClick={() => {
-                              setHospitalityType(type);
-                            }}
-                          >
-                            {type}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {propertyType === "Land" && (
-                    <div className="mt-4">
-                      <label className="block mb-1 font-medium text-gray-700">
-                        What kind of land?
-                      </label>
+                  <ZbField label="City" required error={formErrors.city}>
+  <ZbSelect
+    icon={Building2}
+    value={city || ""}
+    placeholder="Select City"
+    onChange={(e) => {
+      setCity(e.target.value);
+      clearFormError("city");
+    }}
+    options={CITY_OPTIONS}
+  />
+</ZbField>
 
-                      <div className="flex flex-wrap gap-2">
-                        {landOptions.map((type) => (
-                          <button
-                            key={type}
-                            type="button"
-                            className={`px-4 py-2 rounded-full border transition ${landType === type
-                              ? "bg-rose-100 text-rose-700 border-rose-500"
-                              : "border-gray-300 text-gray-600 hover:bg-gray-100"
-                              }`}
-                            onClick={() => {
-                              setLandType(type);
-                              setFormData({ ...formData, land_type: type });
-                            }}
-                          >
-                            {type}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {propertyType === "Industry" && (
-                    <div className="mt-4">
-                      <label className="block mb-1 font-medium text-gray-700">
-                        What kind of industry?
-                      </label>
+                  <ZbField label="Zip Code" required error={formErrors.zipCode}>
+                    <ZbInput
+                      icon={Mail}
+                      value={zipCode || ""}
+                      placeholder="Enter Zip Code"
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        if (/^\d*$/.test(v) && v.length <= getZipMaxLength(country)) {
+                          setZipCode(v);
+                          clearFormError("zipCode");
+                        }
+                      }}
+                    />
+                  </ZbField>
 
-                      <div className="flex flex-wrap gap-2">
-                        {industryOptions.map((type) => (
-                          <button
-                            key={type}
-                            type="button"
-                            className={`px-4 py-2 rounded-full border transition ${industryType === type
-                              ? "bg-rose-100 text-rose-700 border-rose-500"
-                              : "border-gray-300 text-gray-600 hover:bg-gray-100"
-                              }`}
-                            onClick={() => {
-                              setIndustryType(type);
-                            }}
-                          >
-                            {type}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {propertyType === "Storage" && (
-                    <div className="mt-4">
-                      <label className="block mb-1 font-medium text-gray-700">
-                        What kind of storage?
-                      </label>
+                  <ZbField label="Locality">
+                    <ZbInput
+                      icon={LocateFixed}
+                      value={locality || ""}
+                      placeholder="Enter locality"
+                      onChange={(e) => setLocality(e.target.value)}
+                    />
+                  </ZbField>
 
-                      <div className="flex flex-wrap gap-2">
-                        {storageOptions.map((type) => (
-                          <button
-                            key={type}
-                            type="button"
-                            className={`px-4 py-2 rounded-full border transition ${storageType === type
-                              ? "bg-rose-100 text-rose-700 border-rose-500"
-                              : "border-gray-300 text-gray-600 hover:bg-gray-100"
-                              }`}
-                            onClick={() => {
-                              setStorageType(type);
-                            }}
-                          >
-                            {type}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {propertyType === "Office Space" && (
-                    <div className="mt-4">
-                      <label className="block mb-1 font-medium text-gray-700">
-                        What kind of office?
-                      </label>
-
-                      <div className="flex flex-wrap gap-2">
-                        {officeOptions.map((type) => (
-                          <button
-                            key={type}
-                            type="button"
-                            className={`px-4 py-2 rounded-full border transition ${officeSubType === type
-                              ? "bg-rose-100 text-rose-700 border-rose-500"
-                              : "border-gray-300 text-gray-600 hover:bg-gray-100"
-                              }`}
-                            onClick={() => {
-                              setOfficeSubType(type);
-                              setFormData({
-                                ...formData,
-                                office_sub_type: type,
-                              });
-                            }}
-                          >
-                            {type}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {propertyType === "Retail" && (
-                    <div className="mt-4">
-                      <label className="block mb-1 font-medium text-gray-700">
-                        What kind of retail?
-                      </label>
-
-                      <div className="flex flex-wrap gap-2">
-                        {retailOptions.map((type) => (
-                          <button
-                            key={type}
-                            type="button"
-                            className={`px-4 py-2 rounded-full border transition ${RetailSubType === type
-                              ? "bg-rose-100 text-rose-700 border-rose-500"
-                              : "border-gray-300 text-gray-600 hover:bg-gray-100"
-                              }`}
-                            onClick={() => {
-                              setRetailSubType(type);
-                              setFormData({
-                                ...formData,
-                                office_type: type, //IMPORTANT (API key)
-                              });
-                            }}
-                          >
-                            {type}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {propertyType === "Retail" && RetailSubType && (
-                    <div className="mt-4">
-                      <label className="block mb-1 font-medium text-gray-700">
-                        Your Retail located inside?
-                      </label>
-
-                      <div className="flex flex-wrap gap-2">
-                        {retailLocationOptions.map((type) => (
-                          <button
-                            key={type}
-                            type="button"
-                            className={`px-4 py-2 rounded-full border transition ${retailLocation === type
-                              ? "bg-rose-100 text-rose-700 border-rose-500"
-                              : "border-gray-300 text-gray-600 hover:bg-gray-100"
-                              }`}
-                            onClick={() => {
-                              setRetailLocation(type);
-                              setFormData({
-                                ...formData,
-                                sub_sub_property_type: type, //  API KEY
-                              });
-                            }}
-                          >
-                            {type}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                  <ZbField label="Sub-locality">
+                    <ZbInput
+                      icon={LocateFixed}
+                      value={subLocality || ""}
+                      placeholder="Enter sub-locality"
+                      onChange={(e) => setSubLocality(e.target.value)}
+                    />
+                  </ZbField>
                 </div>
               </div>
             )}
 
-            {activeStep === 1 && (
-              <>
-                <div className="max-w-5xl mx-auto mb-32 bg-white rounded-xl">
-                  <h2 className="text-2xl text-gray-900">Project Address</h2>
-                  <p className="mt-1 text-gray-500">
-                    Place the listing pin on the map
-                  </p>
-                  <div className="grid grid-cols-1 gap-6 mt-6 md:grid-cols-2">
-                    {/* <div className="w-full overflow-hidden bg-gray-200 rounded-lg h-80">
-                    <LoadScript
-                      googleMapsApiKey={GOOGLE_MAPS_API_KEY}
-                      libraries={["places"]}
-                    >
-                      <GoogleMap
-                        mapContainerStyle={{ width: "100%", height: "100%" }}
-                        center={mapCenter}
-                        zoom={14}
-                      >
-                        <Marker position={mapCenter} />
-                      </GoogleMap>
-                    </LoadScript>
-                  </div> */}
+            {/* ============ SCREEN 2: Property Details + Amenities ============ */}
+            {uiStep === 1 && (
+              <div className="zb-screen zb-enter">
+                <ZbHeader
+                  icon={Building2}
+                  title="Property Details"
+                  subtitle="Only the fields that apply to this property type are shown."
+                />
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="col-span-2">
-                        <label className="font-medium text-gray-700">
-                          Address{" "}
-                          <span className="text-xl font-bold text-red-500">
-                            *
-                          </span>
-                        </label>
-                        {/* <LoadScript
-                        googleMapsApiKey={GOOGLE_MAPS_API_KEY}
-                        libraries={["places"]}
-                      > */}
-                        <Autocomplete
-                          onLoad={(ac) => (autoCompleteRef.current = ac)}
-                          onPlaceChanged={handlePlaceChanged}
-                        >
-                          <input
-                            type="text"
-                            value={address}
-                            onChange={(e) => {
-                              const value = e.target.value.replace(/^\s+/, ""); // no leading space
-                              const isValid = /^[a-zA-Z0-9\s]*$/.test(value) && value.length <= ADDRESS_MAX;
-                              if (isValid) {
-                                setAddress(value);
-                              }
-                            }}
-                            className={`w-full border rounded-md p-3 text-gray-700 focus:ring-2 focus:ring-rose-500 outline-none ${formErrors.address
-                              ? "border-red-600"
-                              : "border-gray-300"
-                              }`}
-                          />
-                        </Autocomplete>
+                <div className="zb-grid-3">
+                  {propertyCategory === "Buy" && (
+                    <ZbField label="Ownership" required error={formErrors.ownership}>
+                      <ZbSelect
+                        icon={Award}
+                        name="ownership"
+                        value={formData.ownership || ""}
+                        onChange={handleInputChange}
+                        placeholder="Select Ownership"
+                        options={OWNERSHIP_OPTIONS}
+                      />
+                    </ZbField>
+                  )}
 
-                        {formErrors.address && (
-                          <p className="flex items-center gap-1 mt-1 text-sm text-red-500">
-                            <MdErrorOutline className="text-lg" />
-                            {formErrors.address}
-                          </p>
-                        )}
-                        {/* </LoadScript> */}
-                      </div>
+                  {isHome && (
+                    <ZbField label="Bathroom">
+                      <ZbSelect
+                        icon={Bath}
+                        name="bathroom"
+                        value={formData.bathroom || ""}
+                        onChange={handleInputChange}
+                        placeholder="Select Bathrooms"
+                        options={BATHROOM_OPTIONS}
+                      />
+                    </ZbField>
+                  )}
 
-                      {/* Country Dropdown */}
-                      <div>
-                        <label className="font-medium text-gray-700">
-                          Country{" "}
-                          <span className="text-xl font-bold text-red-500">
-                            *
-                          </span>
-                        </label>
-                        <select
-                          value={country}
-                          onChange={(e) => {
-                            setCountry(e.target.value);
-                            setState("");
-                          }}
-                          className={`w-full border rounded-md p-3 text-gray-700 focus:ring-2 focus:ring-rose-500 outline-none ${formErrors.country
-                            ? "border-red-600"
-                            : "border-gray-300"
-                            }`}
-                        >
-                          <option value="">Select Country</option>
-                          {allCountries.map((c) => (
-                            <option key={c.isoCode} value={c.isoCode}>
-                              {c.name}
-                            </option>
-                          ))}
-                        </select>
-                        {formErrors.country && (
-                          <p className="flex items-center gap-1 mt-1 text-sm text-red-500">
-                            <MdErrorOutline className="text-lg" />
-                            {formErrors.country}
-                          </p>
-                        )}
-                      </div>
+                  {propertyCategory === "Buy" && (
+                    <ZbField label="Possession Status" required error={formErrors.possession_status}>
+                      <ZbSelect
+                        icon={CalendarCheck}
+                        name="possession_status"
+                        value={formData.possession_status || ""}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setFormData((prev) => ({
+                            ...prev,
+                            possession_status: value,
+                            available_from: value === "Ready To Move" ? "Immediately" : "",
+                            possession_date: value === "Ready To Move" ? "" : prev.possession_date,
+                          }));
+                          clearFormError("possession_status");
+                        }}
+                        placeholder="Select Status"
+                        options={POSSESSION_OPTIONS}
+                      />
+                    </ZbField>
+                  )}
 
-                      {/* State Dropdown */}
-                      <div>
-                        <label className="font-medium text-gray-700">
-                          State{" "}
-                          <span className="text-xl font-bold text-red-500">
-                            *
-                          </span>
-                        </label>
-                        <select
-                          value={state}
-                          onChange={(e) => setState(e.target.value)}
-                          className={`w-full border rounded-md p-3 text-gray-700 focus:ring-2 focus:ring-rose-500 outline-none ${formErrors.state
-                            ? "border-red-600"
-                            : "border-gray-300"
-                            }`}
-                        >
-                          <option value="">Select State</option>
-                          {allStates.map((s) => (
-                            <option key={s.isoCode} value={s.name}>
-                              {s.name}
-                            </option>
-                          ))}
-                        </select>
-                        {formErrors.state && (
-                          <p className="flex items-center gap-1 mt-1 text-sm text-red-500">
-                            <MdErrorOutline className="text-lg" />
-                            {formErrors.state}
-                          </p>
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="font-medium text-gray-700">
-                          City{" "}
-                          <span className="text-xl font-bold text-red-500">
-                            *
-                          </span>
-                        </label>
-                        <input
-                          type="text"
-                          value={city}
-                          onChange={(e) => setCity(sanitizeCityTyping(e.target.value))}
-                          placeholder="Enter City"
-                          className={`w-full border rounded-md p-3 text-gray-700 focus:ring-2 focus:ring-rose-500 outline-none ${formErrors.city
-                            ? "border-red-600"
-                            : "border-gray-300"
-                            }`}
-                        />
-                        {formErrors.city && (
-                          <p className="flex items-center gap-1 mt-1 text-sm text-red-500">
-                            <MdErrorOutline className="text-lg" />
-                            {formErrors.city}
-                          </p>
-                        )}
-                      </div>
-                      {/* Locality */}
-                      {/* <div>
-                        <label className="font-medium text-gray-700">
-                          Locality{" "} */}
-                      {/* <span className="text-xl font-bold text-red-500">
-                          *
-                        </span> */}
-                      {/* </label>
-                        <input
-                          type="text"
-                          value={locality}
-                          onChange={(e) => setLocality(e.target.value)}
-                          placeholder="Enter Locality"
-                          className="w-full border rounded-md p-3 text-gray-700 focus:ring-2 focus:ring-rose-500 outline-none border-gray-300"
-                        />
-                      </div> */}
-
-                      {/* Sub Locality */}
-                      {/* <div>
-                        <label className="font-medium text-gray-700">
-                          Sub Locality{" "} */}
-                      {/* <span className="text-xl font-bold text-red-500">
-                          *
-                        </span> */}
-                      {/* </label>
-                        <input
-                          type="text"
-                          value={subLocality}
-                          onChange={(e) => setSubLocality(e.target.value)}
-                          placeholder="Enter Sub Locality"
-                          className="w-full border rounded-md p-3 text-gray-700 focus:ring-2 focus:ring-rose-500 outline-none border-gray-300"
-                        />
-                      </div> */}
-
-                      {/* Zip Code */}
-                      <div>
-                        <label className="font-medium text-gray-700">
-                          Zip <span className="text-xl text-red-500">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="Zip Code"
-                          value={zipCode}
+                  {!isPlot &&
+                    ((propertyCategory === "Rent" && buildingType === "Residential") ||
+                      propertyCategory === "Paying Guest" ||
+                      (propertyCategory === "Rent" && buildingType === "Commercial")) && (
+                      <ZbField label="Available From" required error={formErrors.available_from}>
+                        <ZbSelect
+                          icon={Clock}
+                          name="available_from"
+                          value={formData.available_from || ""}
                           onChange={(e) => {
                             const value = e.target.value;
-                            if (/^\d*$/.test(value) && value.length <= getZipMaxLength(country)) {
-                            setZipCode(value);
-                            }
+                            setIsLaterSelected(value === "Later");
+                            setFormData((prev) => ({ ...prev, available_from: value }));
+                            clearFormError("available_from");
                           }}
-                          className={`w-full border rounded-md p-3 text-gray-700 focus:ring-2 focus:ring-rose-500 outline-none ${formErrors.zipCode
-                            ? "border-red-600"
-                            : "border-gray-300"
-                            }`}
+                          placeholder="Select availability"
+                          options={[
+                            { value: "Immediately", label: "Immediate" },
+                            { value: "Later", label: "Later" },
+                          ]}
                         />
-                        {formErrors.zipCode && (
-                          <p className="flex items-center gap-1 mt-1 text-sm text-red-500">
-                            <MdErrorOutline className="text-lg" />
-                            {formErrors.zipCode}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+                      </ZbField>
+                    )}
                 </div>
-              </>
-            )}
 
-            {activeStep === 2 && (
-              <div className="max-w-5xl mx-auto mb-20 bg-white rounded-xl">
-                {!(
-                  (
-                    propertyCategory === "Rent" &&
-                    buildingType === "Residential" &&
-                    propertyType === "Plot"
-                  )
-                  // (propertyCategory === "Paying Guest" &&
-                  //   buildingType === "Residential" &&
-                  //   propertyType === "Apartment")
-                  // (propertyCategory === "Rent" &&
-                  //   buildingType === "Commercial" &&
-                  //   propertyType === "Land") ||
-                  // (propertyCategory === "Rent" &&
-                  //   buildingType === "Commercial" &&
-                  //   propertyType === "Industry")
-                ) && (
-                    <div className="p-3 mb-3 border border-gray-300 rounded-xl">
-                      <h2 className="text-2xl text-gray-900">Property Details</h2>
-                      <p className="mt-1 text-gray-500">
-                        Enter and manage essential information related to your
-                        property.
-                      </p>
-
-                      <div className="grid grid-cols-1 gap-4 mt-6 md:grid-cols-3 ">
-                        {!(
-                          propertyCategory === "Rent" ||
-                          propertyCategory === "Paying Guest"
-                        ) && (
-                            <div>
-                              <label className="font-medium text-gray-700">
-                                Property Price{" "}
-                                <span className="text-xl font-bold text-red-500">
-                                  *
-                                </span>
-                              </label>
-                              <input
-                                type="text"
-                                placeholder="� Expected Price"
-                                name="property_price"
-                                value={
-                                  formData.property_price
-                                    ? Number(
-                                      formData.property_price,
-                                    ).toLocaleString("en-IN")
-                                    : ""
-                                }
-                                onChange={(e) => {
-                                  const rawValue = e.target.value.replace(/,/g, "");
-                                  if (/^\d*$/.test(rawValue) && rawValue.length <= PRICE_MAX_DIGITS) {
-                                    handleInputChange({
-                                      target: {
-                                        name: "property_price",
-                                        value: rawValue,
-                                      },
-                                    });
-                                  }
-                                }}
-                                className={`w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-rose-500 outline-none ${formErrors.property_price || !propertyPrice
-                                  ? "border-red-600"
-                                  : "border-gray-300"
-                                  }`}
-                              />
-                              {formErrors.property_price && (
-                                <p className="flex items-center gap-1 mt-1 text-sm text-red-500">
-                                  <MdErrorOutline className="text-lg" />
-                                  {formErrors.property_price}
-                                </p>
-                              )}
-
-                              {/* Suggested Price Card */}
-                              <div className="flex items-center p-1 mt-4 space-x-1 bg-pink-100 rounded-lg">
-                                <span className="my-text"></span>
-                                <div>
-                                  <p className="font-semibold text-gray-800">
-                                    {formData.property_price
-                                      ? toWords.convert(
-                                        Number(formData.property_price),
-                                      )
-                                      : ""}
-                                  </p>
-                                  <p className="text-sm text-gray-600">
-                                    Suggested price for your area
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
-                        {!(
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Residential" &&
-                            propertyType === "Plot") ||
-                          (propertyCategory === "Rent" &&
-                            buildingType === "Residential" &&
-                            propertyType === "Plot") ||
-                          buildingType === "Commercial" ||
-                          (propertyCategory === "Rent" &&
-                            buildingType === "Residential" &&
-                            propertyType === "PG") ||
-                          propertyType === "1RK/Studio Apartment"
-                        ) && (
-                            <div>
-                              <label className="font-medium text-gray-700">
-                                BHK{" "}
-                                <span className="text-xl font-bold text-red-500">
-                                  *
-                                </span>
-                              </label>
-                              <select
-                                className={`w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-rose-500 outline-none ${formErrors.bhk_type || !propertyPrice
-                                  ? "border-red-600"
-                                  : "border-gray-300"
-                                  }`}
-                                value={formData.bhk_type}
-                                onChange={(e) =>
-                                  setFormData({
-                                    ...formData,
-                                    bhk_type: e.target.value,
-                                  })
-                                }
-                              >
-                                <option value="">Select Configuration</option>
-                                <option value="Studio">Studio/Single Room</option>
-                                <option value="1 RK">1 RK</option>
-                                <option value="1 BHK">1 BHK</option>
-                                <option value="1.5 BHK">1.5 BHK</option>
-                                <option value="2 BHK">2 BHK</option>
-                                <option value="2.5 BHK">2.5 BHK</option>
-                                <option value="3 BHK">3 BHK</option>
-                                <option value="3.5 BHK">3.5 BHK</option>
-                                <option value="4 BHK">4 BHK</option>
-                                <option value="5 BHK">5 BHK</option>
-                                <option value="6 BHK">6 BHK</option>
-                                <option value="6+ BHK">6+ BHK</option>
-                              </select>
-                              {formErrors.bhk_type && (
-                                <p className="flex items-center gap-1 mt-1 text-sm text-red-500 normal-case">
-                                  <MdErrorOutline className="text-lg" />
-                                  {formErrors.bhk_type}
-                                </p>
-                              )}
-                            </div>
-                          )}
-
-                        {/* {!(
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Plot") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Plot") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Land") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Industry") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Land") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Warehouse") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Industry")
-                    ) && (
-                      <div className="mb-4">
-                        <label className="block mb-2 font-medium text-gray-700">
-                          Washroom
-                        </label>
-
-                        <div className="flex gap-3">
-                          {["Yes", "No"].map((option) => (
-                            <button
-                              key={option}
-                              type="button"
-                              onClick={() => setWashroom(option)}
-                              className={`px-6 py-2 rounded-full border transition ${
-                                washroom === option
-                                  ? "bg-rose-200 text-rose-600 border-rose-300"
-                                  : "bg-gray-100 text-gray-700 border-gray-300"
-                              }`}
-                            >
-                              {option}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )} */}
-
-                        {!(
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Residential" &&
-                            propertyType === "Plot") ||
-                          (propertyCategory === "Rent" &&
-                            buildingType === "Residential" &&
-                            propertyType === "Plot") ||
-                          (propertyCategory === "Rent" &&
-                            buildingType === "Commercial" &&
-                            propertyType === "Land") ||
-                          (propertyCategory === "Rent" &&
-                            buildingType === "Commercial" &&
-                            propertyType === "Storage") ||
-                          (propertyCategory === "Rent" &&
-                            buildingType === "Commercial" &&
-                            propertyType === "Hospitality") ||
-                          (propertyCategory === "Rent" &&
-                            buildingType === "Commercial" &&
-                            propertyType === "Industry") ||
-                          (propertyCategory === "Rent" &&
-                            buildingType === "Commercial" &&
-                            propertyType === "Retail") ||
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Commercial" &&
-                            propertyType === "Land") ||
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Commercial" &&
-                            propertyType === "Warehouse") ||
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Commercial" &&
-                            propertyType === "Retail") ||
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Commercial" &&
-                            propertyType === "Storage") ||
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Commercial" &&
-                            propertyType === "Hospitality") ||
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Commercial" &&
-                            propertyType === "Industry")
-                        ) && (
-                            <div>
-                              <label className="font-medium text-gray-700">
-                                Bathroom
-                              </label>
-
-                              <select
-                                className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                                value={formData.bathroom}
-                                onChange={(e) =>
-                                  setFormData({
-                                    ...formData,
-                                    bathroom: e.target.value,
-                                  })
-                                }
-                              >
-                                <option value="">Select Bathrooms</option>
-                                <option value="1">1</option>
-                                <option value="2">2</option>
-                                <option value="3">3</option>
-                                <option value="4">4</option>
-                                <option value="4+">4+</option>
-                              </select>
-                            </div>
-                          )}
-                        {(propertyCategory === "Buy" ||
-                          propertyCategory === "Rent") &&
-                          buildingType === "Commercial" &&
-                          propertyType === "Retail" && (
-                            <div>
-                              <label className="font-medium text-gray-700">
-                                Washroom
-                              </label>
-
-                              <select
-                                value={retailWashroom}
-                                onChange={(e) =>
-                                  setRetailWashroom(e.target.value)
-                                }
-                                className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                              >
-                                <option value="">Select Washroom</option>
-                                <option value="Private Washrooms">
-                                  Private Washrooms
-                                </option>
-                                <option value="Public Washrooms">
-                                  Public Washrooms
-                                </option>
-                                <option value="Not Available">
-                                  Not Available
-                                </option>
-                              </select>
-                            </div>
-                          )}
-                        {/* Washrooms for Storage */}
-                        {(propertyType === "Storage" ||
-                          propertyType === "Industry" ||
-                          propertyType === "Hospitality") && (
-                            <div>
-                              <label className="font-medium text-gray-700">
-                                Washrooms
-                              </label>
-
-                              <select
-                                name="washroom"
-                                className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                                value={formData.commercial_washroom || ""}
-                                onChange={handleInputChange}
-                              >
-                                <option value="">Select Washrooms</option>
-                                <option value="None">None</option>
-                                <option value="Shared">Shared</option>
-                                <option value="1">1</option>
-                                <option value="2">2</option>
-                                <option value="3">3</option>
-                                <option value="4">4</option>
-                                <option value="4+">4+</option>
-                              </select>
-                            </div>
-                          )}
-                        {propertyCategory === "Buy" &&
-                          buildingType === "Residential" && (
-                            <div>
-                              <label className="font-medium text-gray-700">
-                                Ownership <span className="text-red-500">*</span>
-                              </label>
-
-                              <select
-                                name="ownership"
-                                className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                                value={formData.ownership}
-                                onChange={handleInputChange}
-                              >
-                                <option value="">Select Ownership</option>
-                                <option value="Freehold">Freehold</option>
-                                <option value="Leasehold">Leasehold</option>
-                                <option value="Co-operative Society">
-                                  Co-operative Society
-                                </option>
-                                <option value="Power of Attorney">
-                                  Power of Attorney
-                                </option>
-                              </select>
-
-                              {formErrors.ownership && (
-                                <p className="text-sm text-red-500 mt-1">
-                                  {formErrors.ownership}
-                                </p>
-                              )}
-                            </div>
-                          )}
-
-                        {propertyCategory === "Buy" && (
-                          <div className="md:col-span-3 mt-2">
-                            {/* <label className="font-medium text-gray-700">
-      Price Details
-    </label> */}
-
-                            <div className="flex flex-wrap gap-4 mt-2">
-                              {/* All Inclusive Price */}
-                              {/* All Inclusive Price */}
-                              <label className="flex items-center gap-2">
-                                <input
-                                  type="checkbox"
-                                  checked={formData.all_inclusive_price === "Yes"}
-                                  onChange={(e) =>
-                                    setFormData({
-                                      ...formData,
-                                      all_inclusive_price: e.target.checked
-                                        ? "Yes"
-                                        : "No",
-                                    })
-                                  }
-                                />
-                                All Inclusive Price
-                              </label>
-
-                              {/* Price Onwards */}
-                              <label className="flex items-center gap-2">
-                                <input
-                                  type="checkbox"
-                                  checked={formData.price_onwards === "Yes"}
-                                  onChange={(e) =>
-                                    setFormData({
-                                      ...formData,
-                                      price_onwards: e.target.checked
-                                        ? "Yes"
-                                        : "No",
-                                    })
-                                  }
-                                />
-                                Price Onwards
-                              </label>
-
-                              {/* Price Negotiable */}
-                              <label className="flex items-center gap-2">
-                                <input
-                                  type="checkbox"
-                                  checked={formData.price_negotiable === "Yes"}
-                                  onChange={(e) =>
-                                    setFormData({
-                                      ...formData,
-                                      price_negotiable: e.target.checked
-                                        ? "Yes"
-                                        : "No",
-                                    })
-                                  }
-                                />
-                                Price Negotiable
-                              </label>
-
-                              {/* Tax & Govt Charges */}
-                              <label className="flex items-center gap-2">
-                                <input
-                                  type="checkbox"
-                                  checked={
-                                    formData.tax_and_goverment_charges === "Yes"
-                                  }
-                                  onChange={(e) =>
-                                    setFormData({
-                                      ...formData,
-                                      tax_and_goverment_charges: e.target.checked
-                                        ? "Yes"
-                                        : "No",
-                                    })
-                                  }
-                                />
-                                Tax & Government Charges Excluded
-                              </label>
-                            </div>
-                          </div>
-                        )}
-                        {/* {propertyType === "Office Space" && (
-                      <div className="mt-4">
-                        <label className="block mb-2 font-medium text-gray-700">
-                          Conference Room
-                        </label>
-
-                        <div className="flex gap-3">
-                          {["Yes", "No"].map((option) => (
-                            <button
-                              key={option}
-                              type="button"
-                              onClick={() => setConferenceRoom(option)}
-                              className={`px-6 py-2 rounded-full border transition ${
-                                conferenceRoom === option
-                                  ? "bg-rose-200 text-rose-600 border-rose-300"
-                                  : "bg-gray-100 text-gray-700 border-gray-300"
-                              }`}
-                            >
-                              {option}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )} */}
-                        {!(
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Residential" &&
-                            (propertyType === "Apartment" ||
-                              propertyType === "Independent House/Villa" ||
-                              propertyType === "Plot")) ||
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Residential" &&
-                            propertyType === "Independent/Builder Floor") ||
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Residential" &&
-                            propertyType === "1RK/Studio Apartment") ||
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Residential" &&
-                            propertyType === "Service Apartment") ||
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Commercial" &&
-                            propertyType === "Storage ") ||
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Commercial" &&
-                            propertyType === "Office Space") ||
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Commercial" &&
-                            propertyType === "Retail") ||
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Commercial" &&
-                            propertyType === "Office Space in IT/SEZ") ||
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Commercial" &&
-                            propertyType === "Storage") ||
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Commercial" &&
-                            propertyType === "Warehouse") ||
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Commercial" &&
-                            propertyType === "Industry") ||
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Commercial" &&
-                            propertyType === "Hospitality") ||
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Commercial" &&
-                            propertyType === "Land") ||
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Residential" &&
-                            propertyType === "Farmhouse")
-                        ) && (
-                            <div>
-                              <label className="font-medium text-gray-700">
-                                Rent{" "}
-                                <span className="text-xl font-bold text-red-500">
-                                  *
-                                </span>
-                              </label>
-                              <input
-                                type="text"
-                                name="rent"
-                                className={`w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-rose-500 outline-none ${formErrors.rent
-                                  ? "border-red-600"
-                                  : "border-gray-300"
-                                  }`}
-                                value={
-                                  formData.rent
-                                    ? Number(formData.rent).toLocaleString("en-IN")
-                                    : ""
-                                }
-                                onChange={(e) => {
-                                  const rawValue = e.target.value.replace(/,/g, "");
-
-                                  if (/^\d*$/.test(rawValue)) {
-                                    handleInputChange({
-                                      target: {
-                                        name: "rent",
-                                        value: rawValue,
-                                      },
-                                    });
-                                  }
-                                }}
-                              />
-                              {formData.rent && (
-                                <p className="mt-2 text-sm font-medium text-gray-600">
-                                  {toWords.convert(Number(formData.rent))}
-                                </p>
-                              )}
-                              {formErrors.rent && (
-                                <p className="flex items-center gap-1 mt-1 text-sm text-red-500">
-                                  <MdErrorOutline className="text-lg" />
-                                  {formErrors.rent}
-                                </p>
-                              )}
-                            </div>
-                          )}
-
-                        {!(
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Residential" &&
-                            (propertyType === "Apartment" ||
-                              propertyType === "Independent House/Villa" ||
-                              propertyType === "Plot")) ||
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Residential" &&
-                            propertyType === "Independent/Builder Floor") ||
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Residential" &&
-                            propertyType === "1RK/Studio Apartment") ||
-                          (propertyCategory === "Rent" &&
-                            buildingType === "Commercial" &&
-                            propertyType === "Industry") ||
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Residential" &&
-                            propertyType === "Service Apartment") ||
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Residential" &&
-                            propertyType === "Farmhouse") ||
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Commercial" &&
-                            propertyType === "Storage") ||
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Commercial" &&
-                            propertyType === "Office Space") ||
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Commercial" &&
-                            propertyType === "Retail") ||
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Commercial" &&
-                            propertyType === "Land") ||
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Commercial" &&
-                            propertyType === "Office Space in IT/SEZ") ||
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Commercial" &&
-                            propertyType === "Storage") ||
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Commercial" &&
-                            propertyType === "Warehouse") ||
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Commercial" &&
-                            propertyType === "Industry") ||
-                          (propertyCategory === "Rent" &&
-                            buildingType === "Commercial" &&
-                            propertyType === "Hospitality") ||
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Commercial" &&
-                            propertyType === "Hospitality") ||
-                          (propertyCategory === "Paying Guest" &&
-                            buildingType === "Residential" &&
-                            propertyType === "Builder Floor") ||
-                          (propertyCategory === "Paying Guest" &&
-                            buildingType === "Residential" &&
-                            propertyType === "Apartment") ||
-                          (propertyCategory === "Paying Guest" &&
-                            buildingType === "Residential" &&
-                            propertyType === "1RK/Studio Apartment") ||
-                          (propertyCategory === "Paying Guest" &&
-                            buildingType === "Residential" &&
-                            propertyType === "Independent House/Villa") ||
-                          (propertyCategory === "Paying Guest" &&
-                            buildingType === "Residential" &&
-                            propertyType === "Service Apartment") ||
-                          (propertyCategory === "Rent" &&
-                            buildingType === "Residential" &&
-                            (propertyType === "Apartment" ||
-                              propertyType === "Independent House/Villa" ||
-                              propertyType === "Independent/Builder Floor" ||
-                              propertyType === "1RK/Studio Apartment" ||
-                              propertyType === "Service Apartment" ||
-                              propertyType === "Plot" ||
-                              propertyType === "PG"))
-                        ) && (
-                            <div>
-                              <label className="font-medium text-gray-700">
-                                Rent Duration{" "}
-                                <span className="text-xl font-bold text-red-500">
-                                  *
-                                </span>
-                              </label>
-                              <select
-                                className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                                value={formData.rent_duration}
-                                onChange={(e) =>
-                                  setFormData({
-                                    ...formData,
-                                    rent_duration: e.target.value,
-                                  })
-                                }
-                              >
-                                <option value="">Select Rent Duration</option>
-                                <option value="Per Month">Per Month</option>
-                                <option value="Per Year">Per Year</option>
-                              </select>
-                              {formErrors.rent_duration && (
-                                <p className="flex items-center gap-1 mt-1 text-sm text-red-500">
-                                  <MdErrorOutline className="text-lg" />
-                                  {formErrors.rent_duration}
-                                </p>
-                              )}
-                            </div>
-                          )}
-
-                        {!(
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Residential" &&
-                            (propertyType === "Apartment" ||
-                              propertyType === "Independent House/Villa" ||
-                              propertyType === "Plot")) ||
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Residential" &&
-                            propertyType === "Independent/Builder Floor") ||
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Residential" &&
-                            propertyType === "1RK/Studio Apartment") ||
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Residential" &&
-                            propertyType === "Service Apartment") ||
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Residential" &&
-                            propertyType === "Farmhouse") ||
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Commercial" &&
-                            propertyType === "Storage") ||
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Commercial" &&
-                            propertyType === "Office Space") ||
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Commercial" &&
-                            propertyType === "Retail") ||
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Commercial" &&
-                            propertyType === "Land") ||
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Commercial" &&
-                            propertyType === "Office Space in IT/SEZ") ||
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Commercial" &&
-                            propertyType === "Storage") ||
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Commercial" &&
-                            propertyType === "Warehouse") ||
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Commercial" &&
-                            propertyType === "Industry") ||
-                          (propertyCategory === "Buy" &&
-                            buildingType === "Commercial" &&
-                            propertyType === "Hospitality")
-                        ) && (
-                            <div>
-                              <label className="font-medium text-gray-700">
-                                Security Deposit Amount{" "}
-                                <span className="text-xl font-bold text-red-500">
-                                  *
-                                </span>
-                              </label>
-
-                              <input
-                                type="text"
-                                inputMode="numeric"
-                                pattern="[0-9]*"
-                                value={
-                                  formData.custom_deposit_amount
-                                    ? Number(
-                                      formData.custom_deposit_amount,
-                                    ).toLocaleString("en-IN")
-                                    : ""
-                                }
-                                onChange={(e) => {
-                                  const rawValue = e.target.value.replace(/,/g, "");
-
-                                  if (/^\d*$/.test(rawValue)) {
-                                    setFormData((prev) => ({
-                                      ...prev,
-                                      custom_deposit_amount: rawValue,
-                                    }));
-                                  }
-                                }}
-                                className={`w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-rose-500 outline-none ${formErrors.security_deposit_amount
-                                  ? "border-red-600"
-                                  : "border-gray-300"
-                                  }`}
-                              />
-                              {formData.custom_deposit_amount && (
-                                <p className="mt-2 text-sm font-medium text-gray-600">
-                                  {toWords.convert(
-                                    Number(formData.custom_deposit_amount),
-                                  )}
-                                </p>
-                              )}
-
-                              {formErrors.custom_deposit_amount && (
-                                <p className="flex items-center gap-1 mt-1 text-sm text-red-500">
-                                  <MdErrorOutline className="text-lg" />
-                                  {formErrors.custom_deposit_amount}
-                                </p>
-                              )}
-                            </div>
-                          )}
-
-                        {(propertyCategory === "Rent" ||
-                          propertyCategory === "Paying Guest") && (
-                            <div className="md:col-span-3 mt-2">
-                              <div className="flex flex-wrap gap-4 mt-2">
-                                {/* All Inclusive Price */}
-                              <label className="flex items-center gap-2">
-                                <input
-                                  type="checkbox"
-                                  checked={formData.all_inclusive_price === "Yes"}
-                                  onChange={(e) =>
-                                    setFormData({
-                                      ...formData,
-                                      all_inclusive_price: e.target.checked
-                                        ? "Yes"
-                                        : "No",
-                                    })
-                                  }
-                                />
-                                All Inclusive Price
-                              </label>
-
-                              {/* Price Onwards */}
-                              <label className="flex items-center gap-2">
-                                <input
-                                  type="checkbox"
-                                  checked={formData.price_onwards === "Yes"}
-                                  onChange={(e) =>
-                                    setFormData({
-                                      ...formData,
-                                      price_onwards: e.target.checked
-                                        ? "Yes"
-                                        : "No",
-                                    })
-                                  }
-                                />
-                                Price Onwards
-                              </label>
-                                {/* Price Negotiable */}
-                                <label className="flex items-center gap-2">
-                                  <input
-                                    type="checkbox"
-                                    checked={formData.price_negotiable === "Yes"}
-                                    onChange={(e) =>
-                                      setFormData({
-                                        ...formData,
-                                        price_negotiable: e.target.checked
-                                          ? "Yes"
-                                          : "No",
-                                      })
-                                    }
-                                  />
-                                  Price Negotiable
-                                </label>
-
-                                {/* Electricity & Water Charges Included */}
-                                <label className="flex items-center gap-2">
-                                  <input
-                                    type="checkbox"
-                                    checked={
-                                      formData.electricity_and_water_charges ===
-                                      "Yes"
-                                    }
-                                    onChange={(e) =>
-                                      setFormData({
-                                        ...formData,
-                                        electricity_and_water_charges: e.target
-                                          .checked
-                                          ? "Yes"
-                                          : "No",
-                                      })
-                                    }
-                                  />
-                                  Electricity & Water Charges Included
-                                </label>
-                              </div>
-                            </div>
-                          )}
-                      </div>
-                    </div>
-                  )}
-
-                {/* Area Details Section */}
-                <div className="p-3 mb-3 border border-gray-300 rounded-xl">
-                  <h2 className="text-2xl text-gray-900">Area Details</h2>
-                  <p className="mt-1 text-gray-500">
-                    Comprehensive overview covering scale, financials, features,
-                    timeline, and compliance of the property Area Details.
-                  </p>
-
-                  <div className="grid grid-cols-1 gap-4 mt-6 md:grid-cols-4">
-                    {/* Carpet Area */}
-                    <div>
-                      <label className="font-medium text-gray-700">
-                        Carpet Area <span className="text-red-500">*</span>
-                      </label>
+                {(formData.possession_status || isLaterSelected) && propertyCategory === "Buy" && (
+                  <ZbField
+                    label={
+                      isLaterSelected
+                        ? "Available Date"
+                        : formData.possession_status === "Ready To Move"
+                          ? "Ready To Move From"
+                          : "Possession Date"
+                    }
+                    required={
+                      formData.possession_status === "Under Construction" ||
+                      formData.possession_status === "Expected Possession" ||
+                      isLaterSelected
+                    }
+                    error={formErrors.possession_date}
+                  >
+                    <div className="zb-rel">
+                      <Calendar className="zb-ico" size={16} />
                       <input
-                    type="text"
-                    value={carpetArea}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      if (/^\d{0,10}$/.test(value)) {
-                        setCarpetArea(value);
-                        clearFormError("carpetArea");
-                      }
-                    }}
-                    onBlur={() => {
-                      // check right away when the user leaves a filled-in field
-                      if (String(carpetArea || "").trim()) {
-                        const msg = validateAreaValue("Carpet area", carpetArea, carpetAreaUnit);
-                        if (msg) setFormErrors((prev) => ({ ...prev, carpetArea: msg }));
-                      }
-                    }}
-                    className={`w-full mt-1 p-3 border rounded-lg ${formErrors.carpetArea ? "border-red-600" : ""}`}
-                  />
-                  {formErrors.carpetArea && (
-                    <p className="flex items-center gap-1 mt-1 text-sm text-red-500 normal-case">
-                      <MdErrorOutline className="text-lg" />
-                      {formErrors.carpetArea}
-                    </p>
-                  )}
+                        type="date"
+                        name="possession_date"
+                        className="zb-input zb-has-icon"
+                        value={formData.possession_date || ""}
+                        onChange={handleInputChange}
+                      />
                     </div>
+                  </ZbField>
+                )}
 
-                    <div>
-                      <label className="font-medium text-gray-700">
-                        Unit <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        value={carpetAreaUnit}
-                        onChange={(e) => {
-                          setCarpetAreaUnit(e.target.value);
-                          clearFormError("carpetAreaUnit");
-                          clearFormError("carpetArea");
-                        }}
-                        className={`w-full mt-1 p-3 border rounded-lg ${formErrors.carpetAreaUnit ? "border-red-600" : ""}`}
-                      >
-                        <option value="">Select</option>
-                        <option value="sq.ft">sq.ft</option>
-                        <option value="sq.yards">sq.yards</option>
-                        <option value="sq.m">sq.m</option>
-                        <option value="acre">acre</option>
-                        <option value="marla">marla</option>
-                        <option value="cents">cents</option>
-                        <option value="bigha">bigha</option>
-                        <option value="kottah">kottah</option>
-                        <option value="kanal">kanal</option>
-                        <option value="grounds">grounds</option>
-                        <option value="ares">ares</option>
-                        <option value="biswa">biswa</option>
-                        <option value="guntha">guntha</option>
-                        <option value="aankadam">aankadam</option>
-                        <option value="hectares">hectares</option>
-                        <option value="rood">rood</option>
-                        <option value="chataks">chataks</option>
-                        <option value="perch">perch</option>
-                      </select>
-                      {formErrors.carpetAreaUnit && (
-                        <p className="flex items-center gap-1 mt-1 text-sm text-red-500 normal-case">
-                          <MdErrorOutline className="text-lg" />
-                          {formErrors.carpetAreaUnit}
-                        </p>
-                      )}
-                    </div>
-                    {/* Built-up Area */}
-                    <div>
-                      <label className="font-medium text-gray-700">
-                        Built-up Area <span className="text-red-500">*</span>
-                      </label>
+                {isLaterSelected && propertyCategory !== "Buy" && (
+                  <ZbField label="Available Date" required error={formErrors.possession_date}>
+                    <div className="zb-rel">
+                      <Calendar className="zb-ico" size={16} />
                       <input
-                    type="text"
-                    value={builtUpArea}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      if (/^\d{0,10}$/.test(value)) {
-                        setBuiltUpArea(value);
-                        clearFormError("builtUpArea");
-                      }
-                    }}
-                    onBlur={() => {
-                      // check right away when the user leaves a filled-in field
-                      if (String(builtUpArea || "").trim()) {
-                        const msg = validateAreaValue("Built-up area", builtUpArea, builtUpAreaUnit);
-                        if (msg) setFormErrors((prev) => ({ ...prev, builtUpArea: msg }));
-                      }
-                    }}
-                    className={`w-full mt-1 p-3 border rounded-lg ${formErrors.builtUpArea ? "border-red-600" : ""}`}
-                  />
-                  {formErrors.builtUpArea && (
-                    <p className="flex items-center gap-1 mt-1 text-sm text-red-500 normal-case">
-                      <MdErrorOutline className="text-lg" />
-                      {formErrors.builtUpArea}
-                    </p>
-                  )}
+                        type="date"
+                        name="possession_date"
+                        className="zb-input zb-has-icon"
+                        value={formData.possession_date || ""}
+                        onChange={handleInputChange}
+                      />
                     </div>
+                  </ZbField>
+                )}
 
-                    <div>
-                      <label className="font-medium text-gray-700">
-                        Unit <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        value={builtUpAreaUnit}
-                        onChange={(e) => {
-                          setBuiltUpAreaUnit(e.target.value);
-                          clearFormError("builtUpAreaUnit");
-                          clearFormError("builtUpArea");
-                        }}
-                        className={`w-full mt-1 p-3 border rounded-lg ${formErrors.builtUpAreaUnit ? "border-red-600" : ""}`}
-                      >
-                        <option value="">Select</option>
-                        <option value="sq.ft">sq.ft</option>
-                        <option value="sq.yards">sq.yards</option>
-                        <option value="sq.m">sq.m</option>
-                        <option value="acre">acre</option>
-                        <option value="marla">marla</option>
-                        <option value="cents">cents</option>
-                        <option value="bigha">bigha</option>
-                        <option value="kottah">kottah</option>
-                        <option value="kanal">kanal</option>
-                        <option value="grounds">grounds</option>
-                        <option value="ares">ares</option>
-                        <option value="biswa">biswa</option>
-                        <option value="guntha">guntha</option>
-                        <option value="aankadam">aankadam</option>
-                        <option value="hectares">hectares</option>
-                        <option value="rood">rood</option>
-                        <option value="chataks">chataks</option>
-                        <option value="perch">perch</option>
-                      </select>
-                      {formErrors.builtUpAreaUnit && (
-                        <p className="flex items-center gap-1 mt-1 text-sm text-red-500 normal-case">
-                          <MdErrorOutline className="text-lg" />
-                          {formErrors.builtUpAreaUnit}
-                        </p>
-                      )}
-                    </div>
+                {propertyCategory === "Buy" && (
+                  <div className="zb-checks">
+                    <ZbCheck
+                      checked={formData.all_inclusive_price === "Yes"}
+                      label="All Inclusive Price"
+                      onChange={(c) => setFormData({ ...formData, all_inclusive_price: c ? "Yes" : "No" })}
+                    />
+                    <ZbCheck
+                      checked={formData.price_negotiable === "Yes"}
+                      label="Price Negotiable"
+                      onChange={(c) => setFormData({ ...formData, price_negotiable: c ? "Yes" : "No" })}
+                    />
+                    <ZbCheck
+                      checked={formData.tax_and_goverment_charges === "Yes"}
+                      label="Tax & Government Charges Excluded"
+                      onChange={(c) => setFormData({ ...formData, tax_and_goverment_charges: c ? "Yes" : "No" })}
+                    />
                   </div>
-                  {/* <div>
-                    <label className="font-medium text-gray-700">
-                      Area{" "}
-                      <span className="text-xl font-bold text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="area"
-                      value={formData.area}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        if (/^\d{0,10}$/.test(value)) {
-                          handleInputChange(e);
+                )}
+
+                {isPlot && (
+                  <div className="zb-grid-2">
+                    <ZbField label="Plot Length" required error={formErrors.property_dimensions_length}>
+                      <ZbInput
+                        icon={Ruler}
+                        value={lengthOfLand || ""}
+                        placeholder="Enter length"
+                        onChange={(e) => {
+                          if (/^\d{0,6}$/.test(e.target.value)) {
+                            setLengthOfLand(e.target.value);
+                            clearFormError("property_dimensions_length");
+                          }
+                        }}
+                      />
+                    </ZbField>
+                    <ZbField label="Plot Breadth" required error={formErrors.property_dimensions_breadth}>
+                      <ZbInput
+                        icon={Ruler}
+                        value={breadthOfLand || ""}
+                        placeholder="Enter breadth"
+                        onChange={(e) => {
+                          if (/^\d{0,6}$/.test(e.target.value)) {
+                            setBreadthOfLand(e.target.value);
+                            clearFormError("property_dimensions_breadth");
+                          }
+                        }}
+                      />
+                    </ZbField>
+                  </div>
+                )}
+
+                <ZbSub icon={Ruler} title="Area Details" />
+                <div className="zb-grid-2">
+                  <ZbField label="Built-up Area" required error={formErrors.builtUpArea}>
+                    <ZbAreaInput
+                      value={builtUpArea}
+                      unit={builtUpAreaUnit}
+                      placeholder="Enter built-up area"
+                      error={formErrors.builtUpArea}
+                      onValue={(v) => {
+                        if (/^\d{0,10}$/.test(v)) {
+                          setBuiltUpArea(v);
+                          clearFormError("builtUpArea");
                         }
                       }}
-                      className={`w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-rose-500 outline-none ${
-                        formErrors.area ? "border-red-600" : "border-gray-300"
-                      }`}
+                      onUnit={(u) => {
+                        setBuiltUpAreaUnit(u);
+                        clearFormError("builtUpAreaUnit");
+                      }}
+                      onBlur={() => {
+                        if (String(builtUpArea || "").trim()) {
+                          const msg = validateAreaValue("Built-up area", builtUpArea, builtUpAreaUnit);
+                          if (msg) setFormErrors((prev) => ({ ...prev, builtUpArea: msg }));
+                        }
+                      }}
                     />
-                    {formErrors.area && (
-                      <p className="flex items-center gap-1 mt-1 text-sm text-red-500">
-                        <MdErrorOutline className="text-lg" />
-                        {formErrors.area}
-                      </p>
-                    )}
-                  </div>
+                  </ZbField>
 
-                  <div>
-                    <label className="font-medium text-gray-700">
-                      Area In{" "}
-                      <span className="text-xl font-bold text-red-500">*</span>
-                    </label>
-                    <select
-                      className={`w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-rose-500 outline-none ${
-                        formErrors.area_in
-                          ? "border-red-600"
-                          : "border-gray-300"
-                      }`}
-                      value={formData.area_in}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          area_in: e.target.value,
+                  <ZbField
+                    label={isPlot ? "Plot Area" : "Carpet Area"}
+                    required
+                    error={formErrors.carpetArea}
+                  >
+                    <ZbAreaInput
+                      value={carpetArea}
+                      unit={carpetAreaUnit}
+                      placeholder="Enter area"
+                      error={formErrors.carpetArea}
+                      onValue={(v) => {
+                        if (/^\d{0,10}$/.test(v)) {
+                          setCarpetArea(v);
+                          clearFormError("carpetArea");
+                        }
+                      }}
+                      onUnit={(u) => {
+                        setCarpetAreaUnit(u);
+                        clearFormError("carpetAreaUnit");
+                      }}
+                      onBlur={() => {
+                        if (String(carpetArea || "").trim()) {
+                          const msg = validateAreaValue("Carpet area", carpetArea, carpetAreaUnit);
+                          if (msg) setFormErrors((prev) => ({ ...prev, carpetArea: msg }));
+                        }
+                      }}
+                    />
+                  </ZbField>
+                </div>
+
+                {!isPlot && (
+                  <div className="zb-grid-3">
+                    <ZbField label="Tower / Block Name" error={formErrors.block}>
+                      <ZbInput
+                        icon={Building}
+                        name="block"
+                        value={formData.block || ""}
+                        onChange={handleInputChange}
+                        placeholder="Enter Tower / Block Name"
+                      />
+                    </ZbField>
+
+                    <ZbField label="Total Floor">
+                      <ZbInput
+                        icon={Layers}
+                        name="total_floor"
+                        value={formData.total_floor || ""}
+                        placeholder="Enter Total Floor"
+                        onChange={(e) => {
+                          if (/^\d{0,3}$/.test(e.target.value)) handleInputChange(e);
+                        }}
+                      />
+                    </ZbField>
+
+                    <ZbField label="Floor Number">
+                      <ZbSelect
+                        icon={Layers}
+                        name="property_floor"
+                        value={formData.property_floor || ""}
+                        onChange={handleInputChange}
+                        placeholder="Select Floor"
+                        options={Array.from({ length: Number(formData.total_floor) || 0 }, (_, i) => String(i + 1))}
+                      />
+                    </ZbField>
+
+                    <ZbField label="Furnishing Type" required error={formErrors.furnished_type}>
+                      <ZbSelect
+                        icon={Sofa}
+                        name="furnished_type"
+                        value={formData.furnished_type || ""}
+                        onChange={handleInputChange}
+                        placeholder="Select Furnishing Type"
+                        options={FURNISHING_OPTIONS}
+                      />
+                    </ZbField>
+
+                    <ZbField label="Age of Property">
+                      <ZbSelect
+                        icon={Calendar}
+                        name="age_of_property"
+                        value={formData.age_of_property || ""}
+                        onChange={handleInputChange}
+                        placeholder="Select Age of Property"
+                        options={AGE_OPTIONS}
+                      />
+                    </ZbField>
+
+                    <ZbField label="Car Parking">
+                      <ZbSelect
+                        icon={CircleParking}
+                        name="covered_parking"
+                        value={formData.covered_parking || ""}
+                        onChange={handleInputChange}
+                        placeholder="Select Car Parking"
+                        options={COUNT_OPTIONS}
+                      />
+                    </ZbField>
+
+                    {isHome && (
+                      <ZbField label="Balcony">
+                        <ZbSelect
+                          icon={PanelsTopLeft}
+                          name="balcony"
+                          value={formData.balcony || ""}
+                          onChange={handleInputChange}
+                          placeholder="Select No. of Balconies"
+                          options={BALCONY_OPTIONS}
+                        />
+                      </ZbField>
+                    )}
+
+                    <ZbField label="Lift Availability">
+                      <ZbSelect
+                        icon={ArrowUpDown}
+                        name="lift_availability"
+                        value={formData.lift_availability || ""}
+                        onChange={handleInputChange}
+                        placeholder="Select Lift Availability"
+                        options={YES_NO}
+                      />
+                    </ZbField>
+
+                    <ZbField label="Parking Availability">
+                      <ZbSelect
+                        icon={Car}
+                        name="parking_availability"
+                        value={formData.parking_availability || ""}
+                        onChange={handleInputChange}
+                        placeholder="Select Option"
+                        options={YES_NO}
+                      />
+                    </ZbField>
+                  </div>
+                )}
+
+                {isHome && (
+                  <ZbField label="Additional Rooms">
+                    <Select
+                      isMulti
+                      name="additional_rooms"
+                      options={options}
+                      value={options.filter((opt) => (formData.additional_rooms || []).includes(opt.value))}
+                      onChange={(selected) =>
+                        handleInputChange({
+                          target: { name: "additional_rooms", value: selected.map((opt) => opt.value) },
                         })
                       }
-                    >
-                      <option value="">Select Area Unit</option>
-                      <option value="sq.ft">sq.ft</option>
-                      <option value="sq.yards">sq.yards</option>
-                      <option value="sq.m">sq.m</option>
-                      <option value="acre">acre</option>
-                      <option value="marla">marla</option>
-                      <option value="cents">cents</option>
-                      <option value="bigha">bigha</option>
-                      <option value="kottah">kottah</option>
-                      <option value="kanal">kanal</option>
-                      <option value="grounds">grounds</option>
-                      <option value="ares">ares</option>
-                      <option value="biswa">biswa</option>
-                      <option value="guntha">guntha</option>
-                      <option value="aankadam">aankadam</option>
-                      <option value="hectares">hectares</option>
-                      <option value="rood">rood</option>
-                      <option value="chataks">chataks</option>
-                      <option value="perch">perch</option>
-                    </select>
-                    {formErrors.area_in && (
-                      <p className="flex items-center gap-1 mt-1 text-sm text-red-500">
-                        <MdErrorOutline className="text-lg" />
-                        {formErrors.area_in}
-                      </p>
-                    )}
-                  </div> */}
-
-                  {/* {!(
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Plot") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Plot") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Industry") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Industry") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Industry") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "PG")
-                  ) && (
-                    <div>
-                      <label className="font-medium text-gray-700">
-                        Area Type{" "}
-                        <span className="text-xl font-bold text-red-500">
-                          *
-                        </span>
-                      </label>
-                      <select
-                        className={`w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-rose-500 outline-none ${
-                          formErrors.area_type
-                            ? "border-red-600"
-                            : "border-gray-300"
-                        }`}
-                        value={formData.area_type}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            area_type: e.target.value,
-                          })
-                        }
-                      >
-                        <option value="">Select Area Type</option>
-                        <option value="Carpet Area">Carpet Area</option>
-                        <option value="Plot Area">Plot Area</option>
-                        <option value="Saleable Area">Saleable Area</option>
-                        <option value="Built-up Area">Built-up Area</option>
-                      </select>
-                      {formErrors.area_type && (
-                        <p className="flex items-center gap-1 mt-1 text-sm text-red-500">
-                          <MdErrorOutline className="text-lg" />
-                          {formErrors.area_type}
-                        </p>
-                      )}
-                    </div>
-                  )} */}
-                </div>
-
-                <div className="p-3 mb-3 border border-gray-300 rounded-xl">
-                  <div className="grid grid-cols-1 gap-4 mt-6 md:grid-cols-3">
-                    {propertyCategory === "Buy" &&
-  !(
-    (buildingType === "Residential" && propertyType === "Plot") ||
-    (buildingType === "Commercial" && propertyType === "Land")
-  ) && (
-                        <div>
-                          <label className="font-medium text-gray-700">
-                            Possession Status
-                          </label>
-                          <select
-                            className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                            value={formData.possession_status || ""}
-                            onChange={(e) => {
-  const value = e.target.value;
-
-  setFormData((prev) => ({
-    ...prev,
-    possession_status: value,
-
-    // Only for Buy
-    ...(propertyCategory === "Buy"
-      ? {
-          available_from:
-            value === "Ready To Move" ? "Immediately" : "",
-          possession_date:
-            value === "Ready To Move" ? "" : prev.possession_date,
-        }
-      : {}),
-  }));
-}}
-                          >
-                            <option value="">Select Status</option>
-                            <option value="Expected Possession">Expected Possession</option>
-                            <option value="Ready To Move">Ready To Move</option>
-                            <option value="Under Construction">Under Construction</option>
-                            <option value="New Launch">New Launch</option>
-                            <option value="Resale">Resale</option>
-                          </select>
-                        </div>
-                      )}
-
-                      {(
-  (
-    propertyCategory === "Rent" &&
-    !(
-      (buildingType === "Residential" && propertyType === "Plot") ||
-      (buildingType === "Commercial" && propertyType === "Land")
-    )
-  ) ||
-  propertyCategory === "Paying Guest"
-) && (
-                        <div>
-                          <label className="block mb-2 font-medium text-gray-700">
-                            Available From
-                          </label>
-
-                          <select
-                            name="available_from"
-                            value={formData.available_from}
-                           onChange={(e) => {
-  const value = e.target.value;
-
-  setFormData((prev) => ({
-    ...prev,
-    available_from: value,
-    ...(propertyCategory === "Rent" && value === "Immediately"
-      ? {
-          possession_date: "",
-        }
-      : {}),
-  }));
-}}
-                            className="w-full p-3 mt-1 text-gray-800 bg-white border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                          >
-                            <option value="">Select availability</option>
-                            <option value="Immediately">Immediate</option>
-                            <option value="Later">Later</option>
-                          </select>
-                        </div>
-                      )
-                    }
-                    {(
-  (propertyCategory === "Buy" &&
-    formData.possession_status === "Under Construction" ||
-  formData.possession_status === "Expected Possession") ||
-  ((propertyCategory === "Rent" ||
-    propertyCategory === "Paying Guest") &&
-    isLaterSelected)
-) && (
-  <div>
-    <label className="font-medium text-gray-700">
-      {propertyCategory === "Rent"
-  ? "Available Date"
-  : "Possession Date"}
-      <span className="text-xl font-bold text-red-500">*</span>
-    </label>
-
-    <input
-      type="date"
-      name="possession_date"
-      className={`w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-rose-500 outline-none ${
-        formErrors.possession_date
-          ? "border-red-600"
-          : "border-rose-300"
-      }`}
-      value={formData.possession_date || ""}
-      min={new Date().toISOString().split("T")[0]}
-      onChange={(e) =>
-        setFormData({
-          ...formData,
-          possession_date: e.target.value,
-        })
-      }
-    />
-
-    {formErrors.possession_date && (
-      <p className="flex items-center gap-1 mt-1 text-sm text-red-500">
-        <MdErrorOutline className="text-lg" />
-        {formErrors.possession_date}
-      </p>
-    )}
-  </div>
-)} 
-{(
-  (propertyCategory === "Buy" &&
-    buildingType === "Residential" &&
-    propertyType === "Plot") ||
-
-  (propertyCategory === "Rent" &&
-    buildingType === "Residential" &&
-    propertyType === "Plot") ||
-
-  (propertyCategory === "Buy" &&
-    buildingType === "Commercial" &&
-    propertyType === "Land") ||
-
-  (propertyCategory === "Rent" &&
-    buildingType === "Commercial" &&
-    propertyType === "Land")
-) && (
-  <div>
-    <label className="font-medium text-gray-700">
-      Possession Status
-      <span className="text-xl font-bold text-red-500">*</span>
-    </label>
-
-    <select
-      name="possession_status"
-      value={formData.possession_status || ""}
-      onChange={(e) => {
-        const value = e.target.value;
-
-        setFormData((prev) => ({
-          ...prev,
-          possession_status: value,
-          possession_date:
-            value === "Ready To Move"
-              ? ""
-              : prev.possession_date,
-        }));
-      }}
-      className={`w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-rose-500 outline-none ${
-        formErrors.possession_status
-          ? "border-red-600"
-          : "border-gray-300"
-      }`}
-    >
-      <option value="">Select Status</option>
-      <option value="Ready To Move">Ready To Move</option>
-      <option value="Later">Later</option>
-      <option value="New Launch">New Launch</option>
-    </select>
-
-    {formErrors.possession_status && (
-      <p className="flex items-center gap-1 mt-1 text-sm text-red-500">
-        <MdErrorOutline className="text-lg" />
-        {formErrors.possession_status}
-      </p>
-    )}
-  </div>
-)}
-
-{(
-  (
-    (propertyCategory === "Buy" ||
-      propertyCategory === "Rent") &&
-    buildingType === "Residential" &&
-    propertyType === "Plot"
-  ) ||
-  (
-    (propertyCategory === "Buy" ||
-      propertyCategory === "Rent") &&
-    buildingType === "Commercial" &&
-    propertyType === "Land"
-  )
-) &&
-  formData.possession_status === "Later" && (
-    <div>
-      <label className="font-medium text-gray-700">
-        Available Date
-        <span className="text-xl font-bold text-red-500">*</span>
-      </label>
-
-      <input
-        type="date"
-        name="possession_date"
-        className={`w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-rose-500 outline-none ${
-          formErrors.possession_date
-            ? "border-red-600"
-            : "border-rose-300"
-        }`}
-        value={formData.possession_date || ""}
-        min={new Date().toISOString().split("T")[0]}
-        onChange={(e) =>
-          setFormData({
-            ...formData,
-            possession_date: e.target.value,
-          })
-        }
-      />
-
-      {formErrors.possession_date && (
-        <p className="flex items-center gap-1 mt-1 text-sm text-red-500">
-          <MdErrorOutline className="text-lg" />
-          {formErrors.possession_date}
-        </p>
-      )}
-    </div>
-  )}
-                    {/* {(formData.possession_status === "Under Construction" ||
-                      formData.available_from === "Later") && (
-                        <div>
-                          <label className="font-medium text-gray-700">
-                            Possession Date{" "}
-                            <span className="text-xl font-bold text-red-500">
-                              *
-                            </span>
-                          </label>
-                          <input
-                            type="date"
-                            name="possession_date"
-                            className={`w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-rose-500 outline-none ${formErrors.possession_date
-                              ? "border-red-600"
-                              : "border-rose-300"
-                              }`}
-                            value={formData.possession_date || ""}
-                            min={new Date().toISOString().split("T")[0]}
-                            onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                possession_date: e.target.value,
-                              })
-                            }
-                          />
-                          {formErrors.possession_date && (
-                            <p className="flex items-center gap-1 mt-1 text-sm text-red-500">
-                              <MdErrorOutline className="text-lg" />
-                              {formErrors.possession_date}
-                            </p>
-                          )}
-                        </div>
-                      )} */}
-
-                    {/* {!(
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Apartment") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Plot") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent/Builder Floor") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Farmhouse") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Plot") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent/Builder Floor") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Farmhouse") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "PG") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space in IT/SEZ 22") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Warehouse") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Industry") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Hospitality") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Paying Guest" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Apartment") ||
-                      (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Builder Floor") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                         (propertyCategory === "Paying Guest" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                      (propertyCategory === "Paying Guest" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Industry")
-                  ) && (
-                    <div>
-                      <label className="font-medium text-gray-700">
-                        Developer
-                      </label>
-                      <input
-                        type="text"
-                        name="developer"
-                        className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                        value={formData.developer}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          if (/^[a-zA-Z0-9]{0,10}$/.test(value)) {
-                            handleInputChange(e);
-                          }
-                        }}
-                      />
-                    </div>
-                  )} */}
-
-                    {!(
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Independent House/Villa") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Apartment") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Farmhouse") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Plot") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Service Apartment") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Apartment") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Independent House/Villa") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Plot") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Independent/Builder Floor") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Service Apartment") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "PG") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Farmhouse") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Office Space") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Retail") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Land") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Office Space in IT/SEZ") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Storage") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Warehouse") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Industry") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Hospitality") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Storage") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Office Space") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Retail") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Land") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Office Space in IT/SEZ") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Storage") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Warehouse") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Industry") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Hospitality") ||
-                      (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Builder Floor") ||
-                      (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Apartment") ||
-                      (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                      (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Independent House/Villa") ||
-                      (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Service Apartment") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Independent/Builder Floor")
-                    ) && (
-                        <div>
-                          <label className="font-medium text-gray-700">
-                            Project Type
-                          </label>
-                          <input
-                            type="text"
-                            name="project_type"
-                            className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                            value={formData.project_type}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              if (/^[a-zA-Z0-9]{0,10}$/.test(value)) {
-                                handleInputChange(e);
-                              }
-                            }}
-                          />
-                        </div>
-                      )}
-                    {!(
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Plot") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Plot") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "PG") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Land") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Office Space in IT/SEZ") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Warehouse") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Industry") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Hospitality") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Storage") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Land") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Office Space in IT/SEZ") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Warehouse") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Industry") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Storage") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Hospitality")
-                    ) && (
-                        <div>
-                          <label className="font-medium text-gray-700">
-                            Total Floor
-                          </label>
-                          <input
-                            type="text"
-                            name="total_floor"
-                            className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                            value={formData.total_floor}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              if (/^\d{0,3}$/.test(value)) {
-                                handleInputChange(e);
-                              }
-                            }}
-                          />
-                        </div>
-                      )}
-                    {!(
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Plot") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Plot") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "PG") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Land") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Warehouse") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Industry") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Land") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Warehouse") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Storage") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Hospitality") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Industry")
-                    ) && (
-                        <div>
-                          <label className="font-medium text-gray-700">
-  {buildingType === "Residential" &&
- propertyType !== "Independent House/Villa"
-  ? "Flat on the Floor"
-  : "Property on the Floor"}
-</label>
-                          <input
-                            type="text"
-                            name="property_floor"
-                            className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                            value={formData.property_floor}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              if (/^[a-zA-Z0-9]{0,10}$/.test(value)) {
-                                handleInputChange(e);
-                              }
-                            }}
-                          />
-                        </div>
-                      )}
-                    {!(
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Plot") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Plot") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "PG") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Land") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Warehouse") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Industry") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Land") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Warehouse") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Storage") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Hospitality") ||
-                      (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Apartment") ||
-                      (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Builder Floor") ||
-                      (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                      (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Independent House/Villa") ||
-                      (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Service Apartment") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Industry")
-                    ) && (
-                        <div>
-                          <label className="font-medium text-gray-700">
-  {buildingType === "Commercial" && propertyType === "Office Space"
-    ? "Office / Unit Number"
-    : buildingType === "Commercial" && propertyType === "Storage"
-      ? "Unit Number"
-      : buildingType === "Commercial" &&
-        propertyType === "Retail" &&
-        RetailSubType === "Commercial Shops"
-        ? "Shop / Unit Number"
-        : buildingType === "Commercial" &&
-          propertyType === "Retail" &&
-          RetailSubType === "Commercial Showrooms"
-          ? "Showroom / Unit Number"
-          : "Flat / House No"}
-</label>
-                          <input
-                            type="text"
-                            name="block"
-                            className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                            value={formData.block}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              if (
-                                /^[a-zA-Z0-9\s\-_/().,#@&]{0,20}$/.test(value)
-                              ) {
-                                handleInputChange(e);
-                              }
-                            }}
-                          />
-                        {formErrors.block && (
-                          <p className="flex items-center gap-1 mt-1 text-sm text-red-500">
-                            <MdErrorOutline className="text-lg" />
-                            {formErrors.block}
-                          </p>
-                        )}
-                        </div>
-                      )}
-
-                    {/* {(propertyType === "Apartment" ||
-                    propertyType === "1RK/Studio Apartment" ||
-                    propertyType === "Service Apartment" ||
-                    propertyType === "Office Space") &&
-                    !(
-                      propertyCategory === "Paying Guest" &&
-                      (propertyType === "Apartment" ||
-                        propertyType === "1RK/Studio Apartment" ||
-                        propertyType === "Service Apartment")
-                    ) && (
-                      <div>
-                        <label className="font-medium text-gray-700">
-                          Total Number of Parking
-                        </label>
-
-                        <input
-                          type="text"
-                          value={totalNumberParking}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            if (/^\d*$/.test(value)) {
-                              setTotalNumberParking(value);
-                            }
-                          }}
-                          placeholder="Enter Total Parking"
-                          className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                        />
-                      </div>
-                    )} */}
-                    {(propertyCategory === "Buy" ||
-                      propertyCategory === "Rent") &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail" && (
-                        <div>
-                          <label className="font-medium text-gray-700">
-                            Parking Type
-                          </label>
-
-                          <select
-                            value={parkingTypes}
-                            onChange={(e) => setParkingTypes(e.target.value)}
-                            className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                          >
-                            <option value="">Select Parking Type</option>
-                            <option value="Private Parking">
-                              Private Parking
-                            </option>
-                            <option value="Public Parking">
-                              Public Parking
-                            </option>
-                            <option value="Multilevel Parking">
-                              Multilevel Parking
-                            </option>
-                            <option value="Not Available">Not Available</option>
-                          </select>
-                        </div>
-                      )}
-                    {/* No. of Cabines */}
-                    {buildingType === "Commercial" &&
-                      propertyType === "Office Space" && (
-                        <div>
-                          <label className="font-medium text-gray-700">
-                            No. of Cabines
-                          </label>
-
-                          <select
-                            value={noOfCabines}
-                            onChange={(e) => setNoOfCabines(e.target.value)}
-                            className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                          >
-                            <option value="">Select Cabines</option>
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                            <option value="4">4</option>
-                            <option value="5">5</option>
-                            <option value="10+">10+</option>
-                          </select>
-                        </div>
-                      )}
-
-                    {/* No. of Meeting Rooms */}
-                    {buildingType === "Commercial" &&
-                      propertyType === "Office Space" && (
-                        <div>
-                          <label className="font-medium text-gray-700">
-                            No. of Meeting Rooms
-                          </label>
-
-                          <select
-                            value={noOfMeetingRooms}
-                            onChange={(e) =>
-                              setNoOfMeetingRooms(e.target.value)
-                            }
-                            className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                          >
-                            <option value="">Select Meeting Rooms</option>
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                            <option value="4">4</option>
-                            <option value="5+">5+</option>
-                          </select>
-                        </div>
-                      )}
-
-                    {/* No. of Conference Room */}
-                    {buildingType === "Commercial" &&
-                      propertyType === "Office Space" && (
-                        <div>
-                          <label className="font-medium text-gray-700">
-                            No. of Conference Room
-                          </label>
-
-                          <select
-                            value={noOfConferenceRoom}
-                            onChange={(e) =>
-                              setNoOfConferenceRoom(e.target.value)
-                            }
-                            className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                          >
-                            <option value="">Select Conference Room</option>
-                            <option value="0">0</option>
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3+">3+</option>
-                          </select>
-                        </div>
-                      )}
-
-                    {propertyType === "Hospitality" && (
-                      <div>
-                        <label className="font-medium text-gray-700">
-                          Total Number of Rooms
-                        </label>
-
-                        <input
-                          type="text"
-                          value={totalNumberOfRooms}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            if (/^\d*$/.test(value)) {
-                              setTotalNumberOfRooms(value);
-                            }
-                          }}
-                          placeholder="Enter Total Rooms"
-                          className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                        />
-                      </div>
-                    )}
-                    {propertyType === "Hospitality" && (
-                      <div>
-                        <label className="font-medium text-gray-700">
-                          Quality Rating
-                        </label>
-
-                        <select
-                          value={qualityRating}
-                          onChange={(e) => setQualityRating(e.target.value)}
-                          className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                        >
-                          <option value="">Select Rating</option>
-                          <option value="No Rating">No Rating</option>
-                          <option value="1 Star">1 Star</option>
-                          <option value="2 Star">2 Star</option>
-                          <option value="3 Star">3 Star</option>
-                          <option value="4 Star">4 Star</option>
-                          <option value="5 Star">5 Star</option>
-                          <option value="6 Star">6 Star</option>
-                          <option value="7 Star">7 Star</option>
-                        </select>
-                      </div>
-                    )}
-                    {/* {!(
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                    (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Farmhouse") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Apartment") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Plot") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent/Builder Floor") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Plot") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent/Builder Floor") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "PG") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space in IT/SEZ") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Warehouse") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Industry") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Hospitality") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space in IT/SEZ") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Warehouse") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Industry") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Farmhouse") ||
-                    (propertyCategory === "Paying Guest" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Apartment") ||
-                      (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Builder Floor") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                         (propertyCategory === "Paying Guest" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                       (propertyCategory === "Paying Guest" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Hospitality")
-                  ) && (
-                    <div>
-                      <label className="font-medium text-gray-700">
-                        Transaction Type
-                      </label>
-                      <input
-                        type="text"
-                        name="transaction_type"
-                        className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                        value={formData.transaction_type}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          if (/^[a-zA-Z0-9]{0,10}$/.test(value)) {
-                            handleInputChange(e);
-                          }
-                        }}
-                      />
-                    </div>
-                  )} */}
-
-                    {!(
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Plot") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Plot") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "PG") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Office Space") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Retail") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Land") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Office Space in IT/SEZ") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Warehouse") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Industry") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Hospitality") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Storage") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Office Space") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Retail") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Land") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Office Space in IT/SEZ") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Storage") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Warehouse") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Industry") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Storage") ||
-                      (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Apartment") ||
-                      (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Builder Floor") ||
-                      (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                      (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Independent House/Villa") ||
-                      (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Service Apartment") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Hospitality")
-                    ) && (
-                        <div>
-                          <label className="font-medium text-gray-700">
-                            Additional Rooms
-                          </label>
-                          <Select
-                            isMulti
-                            name="additional_rooms"
-                            options={options}
-                            value={options.filter((opt) =>
-                              formData.additional_rooms.includes(opt.value),
-                            )}
-                            onChange={(selectedOptions) =>
-                              handleInputChange({
-                                target: {
-                                  name: "additional_rooms",
-                                  value: selectedOptions.map((opt) => opt.value),
-                                },
-                              })
-                            }
-                            components={{ MultiValue: CustomMultiValue }}
-                            placeholder="Select Additional Room"
-                            classNamePrefix="react-select"
-                            styles={{
-                              control: (base, state) => ({
-                                ...base,
-                                minHeight: "60px",
-                                padding: "6px",
-                                borderColor: state.isFocused
-                                  ? "#a855f7"
-                                  : "#d1d5db",
-                                boxShadow: state.isFocused
-                                  ? "0 0 0 2px #a855f7"
-                                  : "none",
-                                borderRadius: "0.5rem",
-                                fontSize: "16px",
-                                display: "flex",
-                                flexWrap: "nowrap",
-                                overflowX: "auto",
-                              }),
-                              valueContainer: (base) => ({
-                                ...base,
-                                padding: "0 6px",
-                                display: "flex",
-                                flexWrap: "nowrap",
-                                gap: "6px",
-                                overflowX: "auto",
-                                scrollbarWidth: "thin",
-                                alignItems: "center",
-                              }),
-                              placeholder: (base) => ({
-                                ...base,
-                                color: "#1f2937",
-                                fontSize: "16px",
-                              }),
-                              multiValue: (base) => ({
-                                ...base,
-                                backgroundColor: "#ede9fe",
-                                borderRadius: "0.375rem",
-                                display: "flex",
-                                alignItems: "center",
-                                padding: "2px 6px",
-                                whiteSpace: "nowrap",
-                              }),
-                              multiValueLabel: (base) => ({
-                                ...base,
-                                color: "#6b21a8",
-                                fontWeight: "500",
-                              }),
-                              multiValueRemove: (base) => ({
-                                ...base,
-                                color: "#6b21a8",
-                                ":hover": {
-                                  backgroundColor: "#ddd6fe",
-                                  color: "#4c1d95",
-                                },
-                              }),
-                            }}
-                          />
-                        </div>
-                      )}
-
-                    {!(
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Warehouse") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Industry") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Hospitality") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Office Space") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Retail") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Warehouse") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Storage") ||
-                      (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Apartment") ||
-                      (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Builder Floor") ||
-                      (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                      (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Independent House/Villa") ||
-                      (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Service Apartment") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Industry")
-                    ) && (
-                        <div>
-                          <label className="font-medium text-gray-700">
-                            Facing
-                          </label>
-                          <select
-                            className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                            value={formData.facing}
-                            onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                facing: e.target.value,
-                              })
-                            }
-                          >
-                            <option value="">Select Facing</option>
-                            <option value="East">East</option>
-                            <option value="West">West</option>
-                            <option value="North">North</option>
-                            <option value="South">South</option>
-                            <option value="North East">North East</option>
-                            <option value="North West">North West</option>
-                            <option value="South East">South East</option>
-                            <option value="South West">South West</option>
-                          </select>
-                        </div>
-                      )}
-
-                    {propertyType === "Independent/Builder Floor" && (
-                      <div>
-                        <label className="font-medium text-gray-700">
-                          Builder Floor Type{" "}
-                          <span className="text-red-500">*</span>
-                        </label>
-
-                        <select
-                          className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                          value={builderFloorType}
-                          onChange={(e) => setBuilderFloorType(e.target.value)}
-                        >
-                          <option value="">Select Floor Type</option>
-                          {builderFloorOptions.map((item) => (
-                            <option key={item} value={item}>
-                              {item}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
-                    {(propertyCategory === "Buy" ||
-                      propertyCategory === "Rent") &&
-                      ((buildingType === "Residential" &&
-                        propertyType === "Plot") ||
-                        (buildingType === "Commercial" &&
-                          propertyType === "Land")) && (
-                        <>
-                          {/* Length */}
-                          <div>
-                            <label className="font-medium text-gray-700">
-                              Length of Plot (ft){" "}
-                              <span className="text-red-500">*</span>
-                            </label>
-
-                            <input
-                              type="text"
-                              value={lengthOfLand}
-                              onChange={(e) => {
-                                const value = e.target.value;
-                                if (/^\d*$/.test(value)) {
-                                  setLengthOfLand(value);
-                                }
-                              }}
-                              placeholder="Enter Length"
-                              className="w-full p-3 mt-1 border rounded-lg focus:ring-2 focus:ring-rose-500 outline-none"
-                            />
-
-                            {formErrors.property_dimensions_length && (
-                              <p className="text-sm text-red-500 mt-1">
-                                {formErrors.property_dimensions_length}
-                              </p>
-                            )}
-                          </div>
-
-                          {/* Breadth */}
-                          <div>
-                            <label className="font-medium text-gray-700">
-                              Breadth of Plot (ft){" "}
-                              <span className="text-red-500">*</span>
-                            </label>
-
-                            <input
-                              type="text"
-                              value={breadthOfLand}
-                              onChange={(e) => {
-                                const value = e.target.value;
-                                if (/^\d*$/.test(value)) {
-                                  setBreadthOfLand(value);
-                                }
-                              }}
-                              placeholder="Enter Breadth"
-                              className="w-full p-3 mt-1 border rounded-lg focus:ring-2 focus:ring-rose-500 outline-none"
-                            />
-
-                            {formErrors.property_dimensions_breadth && (
-                              <p className="text-sm text-red-500 mt-1">
-                                {formErrors.property_dimensions_breadth}
-                              </p>
-                            )}
-                          </div>
-                        </>
-                      )}
-                    {/* Open Sides */}
-                    {(propertyCategory === "Buy" ||
-                      propertyCategory === "Rent") &&
-                      ((buildingType === "Residential" &&
-                        propertyType === "Plot") ||
-                        (buildingType === "Commercial" &&
-                          propertyType === "Land")) && (
-                        <div>
-                          <label className="font-medium text-gray-700">
-                            No. of Open Sides
-                          </label>
-
-                          <select
-                            name="openSidesOfLand"
-                            className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                            value={formData.openSidesOfLand}
-                            onChange={handleInputChange}
-                          >
-                            <option value="">Select Open Sides</option>
-                            <option value="1 Side">1 Side</option>
-                            <option value="2 Sides">2 Sides</option>
-                            <option value="3 Sides">3 Sides</option>
-                            <option value="4 Sides">4 Sides</option>
-                          </select>
-                        </div>
-                      )}
-
-                    {/* Construction */}
-                    {(propertyCategory === "Buy" ||
-                      propertyCategory === "Rent") &&
-                      ((buildingType === "Residential" &&
-                        propertyType === "Plot") ||
-                        (buildingType === "Commercial" &&
-                          propertyType === "Land")) && (
-                        <div>
-                          <label className="block mb-2 font-medium text-gray-700">
-                            Any Construction on Property
-                          </label>
-
-                          <select
-                            className="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                            value={typeOfConstruction}
-                            onChange={(e) =>
-                              setTypeOfConstruction(e.target.value)
-                            }
-                          >
-                            <option value="">Select Construction Type</option>
-                            {constructionOptions.map((item) => (
-                              <option key={item} value={item}>
-                                {item}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      )}
-                    {/* {propertyCategory === "Buy" &&
-                      (propertyType === "Plot" || propertyType === "Land") && (
-                        <div>
-                          <label className="font-medium text-gray-700">
-                            Possession By
-                          </label>
-
-                          <select
-                            value={possessionBy}
-                            onChange={(e) => setPossessionBy(e.target.value)}
-                            className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                          >
-                            <option value="">Select Possession</option>
-                            <option value="Immediate">Immediate</option>
-                            <option value="Within 3 Months">
-                              Within 3 Months
-                            </option>
-                            <option value="Within 6 Months">
-                              Within 6 Months
-                            </option>
-                            <option value="By 2026">By 2026</option>
-                            <option value="By 2027">By 2027</option>
-                            <option value="By 2028">By 2028</option>
-                            <option value="By 2029">By 2029</option>
-                            <option value="By 2030">By 2030</option>
-                            <option value="By 2031">By 2031</option>
-                            <option value="By 2032">By 2032</option>
-                          </select>
-                        </div>
-                      )} */}
-                    {/* Length */}
-                    {/* {propertyType === "Land" && (
-  <div>
-    <label className="font-medium text-gray-700">
-      Length of Land
-    </label>
-    <input
-      type="text"
-      className="w-full p-3 mt-1 border rounded-lg"
-      value={formData.length_of_land}
-      onChange={(e) =>
-        setFormData({
-          ...formData,
-          length_of_land: e.target.value,
-        })
-      }
-    />
-  </div>
-)} */}
-
-                    {/* Breadth */}
-                    {/* {propertyType === "Land" && (
-  <div>
-    <label className="font-medium text-gray-700">
-      Breadth of Land
-    </label>
-    <input
-      type="text"
-      className="w-full p-3 mt-1 border rounded-lg"
-      value={formData.breadthOfLand}
-      onChange={(e) =>
-        setFormData({
-          ...formData,
-          breadthOfLand: e.target.value,
-        })
-      }
-    />
-  </div>
-)} */}
-
-                    {!(
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Plot") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Plot") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Land") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Industry") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Storage") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Hospitality") ||
-                      (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Apartment") ||
-                      (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Builder Floor") ||
-                      (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                      (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Independent House/Villa") ||
-                      (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Service Apartment") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Land")
-                    ) && (
-                        <div>
-                          <label className="font-medium text-gray-700">
-                            Age of Property
-                          </label>
-                          <select
-                            className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                            value={formData.age_of_property}
-                            onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                age_of_property: e.target.value,
-                              })
-                            }
-                          >
-                            <option value="">Select Age of Property</option>
-                            <option value="0-1">0-1</option>
-                            <option value="2-4">2-4</option>
-                            <option value="5-7">5-7</option>
-                            <option value="8-10">8-10</option>
-                            <option value="10+">10+</option>
-                          </select>
-                        </div>
-                      )}
-                    {!(
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Plot") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Plot") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Land") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Warehouse") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Industry") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Land") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Warehouse") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Storage") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Industry")
-                    ) && (
-                        <div>
-                          <label className="font-medium text-gray-700">
-                            Furnishing Type{" "}
-                            <span className="text-xl font-bold text-red-500">
-                              *
-                            </span>
-                          </label>
-                          <select
-                            className={`w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-rose-500 outline-none ${formErrors.furnished_type ? "border-red-600" : "border-gray-300"}`}
-                            value={formData.furnished_type}
-                            onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                furnished_type: e.target.value,
-                              })
-                            }
-                          >
-                            <option value="">Select Furnishing Type</option>
-                            <option value="Furnished">Furnished</option>
-                            <option value="Unfurnished">Unfurnished</option>
-                            <option value="Semi-Furnished">Semi-Furnished</option>
-                          </select>
-                          {formErrors.furnished_type && (
-                            <p className="flex items-center gap-1 mt-1 text-sm text-red-500">
-                              <MdErrorOutline className="text-lg" />
-                              {formErrors.furnished_type}
-                            </p>
-                          )}
-                        </div>
-                      )}
-                    {!(
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Plot") ||
-                      // (propertyCategory === "Buy" &&
-                      //   buildingType === "Residential" &&
-                      //   propertyType === "Farmhouse") ||
-                      // (propertyCategory === "Buy" &&
-                      //   buildingType === "Residential" &&
-                      //   propertyType === "Apartment") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Plot") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Land") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Industry") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Land") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Industry") ||
-                      // (propertyCategory === "Rent" &&
-                      //   buildingType === "Residential" &&
-                      //   propertyType === "Apartment") ||
-                      // (propertyCategory === "Buy" &&
-                      //   buildingType === "Residential" &&
-                      //   propertyType === "Independent House/Villa") ||
-                      // (propertyCategory === "Rent" &&
-                      //   buildingType === "Residential" &&
-                      //   propertyType === "Independent House/Villa") ||
-                      // (propertyCategory === "Buy" &&
-                      //   buildingType === "Residential" &&
-                      //   propertyType === "Independent/Builder Floor") ||
-                      // (propertyCategory === "Rent" &&
-                      //   buildingType === "Residential" &&
-                      //   propertyType === "Independent/Builder Floor") ||
-                      // (propertyCategory === "Buy" &&
-                      //   buildingType === "Residential" &&
-                      //   propertyType === "1RK/Studio Apartment") ||
-                      // (propertyCategory === "Rent" &&
-                      //   buildingType === "Residential" &&
-                      //   propertyType === "1RK/Studio Apartment") ||
-                      // (propertyCategory === "Buy" &&
-                      //   buildingType === "Residential" &&
-                      //   propertyType === "Service Apartment") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Retail") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Storage") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Hospitality") 
-                      // (propertyCategory === "Rent" &&
-                      //   buildingType === "Residential" &&
-                      //   propertyType === "Service Apartment")
-                    ) && (
-                        <div>
-                          <label className="font-medium text-gray-700">
-                            Parking Availability
-                          </label>
-                          <select
-                            className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                            value={formData.parking_availability}
-                            onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                parking_availability: e.target.value,
-                              })
-                            }
-                          >
-                            <option value="">Select Option</option>
-                            <option value="Yes">Yes</option>
-                            <option value="No">No</option>
-                          </select>
-                        </div>
-                      )}
-                    {formData.parking_availability === "Yes" &&
-                    !(
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Plot") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Plot") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "PG") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Land") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Industry") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Land") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Storage") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Hospitality") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Industry")
-                    ) && (
-                        <div>
-                          <label className="font-medium text-gray-700">
-                            Covered Car Parking
-                          </label>
-                          <select
-                            className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                            value={formData.covered_parking}
-                            onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                covered_parking: e.target.value,
-                              })
-                            }
-                          >
-                            <option value="">Select Covered Car Parking</option>
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                            <option value="4">4</option>
-                            <option value="5">5</option>
-                            <option value="6">6</option>
-                            <option value="6+">6+</option>
-                            <option value="NA">NA</option>
-                          </select>
-                        </div>
-                      )}
-
-                    {formData.parking_availability === "Yes" &&
-                    !(
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Plot") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Plot") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "PG") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Land") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Industry") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Land") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Industry") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Storage") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Hospitality") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Industry")
-                    ) && (
-                        <div>
-                          <label className="font-medium text-gray-700">
-                            Open Car Parking
-                          </label>
-                          <select
-                            className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                            value={formData.uncovered_parking}
-                            onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                uncovered_parking: e.target.value,
-                              })
-                            }
-                          >
-                            <option value="">Select Open Car Parking</option>
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                            <option value="4">4</option>
-                            <option value="5">5</option>
-                            <option value="6">6</option>
-                            <option value="6+">6+</option>
-                            <option value="NA">NA</option>
-                          </select>
-                        </div>
-                      )}
-
-                    {buildingType === "Residential" &&
-                      !(
-                        (propertyCategory === "Buy" &&
-                          buildingType === "Residential" &&
-                          propertyType === "Plot") ||
-                        (propertyCategory === "Rent" &&
-                          buildingType === "Commercial" &&
-                          propertyType === "Land") ||
-                        (propertyCategory === "Rent" &&
-                          buildingType === "Commercial" &&
-                          propertyType === "Storage") ||
-                        (propertyCategory === "Rent" &&
-                          buildingType === "Commercial" &&
-                          propertyType === "Warehouse") ||
-                        (propertyCategory === "Rent" &&
-                          buildingType === "Commercial" &&
-                          propertyType === "Industry") ||
-                        (propertyCategory === "Rent" &&
-                          buildingType === "Commercial" &&
-                          propertyType === "Hospitality") ||
-                        (propertyCategory === "Buy" &&
-                          buildingType === "Commercial" &&
-                          propertyType === "Storage") ||
-                        (propertyCategory === "Buy" &&
-                          buildingType === "Commercial" &&
-                          propertyType === "Retail") ||
-                        (propertyCategory === "Buy" &&
-                          buildingType === "Commercial" &&
-                          propertyType === "Land") ||
-                        (propertyCategory === "Buy" &&
-                          buildingType === "Commercial" &&
-                          propertyType === "Storage") ||
-                        (propertyCategory === "Buy" &&
-                          buildingType === "Commercial" &&
-                          propertyType === "Warehouse") ||
-                        (propertyCategory === "Buy" &&
-                          buildingType === "Commercial" &&
-                          propertyType === "Industry") ||
-                        (propertyCategory === "Buy" &&
-                          buildingType === "Commercial" &&
-                          propertyType === "Hospitality") ||
-                        (propertyCategory === "Rent" &&
-                          buildingType === "Residential" &&
-                          propertyType === "Plot")
-                      ) && (
-                        <div>
-                          <label className="font-medium text-gray-700">
-                            Balcony
-                          </label>
-                          <select
-                            name="balcony"
-                            className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                            value={formData.balcony}
-                            onChange={handleInputChange}
-                          >
-                            <option value="">Select No. of Balconies</option>
-                            <option value="0">0</option>
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                            <option value="more than 3">More than 3</option>
-                          </select>
-                        </div>
-                      )}
-
-                    {/* {!(
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Plot") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Plot") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Industry") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Farmhouse") ||  
-                       (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Hospitality") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Apartment") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Builder Floor") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                         (propertyCategory === "Paying Guest" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                       (propertyCategory === "Paying Guest" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Industry")
-                  ) && (
-                    <div>
-                      <label className="font-medium text-gray-700">
-                        Power Backup
-                      </label>
-                      <select
-                        className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                        value={formData.power_backup}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            power_backup: e.target.value,
-                          })
-                        }
-                      >
-                        <option value="">Select Power Backup</option>
-                        <option value="No Back-up">No Back-up</option>
-                        <option value="Available">Available</option>
-                      </select>
-                    </div>
-                  )} */}
-
-                    {/* {!(
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Industry") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Storage") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Hospitality") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Apartment") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Builder Floor") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                         (propertyCategory === "Paying Guest" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                       (propertyCategory === "Paying Guest" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Warehouse")
-                  ) && (
-                    <div>
-                      <label className="font-medium text-gray-700">View</label>
-                      <select
-                        className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                        value={formData.view}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            view: e.target.value,
-                          })
-                        }
-                      >
-                        <option value="">Select View</option>
-                        <option value="Beach View">Beach View</option>
-                        <option value="Garden View">Garden View</option>
-                        <option value="Golf View">Golf View</option>
-                        <option value="Lake View">Lake View</option>
-                        <option value="Park View">Park View</option>
-                        <option value="Road View">Road View</option>
-                        <option value="Community View">Community View</option>
-                        <option value="Pool View">Pool View</option>
-                        <option value="Creek View">Creek View</option>
-                        <option value="Sea View">Sea View</option>
-                      </select>
-                    </div>
-                  )} */}
-
-                    {/* {!(
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Plot") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Plot") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                    (propertyCategory === "Rent" &&  
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Industry") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Hospitality") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Storage") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Apartment") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Builder Floor") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                         (propertyCategory === "Paying Guest" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                       (propertyCategory === "Paying Guest" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Industry")
-                  ) && (
-                    <div>
-                      <label className="font-medium text-gray-700">
-                        Flooring
-                      </label>
-                      <select
-                        className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                        value={formData.flooring}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            flooring: e.target.value,
-                          })
-                        }
-                      >
-                        <option value="">Select Flooring</option>
-                        <option value="Marble">Marble</option>
-                        <option value="Concrete">Concrete</option>
-                        <option value="Cemented">Cemented</option>
-                        <option value="Carpeted">Carpeted</option>
-                        <option value="Wooden">Wooden</option>
-                        <option value="Others">Others</option>
-                      </select>
-                    </div>
-                  )} */}
-
-                    {/* {!(
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Plot") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Plot") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Industry") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Hospitality") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Farmhouse") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Storage") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Apartment") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Builder Floor") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                         (propertyCategory === "Paying Guest" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                       (propertyCategory === "Paying Guest" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Industry")
-                  ) && (
-                    <div>
-                      <label className="font-medium text-gray-700">
-                        Water Source
-                      </label>
-                      <select
-                        className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                        value={formData.water_source}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            water_source: e.target.value,
-                          })
-                        }
-                      >
-                        <option value="">Select Water Source</option>
-                        <option value="Municipal Supply">
-                          Municipal Supply
-                        </option>
-                        <option value="Borewell/ Underground">
-                          Borewell/ Underground
-                        </option>
-                        <option value="Others">Others</option>
-                      </select>
-                    </div>
-                  )} */}
-
-                    {!(
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Plot") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Plot") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "PG") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Land") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Warehouse") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Industry") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Land") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Warehouse") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Storage") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Hospitality") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Industry")
-                    ) && (
-                        <div>
-                          <label className="font-medium text-gray-700">
-                            Lift Availability
-                          </label>
-                          <select
-                            className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                            value={formData.lift_availability}
-                            onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                lift_availability: e.target.value,
-                              })
-                            }
-                          >
-                            <option value="">Select Lift Availability</option>
-                            <option value="Yes">Yes</option>
-                            <option value="No">No</option>
-                          </select>
-                        </div>
-                      )}
-
-                    {/* {!(
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Apartment") ||
-                    (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Farmhouse") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent/Builder Floor") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent/Builder Floor") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "PG") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space in IT/SEZ 22") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Warehouse") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Hospitality") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space in IT/SEZ") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Warehouse") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Farmhouse") ||
-                      (propertyCategory === "Rent" &&
-                          buildingType === "Commercial" &&
-                          propertyType === "Industry")||
-                           (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Apartment") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Builder Floor") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                         (propertyCategory === "Paying Guest" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                       (propertyCategory === "Paying Guest" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Hospitality")
-                  ) && (
-                    <div>
-                      <label className="font-medium text-gray-700">
-                        Loan Availability
-                      </label>
-                      <select
-                        className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                        value={formData.loan_availability}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            loan_availability: e.target.value,
-                          })
-                        }
-                      >
-                        <option value="">Select Loan Availability</option>
-                        <option value="Yes">Yes</option>
-                        <option value="No">No</option>
-                      </select>
-                    </div>
-                  )} */}
-
-                    {/* {!(
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Apartment") ||
-                    (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Farmhouse") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Plot") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent/Builder Floor") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Plot") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent/Builder Floor") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "PG") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage ") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Warehouse ") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Industry") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Hospitality") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Warehouse") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Industry") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Hospitality") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Farmhouse") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Storage") ||
-                         (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Apartment") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Builder Floor") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                         (propertyCategory === "Paying Guest" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                       (propertyCategory === "Paying Guest" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment")
-                  ) && (
-                    <div>
-                      <label className="font-medium text-gray-700">
-                        Office Space Type
-                      </label>
-                      <select
-                        className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                        value={formData.office_space_type}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            office_space_type: e.target.value,
-                          })
-                        }
-                      >
-                        <option value="">Select Office Space Type</option>
-                        <option value="Semi-Fitted">Semi-Fitted</option>
-                        <option value="Fitted Space">Fitted Space</option>
-                        <option value="Shell and Core">Shell and Core</option>
-                      </select>
-                    </div>
-                  )} */}
-
-                    {!(
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Apartment") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Farmhouse") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Independent House/Villa") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Plot") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Independent/Builder Floor") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Service Apartment") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Apartment") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Independent House/Villa") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Plot") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Independent/Builder Floor") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Service Apartment") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "PG") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Land") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Office Space in IT/SEZ") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Warehouse") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Industry") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Land") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Warehouse") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Farmhouse") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Retail") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Storage") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Hospitality") ||
-                      (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Apartment") ||
-                      (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Builder Floor") ||
-                      (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                      (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Independent House/Villa") ||
-                      (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Service Apartment") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Industry")
-                    ) && (
-                        <div>
-                          <label className="font-medium text-gray-700">
-                            Pantry
-                          </label>
-                          <select
-                            className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                            value={pantry}
-                            onChange={(e) => setPantry(e.target.value)}
-                          >
-                            <option value="">Select Pantry</option>
-                            <option value="Wet">Wet</option>
-                            <option value="Dry">Dry</option>
-                            <option value="None">None</option>
-                          </select>
-                        </div>
-                      )}
-                    {buildingType === "Commercial" &&
-                      propertyType === "Office Space" && (
-                        <div>
-                          <label className="font-medium text-gray-700">
-                            Reception Area
-                          </label>
-
-                          <select
-                            value={receptionArea}
-                            onChange={(e) => setReceptionArea(e.target.value)}
-                            className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                          >
-                            <option value="">Select Option</option>
-                            <option value="Yes">Yes</option>
-                            <option value="No">No</option>
-                          </select>
-                        </div>
-                      )}
-                    {buildingType === "Commercial" &&
-                      propertyType === "Office Space" && (
-                        <div>
-                          <label className="font-medium text-gray-700">
-                            Central AC
-                          </label>
-
-                          <select
-                            value={centralAC}
-                            onChange={(e) => setCentralAC(e.target.value)}
-                            className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                          >
-                            <option value="">Select Option</option>
-                            <option value="Duct Only">Duct Only</option>
-                            <option value="Available">Available</option>
-                            <option value="Not Available">Not Available</option>
-                          </select>
-                        </div>
-                      )}
-                    {(propertyType === "Office Space" ||
-                      propertyType === "Retail" ||
-                      propertyType === "Storage" ||
-                      propertyType === "Industry" ||
-                      propertyType === "Hospitality") && (
-                        <div>
-                          <label className="font-medium text-gray-700">
-                            Property Usage
-                          </label>
-
-                          <select
-                            name="investment_options"
-                            className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                            value={formData.investment_options}
-                            onChange={handleInputChange}
-                          >
-                            <option value="">Select Property Usage Option</option>
-                            <option value="Pre-Leased Spaces">
-                              Pre-Leased Spaces
-                            </option>
-                            <option value="Restaurants">Restaurants</option>
-                            <option value="SCO Plots">SCO Plots</option>
-                            <option value="Business Center">
-                              Business Center
-                            </option>
-                            <option value="Food Court">Food Court</option>
-                            <option value="Multiplex">Multiplex</option>
-                            <option value="Co-working">Co-working</option>
-                            <option value="Multiplex">Multiplex</option>
-                            <option value="Corner Shop">Corner Shop</option>
-                            <option value="Main Road Shop">Main Road Shop</option>
-                          </select>
-                        </div>
-                      )}
-
-                    {/* {(propertyType === "Office Space" ||
-                      propertyType === "Retail" ||
-                      propertyType === "Storage" ||
-                      propertyType === "Industry" ||
-                      propertyType === "Hospitality") && (
-                        <div>
-                          <label className="font-medium text-gray-700">
-                            Purchase Type
-                          </label>
-
-                          <select
-                            name="purchase_type"
-                            className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                            value={formData.purchase_type}
-                            onChange={handleInputChange}
-                          >
-                            <option value="">Select Purchase Type</option>
-                            <option value="Resale">Resale</option>
-                            <option value="New Bookings">New Bookings</option>
-                          </select>
-                        </div>
-                      )} */}
-
-                    {!(
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Apartment") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Farmhouse") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Independent House/Villa") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Plot") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Independent/Builder Floor") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Service Apartment") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Apartment") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Independent House/Villa") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Plot") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Independent/Builder Floor") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Service Apartment") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "PG") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Land") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Industry") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Land") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Warehouse") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Farmhouse") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Office Space") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Retail") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Storage") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Hospitality") ||
-                      (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Apartment") ||
-                      (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Builder Floor") ||
-                      (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                      (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Independent House/Villa") ||
-                      (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Service Apartment") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Industry")
-                    ) && (
-                        <div>
-                          <label className="font-medium text-gray-700">
-                            Personal Washroom
-                          </label>
-                          <select
-                            name="personal_washroom"
-                            value={formData.personal_washroom}
-                            onChange={handleInputChange}
-                            className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                          >
-                            <option value="">Select</option>
-                            <option value="Yes">Yes</option>
-                            <option value="No">No</option>
-                          </select>
-                        </div>
-                      )}
-
-                    {/* {!(
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Apartment") ||
-                    (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Farmhouse") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Apartment") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Plot") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent/Builder Floor") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "PG") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space 18") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land 22") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space in IT/SEZ 22") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent/Builder Floor") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Farmhouse") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Storage") ||
-                        (propertyCategory === "Rent" &&
-                          buildingType === "Commercial" &&
-                          propertyType === "Industry")||
-                        (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Hospitality") ||
-                         (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Apartment") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Builder Floor") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                         (propertyCategory === "Paying Guest" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                       (propertyCategory === "Paying Guest" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Plot")
-                  ) && (
-                    <div>
-                      <label className="font-medium text-gray-700">
-                        Ceiling Height
-                      </label>
-                      <input
-                        type="text"
-                        name="ceiling_height"
-                        className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                        value={formData.ceiling_height}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          if (/^[a-zA-Z0-9]{0,10}$/.test(value)) {
-                            handleInputChange(e);
-                          }
-                        }}
-                      />
-                    </div>
-                  )} */}
-
-                    {/* {!(
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Apartment") ||
-                    (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Farmhouse") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Plot") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent/Builder Floor") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Plot") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent/Builder Floor") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space in IT/SEZ") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Warehouse") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Industry") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space in IT/SEZ") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Warehouse") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Industry") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Farmhouse") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType ===
- "Commercial" &&
-                      propertyType === "Office Space") ||
-                    (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Hospitality") ||
-                         (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Apartment") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Builder Floor") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                         (propertyCategory === "Paying Guest" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                       (propertyCategory === "Paying Guest" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "PG")
-                  ) && (
-                    <div>
-                      <label className="font-medium text-gray-700">
-                        Seat Type
-                      </label>
-                      <select
-                        className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                        value={formData.seat_type}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            seat_type: e.target.value,
-                          })
-                        }
-                      >
-                        <option value="">Select Seat Type</option>
-                        <option value="Open Seat">Open Seat</option>
-                        <option value="Private Cabin">Private Cabin</option>
-                        <option value="Conference Cabin">
-                          Conference Cabin
-                        </option>
-                      </select>
-                    </div>
-                  )} */}
-
-                    {!(
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        (propertyType === "Apartment" ||
-                          propertyType === "Independent House/Villa" ||
-                          propertyType === "Plot")) ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Independent/Builder Floor") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Farmhouse") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Service Apartment") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Apartment") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Independent House/Villa") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Plot") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Independent/Builder Floor") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Service Apartment") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Office Space 18") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Retail") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Land") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Office Space in IT/SEZ") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Storage") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Warehouse") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Industry") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Hospitality") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Storage") ||
-                      // (propertyCategory === "Buy" &&
-                      //   buildingType === "Commercial" &&
-                      //   propertyType === "Office Space") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Retail") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Land") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Office Space in IT/SEZ") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Storage") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Warehouse") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Industry") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Farmhouse") ||
-                      (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Apartment") ||
-                      (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Builder Floor") ||
-                      (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                      (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Independent House/Villa") ||
-                      (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Service Apartment") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "PG")
-                    ) && (
-                        <div>
-                          <label className="font-medium text-gray-700">
-                            Number of Seats Available
-                          </label>
-                          <input
-                            type="text"
-                            name="number_of_seats_available"
-                            className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                            value={formData.number_of_seats_available}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              if (/^[a-zA-Z0-9]{0,10}$/.test(value)) {
-                                handleInputChange(e);
-                              }
-                            }}
-                          />
-                        </div>
-                      )}
-
-                    {/* {!(
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      (propertyType === "Apartment" ||
-                        propertyType === "Independent House/Villa" ||
-                        propertyType === "Plot")) ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent/Builder Floor") ||
-                    (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Farmhouse") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space in IT/SEZ") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Warehouse") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Industry") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Hospitality") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent/Builder Floor") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Plot") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Farmhouse") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Storage") ||
-                        (propertyCategory === "Rent" &&
-                          buildingType === "Commercial" &&
-                          propertyType === "Industry")||
-                           (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Hospitality") ||
-                         (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Apartment") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Builder Floor") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                         (propertyCategory === "Paying Guest" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                       (propertyCategory === "Paying Guest" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "PG")
-                  ) && (
-                    <div>
-                      <label className="font-medium text-gray-700">
-                        Maintenance Cost
-                      </label>
-                      <input
-                        type="text"
-                        className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                        name="maintenance_cost"
-                        value={formData.maintenance_cost}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          if (/^[a-zA-Z0-9]{0,10}$/.test(value)) {
-                            handleInputChange(e);
-                          }
-                        }}
-                      />
-                      {formErrors.rent && (
-                        <p className="flex items-center gap-1 mt-1 text-sm text-red-500">
-                          <MdErrorOutline className="text-lg" />
-                          {formErrors.rent}
-                        </p>
-                      )}
-                    </div>
-                  )} */}
-
-                    {/* {!(
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      (propertyType === "Apartment" ||
-                        propertyType === "Independent House/Villa" ||
-                        propertyType === "Plot")) ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent/Builder Floor") ||
-                    (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Farmhouse") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Industry") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space in IT/SEZ") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Warehouse") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Industry") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Hospitality") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent/Builder Floor") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Plot") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Farmhouse") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Storage") ||
-                         (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Hospitality") ||
-                         (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Apartment") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Builder Floor") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                         (propertyCategory === "Paying Guest" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                       (propertyCategory === "Paying Guest" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "PG")
-                  ) && (
-                    <div>
-                      <label className="font-medium text-gray-700">
-                        Maintenance Frequency
-                      </label>
-                      <select
-                        className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                        value={formData.maintenance_frequency}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            maintenance_frequency: e.target.value,
-                          })
-                        }
-                      >
-                        <option value="">Select Maintenance Frequency</option>
-                        <option value="Per Sqft">Per Sqft</option>
-                        <option value="Monthly">Monthly</option>
-                        <option value="Quarterly">Quarterly</option>
-                        <option value="Yearly">Yearly</option>
-                        <option value="One-Time">One-Time</option>
-                      </select>
-                    </div>
-                  )} */}
-
-                    {/* {!(
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      (propertyType === "Apartment" ||
-                        propertyType === "Independent House/Villa" ||
-                        propertyType === "Plot")) ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent/Builder Floor") ||
-                    (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Farmhouse") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Plot") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land ") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space in IT/SEZ") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Warehouse") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Industry") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Industry") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Hospitality") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space in IT/SEZ") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Warehouse") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Industry") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Hospitality") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent/Builder Floor") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Farmhouse") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                       (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Apartment") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Builder Floor") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                         (propertyCategory === "Paying Guest" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                       (propertyCategory === "Paying Guest" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "PG")
-                  ) && (
-                    <div>
-                      <label className="font-medium text-gray-700">
-                        Maintenance Included
-                      </label>
-                      <select
-                        className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                        value={formData.maintenance_included}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            maintenance_included: e.target.value,
-                          })
-                        }
-                      >
-                        <option value="">Select Maintenance Included</option>
-                        <option value="Yes">Yes</option>
-                        <option value="No">No</option>
-                      </select>
-                    </div>
-                  )} */}
-
-                    {/* {!(
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      (propertyType === "Apartment" ||
-                        propertyType === "Independent House/Villa" ||
-                        propertyType === "Plot")) ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Farmhouse") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent/Builder Floor") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space in IT/SEZ") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Warehouse") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Industry") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Hospitality") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent/Builder Floor") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "PG") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Farmhouse") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space") ||
-                      (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Plot") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Storage") ||
-                        (propertyCategory === "Rent" &&
-                          buildingType === "Commercial" &&
-                          propertyType === "Industry")||
-                           (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Hospitality") ||
-                         (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Apartment") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Builder Floor") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                         (propertyCategory === "Paying Guest" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                       (propertyCategory === "Paying Guest" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Plot")
-                  ) && (
-                    <div>
-                      <label className="font-medium text-gray-700">
-                        Security Deposit Type
-                      </label>
-                      <select
-                        className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                        value={formData.security_deposit_type}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            security_deposit_type: e.target.value,
-                          })
-                        }
-                      >
-                        <option value="">Select Deposit Type</option>
-                        <option value="Zero Deposit">Zero Deposit</option>
-                        <option value="One Month">One Month</option>
-                        <option value="Two Months">Two Months</option>
-                        <option value="Other">Other</option>
-                      </select>
-                    </div>
-                  )} */}
-
-                    {/* {!(
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      (propertyType === "Apartment" ||
-                        propertyType === "Independent House/Villa" ||
-                        propertyType === "Plot")) ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent/Builder Floor") ||
-                    (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Farmhouse") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Plot") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land 22") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space in IT/SEZ") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Warehouse") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Industry") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Hospitality") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space in IT/SEZ") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Warehouse") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Industry") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Hospitality") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent/Builder Floor") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Farmhouse") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Storage") ||
-                         (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Apartment") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Builder Floor") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                         (propertyCategory === "Paying Guest" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                       (propertyCategory === "Paying Guest" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "PG")
-                  ) && (
-                    <div>
-                      <label className="font-medium text-gray-700">
-                        Custom Deposit Amount
-                      </label>
-                      <input
-                        type="text"
-                        name="custom_deposit_amount"
-                        className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                        value={formData.custom_deposit_amount}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          if (/^\d{0,10}$/.test(value)) {
-                            handleInputChange(e);
-                          }
-                        }}
-                      />
-                    </div>
-                  )} */}
-
-                    {/* {!(
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      (propertyType === "Apartment" ||
-                        propertyType === "Independent House/Villa" ||
-                        propertyType === "Plot")) ||
-                    (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Farmhouse") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent/Builder Floor") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Plot") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent/Builder Floor") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space in IT/SEZ 22") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Hospitality") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space in IT/SEZ") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Warehouse") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Industry") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Hospitality") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent/Builder Floor") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Farmhouse") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                      (propertyCategory === "Rent" &&
-                          buildingType === "Commercial" &&
-                          propertyType === "Industry")||
-                           (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Apartment") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Builder Floor") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                         (propertyCategory === "Paying Guest" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                       (propertyCategory === "Paying Guest" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "PG")
-                  ) && (
-                    <div>
-                      <label className="font-medium text-gray-700">
-                        Available for Company Lease
-                      </label>
-                      <select
-                        className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                        value={formData.available_for_company_lease}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            available_for_company_lease: e.target.value,
-                          })
-                        }
-                      >
-                        <option value="">Select Option</option>
-                        <option value="Yes">Yes</option>
-                        <option value="No">No</option>
-                      </select>
-                    </div>
-                  )} */}
-
-                    {!(
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        (propertyType === "Apartment" ||
-                          propertyType === "Independent House/Villa" ||
-                          propertyType === "Plot")) ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Independent/Builder Floor") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Farmhouse") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Service Apartment") ||
-                      // (propertyCategory === "Rent" &&
-                      //   buildingType === "Residential" &&
-                      //   propertyType === "Apartment") ||
-                      // (propertyCategory === "Rent" &&
-                      //   buildingType === "Residential" &&
-                      //   propertyType === "Independent House/Villa") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Plot") ||
-                      // (propertyCategory === "Rent" &&
-                      //   buildingType === "Residential" &&
-                      //   propertyType === "Independent/Builder Floor") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Service Apartment") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Office Space") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Retail") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Land") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Office Space in IT/SEZ") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Storage") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Warehouse") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Industry") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Hospitality") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Storage") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Office Space") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Retail") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Land") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Office Space in IT/SEZ") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Storage") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Warehouse") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Industry") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Hospitality")
-                    ) && (
-                        <div>
-                          <label className="font-medium text-gray-700">
-                            Available For{" "}
-                            {propertyCategory === "Rent" &&
-                              buildingType === "Residential" &&
-                              propertyType === "PG" && (
-                                <span className="text-xl font-bold text-red-500">
-                                  *
-                                </span>
-                              )}
-                          </label>
-                          <Select
-  isMulti
-  name="available_for"
-  options={[
-    { value: "Girls", label: "Girls" },
-    { value: "Boys", label: "Boys" },
-    { value: "Working", label: "Working" },
-    { value: "Family", label: "Family" },
-    { value: "Single women", label: "Single women" },
-    { value: "Single Men", label: "Single Men" },
-    { value: "Company Guest House", label: "Company Guest House" },
-    { value: "Anyone / No Preference", label: "Anyone / No Preference"},
-  ]}
-  value={[
-    { value: "Girls", label: "Girls" },
-    { value: "Boys", label: "Boys" },
-    { value: "Working", label: "Working" },
-    { value: "Family", label: "Family" },
-    { value: "Single women", label: "Single women" },
-    { value: "Single Men", label: "Single Men" },
-    { value: "Company Guest House", label: "Company Guest House" },
-    { value: "Anyone / No Preference", label: "Anyone / No Preference"},
-  ].filter((opt) =>
-    Array.isArray(formData.available_for)
-      ? formData.available_for.includes(opt.value)
-      : formData.available_for
-          ?.split(",")
-          .map((v) => v.trim())
-          .includes(opt.value)
-  )}
-  onChange={(selectedOptions) =>
-    setFormData((prev) => ({
-      ...prev,
-      available_for: selectedOptions.map((opt) => opt.value),
-    }))
-  }
-  components={{ MultiValue: CustomMultiValue }}
-  placeholder="Select Availability"
-  classNamePrefix="react-select"
-  styles={{
-    control: (base, state) => ({
-      ...base,
-      minHeight: "60px",
-      padding: "6px",
-      borderColor: state.isFocused
-        ? "#a855f7"
-        : "#d1d5db",
-      boxShadow: state.isFocused
-        ? "0 0 0 2px #a855f7"
-        : "none",
-      borderRadius: "0.5rem",
-      fontSize: "16px",
-      display: "flex",
-      flexWrap: "nowrap",
-      overflowX: "auto",
-    }),
-    valueContainer: (base) => ({
-      ...base,
-      padding: "0 6px",
-      display: "flex",
-      flexWrap: "nowrap",
-      gap: "6px",
-      overflowX: "auto",
-      scrollbarWidth: "thin",
-      alignItems: "center",
-    }),
-    placeholder: (base) => ({
-      ...base,
-      color: "#1f2937",
-      fontSize: "16px",
-    }),
-    multiValue: (base) => ({
-      ...base,
-      backgroundColor: "#ede9fe",
-      borderRadius: "0.375rem",
-      display: "flex",
-      alignItems: "center",
-      padding: "2px 6px",
-      whiteSpace: "nowrap",
-    }),
-    multiValueLabel: (base) => ({
-      ...base,
-      color: "#6b21a8",
-      fontWeight: "500",
-    }),
-    multiValueRemove: (base) => ({
-      ...base,
-      color: "#6b21a8",
-      ":hover": {
-        backgroundColor: "#ddd6fe",
-        color: "#4c1d95",
-      },
-    }),
-  }}
-/>
-                          {formErrors.available_for && (
-                            <p className="flex items-center gap-1 mt-1 text-sm text-red-500">
-                              <MdErrorOutline className="text-lg" />
-                              {formErrors.available_for}
-                            </p>
-                          )}
-                        </div>
-                      )}
-
-                    {/* {!(
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      (propertyType === "Apartment" ||
-                        propertyType === "Independent House/Villa" ||
-                        propertyType === "Plot")) ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent/Builder Floor") ||
-                    (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Farmhouse") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Plot") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent/Builder Floor") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space 18") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space in IT/SEZ") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Warehouse") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Industry") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Hospitality") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space in IT/SEZ") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Warehouse") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Industry") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Hospitality") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Farmhouse") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space") ||
-                       (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Apartment") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Builder Floor") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                         (propertyCategory === "Paying Guest" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                       (propertyCategory === "Paying Guest" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "1RK/Studio Apartment")
-                  ) && (
-                    <div>
-                      <label className="font-medium text-gray-700">
-                        Suited For{" "}
-                        {propertyCategory === "Rent" &&
-                          buildingType === "Residential" &&
-                          propertyType === "PG" && (
-                            <span className="text-xl font-bold text-red-500">
-                              *
-                            </span>
-                          )}
-                      </label>
-                      <select
-                        className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                        value={formData.suited_for}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            suited_for: e.target.value,
-                          })
-                        }
-                      >
-                        <option value="">Select Suitability</option>
-                        <option value="Students">Students</option>
-                        <option value="Working Professionals">
-                          Working Professionals
-                        </option>
-                        <option value="Any">Any</option>
-                      </select>
-                      {formErrors.suited_for && (
-                        <p className="flex items-center gap-1 mt-1 text-sm text-red-500">
-                          <MdErrorOutline className="text-lg" />
-                          {formErrors.suited_for}
-                        </p>
-                      )}
-                    </div>
-                  )} */}
-
-                    {!(
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        (propertyType === "Apartment" ||
-                          propertyType === "Independent House/Villa" ||
-                          propertyType === "Plot")) ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Independent/Builder Floor") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Farmhouse") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Service Apartment") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Apartment") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Independent House/Villa") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Plot") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Independent/Builder Floor") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Service Apartment") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Office Space") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Retail") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Land") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Office Space in IT/SEZ") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Storage") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Warehouse") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Industry") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Hospitality") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Storage") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Office Space") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Retail") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Land") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Office Space in IT/SEZ") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Storage") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Warehouse") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Industry") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Farmhouse") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Hospitality")
-                    ) && (
-                        // Replace button UI with dropdown UI
-
-                        <div>
-                          <label className="font-medium text-gray-700">
-                            Room Type <span className="text-red-500">*</span>
-                          </label>
-
-                          <select
-                            value={roomType}
-                            onChange={(e) => {
-                              setRoomType(e.target.value);
-
-                              setFormData({
-                                ...formData,
-                                room_type: e.target.value,
-                              });
-                            }}
-                            className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                          >
-                            <option value="">Select Room Type</option>
-                            <option value="Private">Private</option>
-                            <option value="Sharing">Sharing</option>
-                          </select>
-
-                          {formErrors.room_type && (
-                            <p className="text-sm text-red-500 mt-1">
-                              {formErrors.room_type}
-                            </p>
-                          )}
-                        </div>
-                        // <div>
-                        //   <label className="block mb-2 font-medium text-gray-700">
-                        //     Room Type{" "}
-                        //     {propertyCategory === "Rent" &&
-                        //       buildingType === "Residential" &&
-                        //       propertyType === "PG" && (
-                        //         <span className="text-xl font-bold text-red-500">
-                        //           *
-                        //         </span>
-                        //       )}
-                        //   </label>
-
-                        //   <Select
-                        //     isMulti
-                        //     name="room_type"
-                        //     options={roomOptions}
-                        //     value={roomOptions.filter((opt) =>
-                        //       formData.room_type.includes(opt.value),
-                        //     )}
-                        //     onChange={(selectedOptions) =>
-                        //       handleInputChange({
-                        //         target: {
-                        //           name: "room_type",
-                        //           value: selectedOptions.map((opt) => opt.value),
-                        //         },
-                        //       })
-                        //     }
-                        //     components={{ MultiValue: CustomMultiValue }}
-                        //     placeholder="Select Room Types"
-                        //     classNamePrefix="react-select"
-                        //     styles={{
-                        //       control: (base, state) => ({
-                        //         ...base,
-                        //         minHeight: "60px",
-                        //         padding: "6px",
-                        //         borderColor: state.isFocused
-                        //           ? "#a855f7"
-                        //           : "#d1d5db",
-                        //         boxShadow: state.isFocused
-                        //           ? "0 0 0 2px #a855f7"
-                        //           : "none",
-                        //         borderRadius: "0.5rem",
-                        //         fontSize: "16px",
-                        //         display: "flex",
-                        //         flexWrap: "nowrap",
-                        //         overflowX: "auto",
-                        //       }),
-                        //       valueContainer: (base) => ({
-                        //         ...base,
-                        //         padding: "0 6px",
-                        //         display: "flex",
-                        //         flexWrap: "nowrap",
-                        //         gap: "6px",
-                        //         overflowX: "auto",
-                        //         scrollbarWidth: "thin",
-                        //         alignItems: "center",
-                        //       }),
-                        //       placeholder: (base) => ({
-                        //         ...base,
-                        //         color: "#1f2937",
-                        //         fontSize: "16px",
-                        //       }),
-                        //       multiValue: (base) => ({
-                        //         ...base,
-                        //         backgroundColor: "#ede9fe",
-                        //         borderRadius: "0.375rem",
-                        //         display: "flex",
-                        //         alignItems: "center",
-                        //         padding: "2px 6px",
-                        //         whiteSpace: "nowrap",
-                        //       }),
-                        //       multiValueLabel: (base) => ({
-                        //         ...base,
-                        //         color: "#6b21a8",
-                        //         fontWeight: "500",
-                        //       }),
-                        //       multiValueRemove: (base) => ({
-                        //         ...base,
-                        //         color: "#6b21a8",
-                        //         ":hover": {
-                        //           backgroundColor: "#ddd6fe",
-                        //           color: "#4c1d95",
-                        //         },
-                        //       }),
-                        //     }}
-                        //   />
-                        //   {formErrors.room_type && (
-                        //     <p className="flex items-center gap-1 mt-1 text-sm text-red-500">
-                        //       <MdErrorOutline className="text-lg" />
-                        //       {formErrors.room_type}
-                        //     </p>
-                        //   )}
-                        // </div>
-                      )}
-                    {roomType === "Sharing" && (
-                      <div>
-                        <label className="block mb-1 font-medium text-gray-700">
-                          How many people can share this room?
-                        </label>
-
-                        <select
-                          value={noOfPeoples}
-                          onChange={(e) => {
-                            setNoOfPeoples(e.target.value);
-                            setFormData((prev) => ({
-                              ...prev,
-                              no_of_peoples: e.target.value,
-                            }));
-                          }}
-                          className="w-full p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                        >
-                          <option value="">Select</option>
-                          <option value="2">2</option>
-                          <option value="3">3</option>
-                          <option value="4">4</option>
-                          <option value="4+">4+</option>
-                        </select>
-                      </div>
-                    )}
-                    {/* {!(
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      (propertyType === "Apartment" ||
-                        propertyType === "Independent House/Villa" ||
-                        propertyType === "Plot")) ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent/Builder Floor") ||
-                    (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Farmhouse") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Plot") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent/Builder Floor") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space in IT/SEZ") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Warehouse") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Industry") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Hospitality") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space in IT/SEZ") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Warehouse") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Industry") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Farmhouse") ||
-                       (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Apartment") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Builder Floor") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Hospitality")
-                  ) && (
-                    <div>
-                      <label className="font-medium text-gray-700">
-                        Food Available
-                      </label>
-                      <Select
-                        isMulti
-                        name="food_available"
-                        options={foodOptions}
-                        value={foodOptions.filter((opt) =>
-                          formData.food_available.includes(opt.value),
-                        )}
-                        onChange={(selectedOptions) =>
-                          handleInputChange({
-                            target: {
-                              name: "food_available",
-                              value: selectedOptions.map((opt) => opt.value),
-                            },
-                          })
-                        }
-                        components={{ MultiValue: CustomMultiValue }}
-                        placeholder="Select food available"
-                        classNamePrefix="react-select"
-                        styles={{
-                          control: (base, state) => ({
-                            ...base,
-                            minHeight: "60px",
-                            padding: "6px",
-                            borderColor: state.isFocused
-                              ? "#a855f7"
-                              : "#d1d5db",
-                            boxShadow: state.isFocused
-                              ? "0 0 0 2px #a855f7"
-                              : "none",
-                            borderRadius: "0.5rem",
-                            fontSize: "16px",
-                            display: "flex",
-                            flexWrap: "nowrap",
-                            overflowX: "auto",
-                          }),
-                          valueContainer: (base) => ({
-                            ...base,
-                            padding: "0 6px",
-                            display: "flex",
-                            flexWrap: "nowrap",
-                            gap: "6px",
-                            overflowX: "auto",
-                            scrollbarWidth: "thin",
-                            alignItems: "center",
-                          }),
-                          placeholder: (base) => ({
-                            ...base,
-                            color: "#1f2937",
-                            fontSize: "16px",
-                          }),
-                          multiValue: (base) => ({
-                            ...base,
-                            backgroundColor: "#ede9fe",
-                            borderRadius: "0.375rem",
-                            display: "flex",
-                            alignItems: "center",
-                            padding: "2px 6px",
-                            whiteSpace: "nowrap",
-                          }),
-                          multiValueLabel: (base) => ({
-                            ...base,
-                            color: "#6b21a8",
-                            fontWeight: "500",
-                          }),
-                          multiValueRemove: (base) => ({
-                            ...base,
-                            color: "#6b21a8",
-                            ":hover": {
-                              backgroundColor: "#ddd6fe",
-                              color: "#4c1d95",
-                            },
-                          }),
-                        }}
-                      />
-                    </div>
-                  )} */}
-
-                    {/* {!(
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      (propertyType === "Apartment" ||
-                        propertyType === "Independent House/Villa" ||
-                        propertyType === "Plot")) ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent/Builder Floor") ||
-                    (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Farmhouse") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Plot") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent/Builder Floor") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space in IT/SEZ") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Warehouse") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Industry") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Hospitality") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space in IT/SEZ") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Warehouse") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Industry") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Farmhouse") ||
-                       (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Apartment") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Builder Floor") ||
-                         (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Hospitality")
-                  ) && (
-                    <div>
-                      <label className="font-medium text-gray-700">
-                        Food Charges Included{" "}
-                        {propertyCategory === "Rent" &&
-                          buildingType === "Residential" &&
-                          propertyType === "PG" && (
-                            <span className="text-xl font-bold text-red-500">
-                              *
-                            </span>
-                          )}
-                      </label>
-                      <select
-                        className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                        value={formData.food_charges_included}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            food_charges_included: e.target.value,
-                          })
-                        }
-                      >
-                        <option value="">Select Food Charges</option>
-                        <option value="Yes">Yes</option>
-                        <option value="No">No</option>
-                      </select>
-                      {formErrors.food_charges_included && (
-                        <p className="flex items-center gap-1 mt-1 text-sm text-red-500">
-                          <MdErrorOutline className="text-lg" />
-                          {formErrors.food_charges_included}
-                        </p>
-                      )}
-                    </div>
-                  )} */}
-
-                    {/* {!(
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      (propertyType === "Apartment" ||
-                        propertyType === "Independent House/Villa" ||
-                        propertyType === "Plot")) ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent/Builder Floor") ||
-                    (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Farmhouse") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Plot") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space in IT/SEZ") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Warehouse") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Industry") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Hospitality") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent/Builder Floor") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Farmhouse") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Storage") ||
-                        (propertyCategory === "Rent" &&
-                          buildingType === "Commercial" &&
-                          propertyType === "Industry")||
-                           (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Hospitality") ||
-                         (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Apartment") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Builder Floor") ||
-                         (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                         (propertyCategory === "Paying Guest" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                       (propertyCategory === "Paying Guest" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment")
-                  ) && (
-                    <div>
-                      <label className="font-medium text-gray-700">
-                        Notice Period
-                      </label>
-                      <select
-                        className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                        value={formData.notice_period}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          setFormData({
-                            ...formData,
-                            notice_period: value,
-                            notice_period_other_days:
-                              value === "Others"
-                                ? formData.notice_period_other_days
-                                : "",
-                          });
-                        }}
-                      >
-                        <option value="">Select Notice Period</option>
-                        <option value="15">15</option>
-                        <option value="30">30</option>
-                        <option value="45">45</option>
-                        <option value="Others">Others</option>
-                      </select>
-                    </div>
-                  )} */}
-
-                    {/* Conditionally Render the "Notice Period (Other Days)" Input */}
-                    {/* {formData.notice_period === "Others" && (
-                    <div>
-                      <label className="font-medium text-gray-700">
-                        Notice Period (Other Days)
-                      </label>
-                      <input
-                        type="text"
-                        name="notice_period_other_days"
-                        className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                        value={formData.notice_period_other_days}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            notice_period_other_days: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                  )} */}
-
-                    {/* {!(
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      (propertyType === "Apartment" ||
-                        propertyType === "Independent House/Villa" ||
-                        propertyType === "Plot")) ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent/Builder Floor") ||
-                    (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Farmhouse") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Plot") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent/Builder Floor") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space 18") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space in IT/SEZ") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Warehouse") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Industry") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Hospitality") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space in IT/SEZ") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Warehouse") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Industry") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Farmhouse") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space") ||
-                       (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Apartment") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Builder Floor") ||
-                         (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                         (propertyCategory === "Paying Guest" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                       (propertyCategory === "Paying Guest" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Hospitality")
-                  ) && (
-                    <div>
-                      <label className="font-medium text-gray-700">
-                        Electricity Charges Included
-                      </label>
-                      <select
-                        className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                        value={formData.electricity_charges_included}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            electricity_charges_included: e.target.value,
-                          })
-                        }
-                      >
-                        <option value="">Select Option</option>
-                        <option value="Yes">Yes</option>
-                        <option value="No">No</option>
-                      </select>
-                    </div>
-                  )} */}
-
-                    {!(
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        (propertyType === "Apartment" ||
-                          propertyType === "Independent House/Villa" ||
-                          propertyType === "Plot")) ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Independent/Builder Floor") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Farmhouse") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Service Apartment") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Apartment") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Independent House/Villa") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Plot") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Independent/Builder Floor") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Service Apartment") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Office Space") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Retail") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Land") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Office Space in IT/SEZ") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Storage") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Warehouse") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Industry") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Hospitality") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Office Space") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Retail") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Land") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Office Space in IT/SEZ") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Storage") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Warehouse") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Industry") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Farmhouse") ||
-                      (propertyCategory === "Buy" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Hospitality")
-                    ) && (
-                        <div>
-                          <label className="font-medium text-gray-700">
-                            Total Beds
-                          </label>
-                          <input
-                            type="text"
-                            name="total_beds"
-                            className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                            value={formData.total_beds}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              if (/^[a-zA-Z0-9]{0,10}$/.test(value)) {
-                                handleInputChange(e);
-                              }
-                            }}
-                          />
-                        </div>
-                      )}
-                    {propertyCategory === "Paying Guest" &&
-                      (propertyType === "Apartment" ||
-                        propertyType === "Builder Floor" ||
-                        propertyType === "1RK/Studio Apartment" ||
-                        propertyType === "Independent House/Villa" ||
-                        propertyType === "Service Apartment") && (
-                        <div>
-                          <label className="block mb-1 font-medium text-gray-700">
-                            Available Beds
-                          </label>
-
-                          <input
-                            type="text"
-                            value={availableBeds}
-                            placeholder="Enter Available Beds"
-                            onChange={(e) => {
-                              const value = e.target.value;
-
-                              if (/^\d*$/.test(value)) {
-                                setAvailableBeds(value);
-
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  available_beds: value,
-                                }));
-                              }
-                            }}
-                            className="w-full p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                          />
-                        </div>
-                      )}
-                    {propertyCategory === "Paying Guest" &&
-                      buildingType === "Residential" &&
-                      (propertyType === "Apartment" ||
-                        propertyType === "Builder Floor" ||
-                        propertyType === "1RK/Studio Apartment" ||
-                        propertyType === "Independent House/Villa" ||
-                        propertyType === "Service Apartment") && (
-                        <div className="md:col-span-3 mt-4">
-                          <div className="flex flex-wrap gap-4">
-                            {/* Attached Balcony */}
-                            <label className="flex items-center gap-2">
-                              <input
-                                type="checkbox"
-                                checked={attachedBalcony}
-                                onChange={(e) =>
-                                  setAttachedBalcony(e.target.checked)
-                                }
-                              />
-                              Attached Balcony
-                            </label>
-
-                            {/* Attached Bathroom */}
-                            <label className="flex items-center gap-2">
-                              <input
-                                type="checkbox"
-                                checked={attachedBathroom}
-                                onChange={(e) =>
-                                  setAttachedBathroom(e.target.checked)
-                                }
-                              />
-                              Attached Bathroom
-                            </label>
-                          </div>
-                        </div>
-                      )}
-                    {/* {!(
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Apartment") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Plot") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent/Builder Floor") ||
-                    (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Farmhouse") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Plot") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent/Builder Floor") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail 20") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space in IT/SEZ") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Warehouse") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Industry") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Hospitality") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space in IT/SEZ") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Warehouse") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Industry") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Hospitality") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Farmhouse") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                       (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Apartment") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Builder Floor") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa")
-                  ) && (
-                    <div>
-                      <label className="block mb-2 font-medium text-gray-700">
-                        PG Rules
-                      </label>
-
-                      <Select
-                        isMulti
-                        name="pg_rules"
-                        options={pgRuleOptions}
-                        value={pgRuleOptions.filter((opt) =>
-                          formData.pg_rules.includes(opt.value),
-                        )}
-                        onChange={(selectedOptions) =>
-                          handleInputChange({
-                            target: {
-                              name: "pg_rules",
-                              value: selectedOptions.map((opt) => opt.value),
-                            },
-                          })
-                        }
-                        components={{ MultiValue: CustomMultiValue }}
-                        placeholder="Select PG Rules"
-                        classNamePrefix="react-select"
-                        styles={{
-                          control: (base, state) => ({
-                            ...base,
-                            minHeight: "60px",
-                            padding: "6px",
-                            borderColor: state.isFocused
-                              ? "#a855f7"
-                              : "#d1d5db",
-                            boxShadow: state.isFocused
-                              ? "0 0 0 2px #a855f7"
-                              : "none",
-                            borderRadius: "0.5rem",
-                            fontSize: "16px",
-                            display: "flex",
-                            flexWrap: "nowrap",
-                            overflowX: "auto",
-                          }),
-                          valueContainer: (base) => ({
-                            ...base,
-                            padding: "0 6px",
-                            display: "flex",
-                            flexWrap: "nowrap",
-                            gap: "6px",
-                            overflowX: "auto",
-                            scrollbarWidth: "thin",
-                            alignItems: "center",
-                          }),
-                          placeholder: (base) => ({
-                            ...base,
-                            color: "#1f2937",
-                            fontSize: "16px",
-                          }),
-                          multiValue: (base) => ({
-                            ...base,
-                            backgroundColor: "#ede9fe",
-                            borderRadius: "0.375rem",
-                            display: "flex",
-                            alignItems: "center",
-                            padding: "2px 6px",
-                            whiteSpace: "nowrap",
-                          }),
-                          multiValueLabel: (base) => ({
-                            ...base,
-                            color: "#6b21a8",
-                            fontWeight: "500",
-                          }),
-                          multiValueRemove: (base) => ({
-                            ...base,
-                            color: "#6b21a8",
-                            ":hover": {
-                              backgroundColor: "#ddd6fe",
-                              color: "#4c1d95",
-                            },
-                          }),
-                        }}
-                      />
-                    </div>
-                  )} */}
-
-                    {/* {!(
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      (propertyType === "Apartment" ||
-                        propertyType === "Independent House/Villa" ||
-                        (propertyCategory === "Buy" &&
-                          buildingType === "Residential" &&
-                          propertyType === "Independent/Builder Floor") ||
-                          (propertyType === "Plot"))) ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space") ||
-                    (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Farmhouse") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space in IT/SEZ") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent/Builder Floor") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Farmhouse") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Storage") ||
-                        (propertyCategory === "Rent" &&
-                          buildingType === "Commercial" &&
-                          propertyType === "Industry")||
-                           (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Hospitality") ||
-                         (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Apartment") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Builder Floor") ||
-                         (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                         (propertyCategory === "Paying Guest" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                       (propertyCategory === "Paying Guest" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Plot")
-                  ) && (
-                    <div>
-                      <label className="font-medium text-gray-700">
-                        Gate Closing Time
-                      </label>
-                      <select
-                        name="gate_closing_time"
-                        className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                        value={formData.gate_closing_time}
-                        onChange={handleInputChange}
-                      >
-                        <option value="">Select Option</option>
-                        <option value="Yes">Yes</option>
-                        <option value="No">No</option>
-                      </select>
-                    </div>
-                  )} */}
-
-                    {/* {!(
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      (propertyType === "Apartment" ||
-                        propertyType === "Independent House/Villa" ||
-                        propertyType === "Plot")) ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent/Builder Floor") ||
-                    (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Farmhouse") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Plot") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent/Builder Floor") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space in IT/SEZ") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage ") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Warehouse ") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Industry") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Hospitality") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space in IT/SEZ") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Warehouse") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Industry") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Farmhouse") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Storage") ||
-                         (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Apartment") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Builder Floor") ||
-                         (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                         (propertyCategory === "Paying Guest" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Hospitality")
-                  ) && (
-                    <div>
-                      <label className="font-medium text-gray-700">
-                        Gate Closing Hour
-                      </label>
-                      <inputm
-                        type="time"
-                        name="gate_closing_hour"
-                        className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                        value={formData.gate_closing_hour}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          handleInputChange(e);
-                        }}
-                      />
-                    </div>
-                  )} */}
-
-                    {/* {!(
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      (propertyType === "Apartment" ||
-                        propertyType === "Independent House/Villa" ||
-                        propertyType === "Plot")) ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent/Builder Floor") ||
-                    (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Farmhouse") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Plot") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent/Builder Floor") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space in IT/SEZ") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage ") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Warehouse ") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Industry") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Hospitality") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space in IT/SEZ") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Warehouse") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Industry") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Farmhouse") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Storage") ||
-                         (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Apartment") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Builder Floor") ||
-                         (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Hospitality")
-                  ) && (
-                    <div>
-                      <label className="font-medium text-gray-700">
-                        PG Services
-                      </label>
-                      <input
-                        type="text"
-                        name="pg_services"
-                        className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                        value={formData.pg_services}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          if (/^[a-zA-Z0-9]{0,10}$/.test(value)) {
-                            handleInputChange(e);
-                          }
-                        }}
-                      />
-                    </div>
-                  )} */}
-
-                    {/* {!(
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      (propertyType === "Apartment" ||
-                        propertyType === "Independent House/Villa" ||
-                        propertyType === "Plot")) ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent/Builder Floor") ||
-                    (propertyCategory === "Buy" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Farmhouse") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Plot") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent/Builder Floor") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space in IT/SEZ 22") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Warehouse") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Industry") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Retail") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Land") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Office Space in IT/SEZ") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Storage") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Warehouse") ||
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Commercial" &&
-                      propertyType === "Industry") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Farmhouse") ||
-                       (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Hospitality") ||
-                         (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Apartment") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Builder Floor") ||
-                         (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "PG")
-                  ) && (
-                    <div>
-                      <label className="font-medium text-gray-700">
-                        Min Lock-in Period
-                      </label>
-                      <input
-                        type="text"
-                        name="min_lockin_period"
-                        value={formData.min_lockin_period}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          if (/^[a-zA-Z0-9]{0,10}$/.test(value)) {
-                            handleInputChange(e);
-                          }
-                        }}
-                        className="w-full p-3 mt-1 border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                      />
-                    </div>
-                  )} */}
-
-                    
-
-                    {/* {!(
-                    (propertyCategory === "Buy" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Plot") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Plot") ||
-                      (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Storage") ||
-                         (propertyCategory === "Rent" &&
-                        buildingType === "Commercial" &&
-                        propertyType === "Hospitality") ||
-                         (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Apartment") ||
-                        (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "Builder Floor") ||
-                         (propertyCategory === "Paying Guest" &&
-                        buildingType === "Residential" &&
-                        propertyType === "1RK/Studio Apartment") ||
-                         (propertyCategory === "Paying Guest" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Independent House/Villa") ||
-                       (propertyCategory === "Paying Guest" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Service Apartment") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "PG")
-                  ) && (
-                    <div>
-                      <label className="font-medium text-gray-700">
-                        Units{" "}
-                        <span className="text-xl font-bold text-red-500">
-                          *
-                        </span>
-                      </label>
-                      <input
-                        type="text"
-                        className={`w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-rose-500 outline-none ${
-                          formErrors.units
-                            ? "border-red-600"
-                            : "border-gray-300"
-                        }`}
-                        name="units"
-                        value={formData.units}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          if (/^[a-zA-Z0-9]{0,10}$/.test(value)) {
-                            handleInputChange(e);
-                          }
-                        }}
-                      />
-                      {formErrors.units && (
-                        <p className="flex items-center gap-1 mt-1 text-sm text-red-500">
-                          <MdErrorOutline className="text-lg" />
-                          {formErrors.units}
-                        </p>
-                      )}
-                    </div>
-                  )} */}
-
-                    {/* {((propertyCategory === "Buy" &&
-                    buildingType === "Residential" &&
-                    propertyType === "Plot") ||
-                    (propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "Plot")) && (
-                    <div>
-                      <label className="font-medium text-gray-700">
-                        Plot No{" "}
-                        <span className="text-xl font-bold text-red-500">
-                          *
-                        </span>
-                      </label>
-                      <input
-                        type="text"
-                        className={`w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-rose-500 outline-none ${
-                          formErrors.plot_no
-                            ? "border-red-600"
-                            : "border-gray-300"
-                        }`}
-                        name="plot_no"
-                        value={formData.plot_no}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          if (/^[a-zA-Z0-9]{0,10}$/.test(value)) {
-                            handleInputChange(e);
-                          }
-                        }}
-                      />
-                      {formErrors.plot_no && (
-                        <p className="flex items-center gap-1 mt-1 text-sm text-red-500">
-                          <MdErrorOutline className="text-lg" />
-                          {formErrors.plot_no}
-                        </p>
-                      )}
-                    </div>
-                  )} */}
-
-                    
-                  
-
-                    {propertyCategory === "Rent" &&
-                      buildingType === "Residential" &&
-                      propertyType === "PG" && (
-                        <div>
-                          <label className="block mb-2 font-medium text-gray-700">
-                            Operating Since(Per year's)
-                          </label>
-                          <select
-                            name="operating_since"
-                            value={formData.operating_since}
-                            onChange={handleInputChange}
-                            className="w-full p-3 mt-1 text-gray-800 bg-white border rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
-                          >
-                            <option value="">Select range</option>
-                            <option value="0-1">01</option>
-                            <option value="2-4">24</option>
-                            <option value="5-8">58</option>
-                            <option value="9-12">912</option>
-                            <option value="13+">13+</option>
-                          </select>
-                        </div>
-                      )}
-                  </div>
-                </div>
-
-                <div className="p-3 mx-auto mb-16 bg-white border max-w-7xl rounded-xl">
-                  {/* Header Section */}
-                  <div className="mb-6">
-                    <h2 className="text-2xl font-semibold text-gray-900">
-                      Generate Property Information with AI
-                    </h2>
-                    <p className="text-gray-500">
-                      Details about the property, including an overview and
-                      description that provides insight into the properties
-                      purpose, goals, and unique aspects.
-                    </p>
-                  </div>
-
-                  {/* Form Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[2.9fr_1fr]">
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <label className="font-medium text-gray-700">
-                          About Property
-                        </label>
-
-                        <button
-                          type="button"
-                          onClick={generateDescription}
-                          disabled={isGeneratingDescription}
-                          className="px-4 py-2 text-sm text-white transition rounded-lg bg-rose-500 hover:bg-rose-600 disabled:opacity-50"
-                        >
-                          {isGeneratingDescription
-                            ? "Generating..."
-                            : "Generate with AI"}
-                        </button>
-                      </div>
-                      {/* Relative wrapper for Textarea and Live Counter */}
-                      <div className="relative w-full mt-1">
-                        <textarea
-                          name="property_description"
-                          maxLength={800}
-                          className="w-full h-40 p-3 pb-7 pr-16 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-rose-500 resize-none block"
-                          value={formData?.property_description || ""}
-                          onChange={handleInputChange}
-                          placeholder="Enter Property Description"
-                        />
-                        <span className="absolute bottom-2 right-3 text-xs text-gray-400 pointer-events-none select-none z-10">
-                          {(formData?.property_description || "").length}/800
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeStep === 3 && (
-              <div className="max-w-5xl p-3 mx-auto mb-3 bg-white border border-gray-300 rounded-xl">
-                <div>
-                  <h2 className="text-2xl text-gray-900">Amenities</h2>
-                  <p className="mt-1 text-gray-500">
-                    This section allows users to select available amenities for
-                    the property, with dynamically updated checkboxes to
-                    represent selected features.
-                  </p>
-                  {formErrors.amenities && (
-                    <p className="flex items-center gap-1 mt-1 text-sm text-red-500">
-                      <MdErrorOutline className="text-lg" />
-                      {formErrors.amenities}
-                    </p>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-1 gap-4 mt-6 md:grid-cols-3">
-                  {amenitiesList.map((amenity, index) => (
-                    <label
-                      key={index}
-                      className="flex items-center space-x-2 cursor-pointer"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedAmenities.includes(amenity._id)}
-                        onChange={() => toggleAmenity(amenity._id)}
-                        className="w-5 h-5 my-text border-gray-300 form-checkbox focus:ring-rose-500"
-                      />
-                      <span
-                        className={`text-gray-700 ${selectedAmenities.includes(amenity._id)
-                          ? "my-text font-medium"
-                          : ""
-                          }`}
-                      >
-                        {fixAmenityLabel(amenity.amenity_name)}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {activeStep === 4 && (
-              <div className="max-w-5xl p-6 mx-auto">
-                <div className="grid grid-cols-1 gap-6 mb-4 md:grid-cols-2">
-                  {/* Upload Property Cover Photo */}
-                  <div
-                    className="p-6 bg-white border-gray-200 rounded-xl border-1"
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      const file = e.dataTransfer.files[0];
-                      if (file && file.type.startsWith("image/")) {
-                        setCoverImage(file);
-                      }
-                    }}
+                      components={{ MultiValue: CustomMultiValue }}
+                      placeholder="Select Additional Room"
+                      classNamePrefix="react-select"
+                    />
+                  </ZbField>
+                )}
+
+                <ZbSub icon={FileText} title="Property Info" />
+                <div className="zb-row-between">
+                  <label className="zb-label">About Property</label>
+                  <button
+                    type="button"
+                    onClick={generateDescription}
+                    disabled={isGeneratingDescription}
+                    className="zb-ai-btn"
                   >
-                    <h2 className="text-xl text-gray-900">
-                      Upload property cover photo
-                    </h2>
-                    <p className="mt-1 text-gray-500">
-                      This step allows users to upload cover photo.
-                    </p>
-                    <div className="relative flex flex-col items-center p-6 mt-4 border-2 border-gray-300 border-dashed rounded-lg">
-                      {coverImage ? (
-                        <div className="relative w-full">
-                          {/* Uploaded Image */}
-                          <img
-                            src={
-                              coverImage instanceof File
-                                ? URL.createObjectURL(coverImage)
-                                : coverImage
-                            }
-                            alt="Uploaded Preview"
-                            className="object-cover w-full h-64 rounded-md"
-                          />
-                          {/* Delete Button */}
-                          <button
-                            onClick={handelCoverImageDelete}
-                            className="absolute p-1 bg-black bg-opacity-50 rounded-full top-2 right-2"
-                          >
-                            <Trash className="w-4 h-4 text-white" />
-                          </button>
-                        </div>
-                      ) : (
-                        <>
-                          {/* Upload Section (only visible when no image) */}
-                          <div className="text-gray-400 text-8xl">
-                            <MdOutlineDriveFolderUpload />
-                          </div>
+                    <Sparkles size={14} />
+                    {isGeneratingDescription ? "Generating..." : "Generate with AI"}
+                  </button>
+                </div>
+                <textarea
+                  name="property_description"
+                  maxLength={500}
+                  rows={4}
+                  className="zb-input zb-textarea"
+                  value={formData?.property_description || ""}
+                  onChange={handleInputChange}
+                  placeholder="Describe the property (up to 500 characters)"
+                />
+                <p className="zb-hint zb-right">{(formData?.property_description || "").length}/500</p>
 
-                          <p className="mt-2 text-gray-500">
-                            Drag and Drop Imag or Upload
-                          </p>
+                <ZbSub icon={Building2} title="Amenities" />
+                <p className="zb-note">Select the amenities available for the property. Selected features appear checked.</p>
+                <p className="zb-count">
+                  <b>{selectedAmenities.length}</b> selected
+                </p>
+                <div className="zb-amen-grid">
+                  {amenitiesList.map((amenity) => {
+                    const Icon = amenityIconFor(amenity.amenity_name);
+                    const on = selectedAmenities.includes(amenity._id);
+                    return (
+                      <button
+                        type="button"
+                        key={amenity._id}
+                        aria-pressed={on}
+                        className={`zb-amen ${on ? "is-on" : ""}`}
+                        onClick={() => toggleAmenity(amenity._id)}
+                      >
+                        <span className="zb-amen-ico">
+                          <Icon size={16} />
+                        </span>
+                        <span className="zb-amen-name">{fixAmenityLabel(amenity.amenity_name)}</span>
+                        <span className="zb-amen-box">{on && <Check size={12} />}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
-                          <button
-                            onClick={() => imageInputRef.current.click()}
-                            className="px-4 py-2 mt-2 text-white my-bg rounded-md hover:my-bg"
-                          >
-                            + Add Photos
-                          </button>
+            {/* ============ SCREEN 3: Photos & Videos ============ */}
+            {uiStep === 2 && (
+              <div className="zb-screen zb-enter">
+                <ZbHeader
+                  icon={ImageIcon}
+                  title="Photos & Videos"
+                  subtitle="Good photos get far more enquiries. Add a cover image and a gallery."
+                />
 
-                          <p className="mt-2 text-xs text-center text-gray-400">
-                            Property listing with more than 5 images get 3x more
-                            views.
-                            <br />
-                            Accepted formats: .jpg, .gif, .bmp, .png | Max size:
-                            50MB
-                          </p>
-                        </>
-                      )}
-
-                      {/* Hidden Input (always present) */}
-                      <input
-                        type="file"
-                        name="cover_image"
-                        accept="image/*"
-                        ref={imageInputRef}
-                        onChange={(e) => setCoverImage(e.target.files[0])}
-                        className="hidden"
-                      />
-                    </div>
-                    {formErrors.cover_image && (
-                      <p className="flex items-center gap-1 mt-4 text-sm text-red-500">
-                        <MdErrorOutline className="text-lg" />
-                        {formErrors.cover_image}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Upload Video Section */}
-                  <div className="flex flex-col gap-6">
-                    <div
-                      className="p-6 bg-white border border-gray-200 rounded-xl"
-                      onDragOver={(e) => e.preventDefault()}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        const file = e.dataTransfer.files[0];
-                        if (
-                          file &&
-                          file.type.startsWith("video/") &&
-                          file.size <= 50 * 1024 * 1024
-                        ) {
-                          handleVideoUpload({ target: { files: [file] } });
-                        }
-                      }}
+                <div className="zb-grid-2 zb-media">
+                  <div className="zb-col">
+                    <ZbCard
+                      icon={ImageIcon}
+                      title="Upload Property Cover Photo"
+                      subtitle="This image will be shown as the main cover image for your property."
                     >
-                      <h2 className="text-xl text-gray-900">Upload Video</h2>
-                      <p className="mt-1 text-gray-500">
-                        You can upload one video. Max size: 50MB.
-                      </p>
-
-                      {video ? (
-                        <div className="relative mt-4">
-                          <video
-                            controls
-                            src={video}
-                            className="object-cover w-full rounded-lg h-72"
-                          />
-                          <button
-                            onClick={handleVideoDelete}
-                            className="absolute p-2 bg-black bg-opacity-50 rounded-full top-2 right-2"
-                          >
-                            <Trash className="w-5 h-5 text-white" />
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="mt-4">
+                      {coverImage ? (
+                        <div className="zb-preview">
+                          <img src={coverImage instanceof File ? URL.createObjectURL(coverImage) : coverImage} alt="Cover preview" />
                           <button
                             type="button"
-                            onClick={() =>
-                              videoInputRef.current &&
-                              videoInputRef.current.click()
-                            }
-                            className="px-4 py-2 text-white my-bg rounded-md hover:my-bg"
+                            className="zb-preview-x"
+                            onClick={handelCoverImageDelete}
+                            aria-label="Remove cover photo"
                           >
-                            Upload Video
+                            <Trash size={14} />
                           </button>
-                          <p className="mt-2 text-xs text-gray-400">
-                            Accepted formats: .mp4, .mov, etc. | Max: 50MB
+                        </div>
+                      ) : (
+                        <div
+                          className="zb-drop"
+                          onDragOver={(e) => e.preventDefault()}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            const file = e.dataTransfer.files[0];
+                            if (file && file.type.startsWith("image/")) {
+                              setCoverImage(file);
+                              clearFormError("cover_image");
+                            }
+                          }}
+                        >
+                          <CloudUpload size={24} className="zb-drop-ico" />
+                          <p>
+                            Drag &amp; drop an image or{" "}
+                            <button type="button" className="zb-link" onClick={() => imageInputRef.current.click()}>
+                              Upload
+                            </button>
                           </p>
+                          <button type="button" className="zb-btn-pill" onClick={() => imageInputRef.current.click()}>
+                            <Plus size={14} /> Add Cover Photo
+                          </button>
+                          <span className="zb-hint">JPG, JPEG, PNG, WebP · Max 10 MB · Recommended 1200 × 675 (16:9)</span>
+                          <input
+                            ref={imageInputRef}
+                            type="file"
+                            accept="image/*"
+                            className="zb-hidden"
+                            onChange={(e) => {
+                              setCoverImage(e.target.files[0]);
+                              clearFormError("cover_image");
+                            }}
+                          />
                         </div>
                       )}
+                      {formErrors.cover_image && <p className="zb-err">{formErrors.cover_image}</p>}
+                    </ZbCard>
 
-                      <input
-                        ref={videoInputRef}
-                        type="file"
-                        accept="video/*"
-                        onChange={handleVideoUpload}
-                        className="hidden"
-                      />
-                    </div>
-
-                    {/* OR Divider */}
-                    <div className="flex items-center justify-center">
-                      <div className="w-full border-t border-gray-300"></div>
-                      <span className="px-4 text-lg font-bold text-gray-700">
-                        OR
-                      </span>
-                      <div className="w-full border-t border-gray-300"></div>
-                    </div>
-
-                    {/* Video  Url Section */}
-                    <div className="p-6 bg-white border-gray-200 rounded-xl border-1">
-                      <h2 className="text-xl text-gray-900">Video Option</h2>
-                      <p className="mt-1 text-gray-500">
-                        This step allows users to upload video URL.
-                      </p>
-                      <div className="flex gap-4 mt-4">
-                        <div className="w-1/2">
-                          <label className="block mb-2 text-gray-700">
-                            Select Video Source
-                          </label>
-                          <select
-                            name="video_url_type"
-                            value={formData.video_url_type}
-                            onChange={(e) => {
-                              handleInputChange(e);
-                              // no source = no link: clear any link typed before
-                              if (!e.target.value) {
-                                handleInputChange({ target: { name: "video_url", value: "" } });
-                              }
-                            }}
-                            className="w-full px-4 py-2 mt-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500"
-                          >
-                            <option value="">Select Video Source</option>
-                            <option value="YouTube">YouTube</option>
-                            <option value="Vimeo">Vimeo</option>
-                            <option value="Other">Other</option>
-                          </select>
-                          {formErrors.video_url_type && (
-                            <p className="flex items-center gap-1 mt-1 text-sm text-red-500 normal-case">
-                              <MdErrorOutline className="text-lg" />
-                              {formErrors.video_url_type}
-                            </p>
-                          )}
-                        </div>
-
-                        <div className="w-1/2">
-                          <label className="block mb-2 text-gray-700">
-                            Enter Video URL
-                          </label>
-                          <input
-                            type="text"
-                            name="video_url"
-                            value={formData.video_url}
-                            onChange={handleInputChange}
-                            disabled={!formData.video_url_type}
-                            placeholder={formData.video_url_type ? "Paste the video link" : "Select a video source first"}
-                            className="w-full px-4 py-2 mt-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                          />
-                          {formErrors.video_url && (
-                            <p className="flex items-center gap-1 mt-1 text-sm text-red-500 normal-case">
-                              <MdErrorOutline className="text-lg" />
-                              {formErrors.video_url}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                  {/* Upload Property Photos */}
-                  <div
-                    className="p-6 bg-white border-gray-200 rounded-xl border-1"
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      const files = Array.from(e.dataTransfer.files);
-                      const imageFiles = files.filter(
-                        (file) =>
-                          file.type.startsWith("image/") &&
-                          file.size <= 5 * 1024 * 1024,
-                      );
-
-                      if (imageFiles.length > 0) {
-                        handleImageUpload2(imageFiles);
-                      }
-                    }}
-                  >
-                    <h2 className="text-xl text-gray-900">
-                      Upload photos of your property
-                    </h2>
-                    <p className="mt-1 text-gray-500">
-                      This step allows users to uploading additional images.
-                    </p>
-                    <div className="flex flex-col items-center p-8 mt-4 border-2 border-gray-300 border-dashed rounded-lg">
-                      <div className="text-gray-400 text-8xl">
-                        <MdOutlineDriveFolderUpload />
-                      </div>
-                      <p className="mt-2 text-gray-700">
-                        Drag and Drop Image Or Upload
-                      </p>
-                      <button
-                        disabled={propertyimages.length >= 5}
-                        onClick={() => imageInputRef2.current.click()}
-                        className={`mt-2 px-4 py-2 rounded-md ${propertyimages.length >= 5
-                          ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                          : "my-bg text-white hover:my-bg"
-                          }`}
+                    <ZbCard
+                      icon={Images}
+                      title="Upload Photos of Your Property"
+                      subtitle="Add multiple images to showcase the property (interiors, exteriors, amenities, etc.)."
+                    >
+                      <div
+                        className="zb-drop zb-drop-sm"
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          const files = Array.from(e.dataTransfer.files).filter((f) => f.type.startsWith("image/"));
+                          if (files.length) handleImageUpload2(files);
+                        }}
                       >
-                        + Add Photos
-                      </button>
-                      <p className="mt-2 text-xs text-center text-gray-400">
-                        Property listing with more than 5 images gets 3x more
-                        views.
-                        <br />
-                        Accepted formats: .jpg, .gif, .bmp, .png | Max size:
-                        50MB
-                      </p>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        ref={imageInputRef2}
-                        onChange={handleImageUpload2}
-                        className="hidden"
-                      />
-                    </div>
+                        <CloudUpload size={22} className="zb-drop-ico" />
+                        <p>
+                          Drag &amp; drop images or{" "}
+                          <button type="button" className="zb-link" onClick={() => imageInputRef2.current.click()}>
+                            Upload
+                          </button>
+                        </p>
+                        <button type="button" className="zb-btn-pill" disabled={propertyimages.length >= 5} onClick={() => imageInputRef2.current.click()}>
+                          <Plus size={14} /> Add Photos
+                        </button>
+                        <span className="zb-hint">JPG, JPEG, PNG, WebP · Max 10 MB per image · up to 5 photos</span>
+                        <input
+                          ref={imageInputRef2}
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          className="zb-hidden"
+                          onChange={handleImageUpload2}
+                        />
+                      </div>
+                      {propertyimages.length > 0 && (
+                        <div className="zb-thumbs">
+                          {propertyimages.map((image, index) => (
+                            <div key={index} className="zb-thumb">
+                              <img src={image.img} alt={`Uploaded ${index + 1}`} />
+                              <button type="button" onClick={() => handleDelete2(index)} aria-label="Remove photo">
+                                <Trash size={12} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </ZbCard>
+                  </div>
 
-                    {/* Uploaded Images Grid */}
-                    <div className="grid grid-cols-2 gap-3 mt-6 sm:grid-cols-4">
-                      {propertyimages.map((image, index) => (
-                        <div key={index} className="relative">
-                          <img
-                            src={image.img}
-                            alt={`Uploaded ${index}`}
-                            className="object-cover w-full h-24 rounded-lg"
-                          />
+                  <div className="zb-col">
+                    <ZbCard icon={Video} title="Upload Video" subtitle="You can upload one video. Max size: 50MB.">
+                      {video ? (
+                        <div className="zb-preview">
+                          <video src={video} controls />
                           <button
-                            onClick={() => handleDelete2(index)}
-                            className="absolute p-1 bg-black bg-opacity-50 rounded-md top-1 right-1"
+                            type="button"
+                            className="zb-preview-x"
+                            onClick={handleVideoDelete}
+                            aria-label="Remove video"
                           >
-                            <Trash className="w-4 h-4 text-white" />
+                            <Trash size={14} />
                           </button>
                         </div>
-                      ))}
+                      ) : (
+                        <div
+                          className="zb-drop zb-drop-sm"
+                          onDragOver={(e) => e.preventDefault()}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            const file = e.dataTransfer.files[0];
+                            if (file && file.type.startsWith("video/")) {
+                              handleVideoUpload({ target: { files: [file] } });
+                            }
+                          }}
+                        >
+                          <Video size={22} className="zb-drop-ico" />
+                          <button
+                            type="button"
+                            className="zb-btn-pill"
+                            onClick={() => videoInputRef.current && videoInputRef.current.click()}
+                          >
+                            <Upload size={14} /> Upload Video
+                          </button>
+                          <span className="zb-hint">MP4, MOV, AVI · Max 50 MB</span>
+                          <input
+                            ref={videoInputRef}
+                            type="file"
+                            accept="video/*"
+                            className="zb-hidden"
+                            onChange={handleVideoUpload}
+                          />
+                        </div>
+                      )}
+                    </ZbCard>
+
+                    <div className="zb-or">
+                      <span>OR</span>
                     </div>
-                  </div>
 
-                  {/* Virtual Tour Section */}
-                  <div className="flex flex-col gap-6">
-                    <div className="p-6 bg-white border-gray-200 rounded-xl border-1">
-                      {/* Heading */}
-                      <h2 className="text-xl font-semibold text-gray-900">
-                        Virtual Tour
-                      </h2>
-                      <p className="mt-1 text-gray-500">
-                        This step allows users to indicate if a virtual tour is
-                        available for the property.
-                      </p>
+                    <ZbCard
+                      icon={Youtube}
+                      title="Video Option"
+                      subtitle="Add a video from an external source (e.g., YouTube)."
+                    >
+                      <div className="zb-grid-2">
+                        <ZbField label="Select Video Source" error={formErrors.video_url_type}>
+                          <ZbSelect
+                            name="video_url_type"
+                            value={formData.video_url_type || ""}
+                            onChange={(e) => {
+                              handleInputChange(e);
+                              handleInputChange({ target: { name: "video_url", value: "" } });
+                            }}
+                            placeholder="Select Video Source"
+                            options={["YouTube", "Vimeo", "Other"]}
+                          />
+                        </ZbField>
+                        <ZbField label="Enter Video URL" error={formErrors.video_url}>
+                          <ZbInput
+                            icon={LinkIcon}
+                            name="video_url"
+                            value={formData.video_url || ""}
+                            onChange={handleInputChange}
+                            disabled={!formData.video_url_type}
+                            placeholder="Paste YouTube link here"
+                          />
+                        </ZbField>
+                      </div>
+                    </ZbCard>
 
-                      {/* Label */}
-                      <label className="block mt-4 font-medium text-gray-700">
-                        Is Virtual Tour Available?
-                      </label>
-
-                      {/* Dropdown for Yes/No */}
-                      <select
-                        value={virtualTourLink}
-                        onChange={(e) => setVirtualTourLink(e.target.value)}
-                        className="w-full px-4 py-2 mt-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500"
-                      >
-                        <option value="">Select Virtual Tour Available?</option>
-                        <option value="Yes">Yes</option>
-                        <option value="No">No</option>
-                      </select>
-                    </div>
+                    <ZbCard
+                      icon={Glasses}
+                      title="Virtual Tour"
+                      subtitle="Add a 360° virtual tour to give viewers an immersive experience of the property."
+                    >
+                      <ZbSelect
+                        value={virtualTourLink || ""}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setVirtualTourLink(value);
+                          setFormData((prev) => ({ ...prev, virtual_tour_availability: value }));
+                        }}
+                        placeholder="Is Virtual Tour Available?"
+                        options={YES_NO}
+                      />
+                    </ZbCard>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Navigation Buttons - Fixed at Bottom */}
-            {/* <div
-              className={`fixed bottom-0 left-0 right-0 bg-white p-4 shadow-md flex mx-32 ${activeStep === 0 ? "justify-end" : "justify-between"
-                }`}
-            >
-              {" "}
-              {activeStep > 0 && (
-                <button
-                  onClick={prevStep}
-                  className="px-5 py-2 text-gray-700 bg-gray-300 rounded-lg hover:bg-gray-400"
-                >
-                  Back
-                </button>
-              )}
-              {activeStep < steps.length - 1 ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (validateStepFields()) {
-                      nextStep();
-                    }
-                  }}
-                  className="px-5 py-2 text-white my-bg rounded-lg hover:my-bg"
-                >
-                  Continue
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    if (validateStepFields()) {
-                      handleEdit(e);
-                    }
-                  }}
-                  disabled={isSubmitting}
-                  className="bg-rose-500 text-white px-6 py-3 rounded-lg"
-                >
-                  {isSubmitting ? "Updating..." : "Update Property"}
-                </button>
-              )}
-            </div> */}
-            <div className={`fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-md px-3 py-3 sm:px-6 sm:py-4 md:px-10 lg:px-16 xl:px-32 flex items-center gap-3 ${
-                  activeStep === 0 ? "justify-end" : "justify-between"
-                }`}
-              >
-                {activeStep > 0 && (
-                  <button
-                    onClick={prevStep}
-                    className="w-full sm:w-auto min-w-[120px] px-5 py-2.5 text-gray-700 bg-gray-300 rounded-lg hover:bg-gray-400"
-                  >
-                    Back
-                  </button>
-                )}
+          </section>
+          {uiStep === 0 && <ZbPromo />}
+        </main>
 
-                {activeStep < steps.length - 1 ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (validateStepFields()) {
-                        nextStep();
-                      }
-                    }}
-                    className="w-full sm:w-auto min-w-[120px] px-5 py-2.5 text-white my-bg rounded-lg hover:my-bg"
-                  >
-                    Continue
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      if (validateStepFields()) {
-                        handleEdit(e);
-                      }
-                    }}
-                    disabled={isSubmitting}
-                    className="w-full sm:w-auto min-w-[140px] px-5 py-2.5 text-white bg-rose-500 rounded-lg hover:bg-rose-600"
-                  >
-                    {isSubmitting ? "Updating..." : "Update Property"}
-                  </button>
-                )}
-              </div>
+        {/* Footer actions */}
+        <footer className="zb-footer">
+          <div className="zb-footer-inner">
+            {uiStep > 0 ? (
+              <button type="button" onClick={prevStep} className="zb-btn zb-btn-outline">
+                <ArrowLeft size={16} /> Back
+              </button>
+            ) : (
+              <span />
+            )}
+
+            <span className="zb-step-count">Step {uiStep + 1} of {steps.length}</span>
+
+            {uiStep < steps.length - 1 ? (
+              <button
+                type="button"
+                className="zb-btn zb-btn-primary"
+                onClick={() => {
+                  if (runStepValidation(UI_STEP_LOGICAL[uiStep])) {
+                    nextStep();
+                  }
+                }}
+              >
+                Continue <ArrowRight size={16} />
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="zb-btn zb-btn-primary"
+                disabled={isSubmitting}
+                onClick={(e) => {
+                  if (runStepValidation(UI_STEP_LOGICAL[uiStep])) {
+                    handleEdit(e);
+                  }
+                }}
+              >
+                {isSubmitting ? "Updating..." : "Update Property"}
+              </button>
+            )}
           </div>
-        </div>
+        </footer>
+      </div>
       {/* </LoadScript> */}
 
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="w-full max-w-md p-6 bg-white shadow-2xl rounded-xl">
-            <h2 className="mb-4 text-xl font-semibold text-red-600">
+            <h2 className="mb-3 text-xl font-semibold text-red-600">
               Free Property Posting Limit Reached
             </h2>
-            <p className="mb-6 text-gray-700">
+            <p className="mb-3 text-gray-700">
               Your free property posting limit has ended. Please purchase a plan
               to continue posting properties.
             </p>
             {/* Align buttons side by side on the right */}
             <div className="flex items-center justify-between px-1">
               <button
-                className="px-4 py-2 text-white my-bg rounded hover:bg-green-700"
+                className="px-4 py-1.5 text-white my-bg rounded hover:bg-green-700"
                 onClick={() => {
                   setShowModal(false); // FIXED
                   history.push({
@@ -10162,7 +3436,7 @@ form.append("property_dimensions_breadth", breadthOfLand);
                 Purchase Plan
               </button>
               <button
-                className="px-4 py-2 text-black bg-gray-300 rounded hover:bg-gray-400"
+                className="px-4 py-1.5 text-black bg-gray-300 rounded hover:bg-gray-400"
                 onClick={() => {
                   setShowModal(false); // FIXED
                   history.push("/");
@@ -10178,15 +3452,15 @@ form.append("property_dimensions_breadth", breadthOfLand);
       {showFeaturePopup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="w-full max-w-md p-6 bg-white shadow-2xl rounded-xl">
-            <h2 className="mb-4 text-xl font-semibold text-red-600">
+            <h2 className="mb-3 text-xl font-semibold text-red-600">
               Your featured count has expired
             </h2>
-            <p className="mb-6 text-gray-700">
+            <p className="mb-3 text-gray-700">
               Please purchase a plan to feature more properties.
             </p>
             <div className="flex items-center justify-between px-1">
               <button
-                className="px-4 py-2 text-white my-bg rounded hover:bg-green-700"
+                className="px-4 py-1.5 text-white my-bg rounded hover:bg-green-700"
                 onClick={() => {
                   setShowFeaturePopup(false);
                   history.push({
@@ -10198,7 +3472,7 @@ form.append("property_dimensions_breadth", breadthOfLand);
                 Purchase Plan
               </button>
               <button
-                className="px-4 py-2 text-black bg-gray-300 rounded hover:bg-gray-400"
+                className="px-4 py-1.5 text-black bg-gray-300 rounded hover:bg-gray-400"
                 onClick={() => {
                   setShowFeaturePopup(false);
                 }}

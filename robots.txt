@@ -1,0 +1,46 @@
+User-agent: *
+Allow: /
+
+# Private pages: login, dashboards, forms and user actions
+Disallow: /login
+Disallow: /verify-login-otp
+Disallow: /verify-otp
+Disallow: /register
+Disallow: /complete-profile
+Disallow: /changepassword
+Disallow: /profile
+Disallow: /dashboard
+Disallow: /savedsearch
+Disallow: /postedproperties
+Disallow: /recommendedpropertiesDashboard
+Disallow: /recommendedpropertiesdashboard
+Disallow: /featuredDashboard
+Disallow: /featureddashboard
+Disallow: /advisordashboard
+Disallow: /searchdashboard
+Disallow: /add_new_property
+Disallow: /edit_property/
+Disallow: /post-property
+Disallow: /add_new_project
+Disallow: /Editproject/
+Disallow: /editproject/
+Disallow: /add-upcoming-project
+Disallow: /add-developer
+Disallow: /updatedeveloper
+Disallow: /add_new_offer
+Disallow: /addoffer
+Disallow: /offer-not-approved
+Disallow: /add-not-approved
+Disallow: /get-shedule
+Disallow: /mytour
+Disallow: /allschedules
+Disallow: /inquirieslist
+Disallow: /inquiriesdetail/
+Disallow: /contactedproperties
+Disallow: /plan-history
+
+# Property detail pages (/propertydetails/...) must stay crawlable
+Disallow: /property$
+Disallow: /property/
+
+Sitemap: https://www.zerobriks.com/sitemap.xml
